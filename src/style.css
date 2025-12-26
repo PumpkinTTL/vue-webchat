@@ -5,6 +5,9 @@
   font-style: normal;
 }
 
+/* Ant Design Vue Reset Styles */
+@import 'ant-design-vue/dist/reset.css';
+
 :root {
   font-family: 'OPPO Sans', sans-serif;
   -webkit-font-smoothing: antialiased;
