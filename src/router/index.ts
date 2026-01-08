@@ -9,22 +9,6 @@ const routes: RouteRecordRaw[] = [
     meta: {
       title: '首页'
     }
-  },
-  {
-    path: '/about',
-    name: 'About',
-    component: () => import('@/views/About.vue'),
-    meta: {
-      title: '关于'
-    }
-  },
-  {
-    path: '/icon-test',
-    name: 'IconTest',
-    component: () => import('@/views/IconTest.vue'),
-    meta: {
-      title: '图标测试'
-    }
   }
 ]
 

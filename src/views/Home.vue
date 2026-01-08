@@ -60,7 +60,7 @@ import { useCounterStore } from '@/store/counter'
 import { getBrowserFingerprint } from '@/utils/fingerprint'
 import { message } from 'ant-design-vue'
 
-import TestAntDesign from '@/components/TestAntDesign.vue'
+
 
 const counterStore = useCounterStore()
 const { count, doubleCount, isEven } = storeToRefs(counterStore)
