@@ -243,7 +243,28 @@ const formState = reactive<FormState>({
 const loading = ref(false)
 const showPassword = ref(false)
 
+// 记录页面访问
+const logPageAccess = async (pageName: string) => {
+  try {
+    const clientIp = await getRealIpFromThirdParty()
+    await fetch('/api/logAccess', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        client_ip: clientIp || '',
+        page: pageName
+      })
+    })
+  } catch (e: any) {
+    console.warn('记录访问失败:', e.message)
+  }
+}
+
 onMounted(() => {
+  // 记录页面访问
+  logPageAccess('访问登录页')
+  
+  // 加载保存的登录凭证
   const savedCreds = getLoginCredentials()
   if (savedCreds) {
     formState.username = savedCreds.username
@@ -309,7 +330,11 @@ const handleLogin = async () => {
         router.push('/')
       }, 500)
     } else if (result.code === 403) {
+      // 账号已封禁，跳转到道别页面
       Message.error('账号无限期停用')
+      setTimeout(() => {
+        window.location.href = '/farewell.html'
+      }, 1500)
     } else {
       Message.error(result.msg || '登录失败')
     }
