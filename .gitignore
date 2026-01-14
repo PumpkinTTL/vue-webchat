@@ -22,3 +22,8 @@ dist-ssr
 *.njsproj
 *.sln
 *.sw?
+
+# Kiro/Claude AI files
+.claude/
+.kiro/
+.shared/
