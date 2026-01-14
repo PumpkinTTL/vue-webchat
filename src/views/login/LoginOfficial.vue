@@ -162,18 +162,18 @@
             <a-button
               type="primary"
               html-type="submit"
-              :loading="loading"
+              :disabled="loading"
               size="large"
               block
               class="official-submit-btn"
             >
-              <span v-if="!loading" class="btn-content">
-                <span>登录</span>
-                <svg class="btn-arrow" viewBox="0 0 24 24" fill="none">
+              <span class="btn-content">
+                <span v-if="loading" class="btn-spinner"></span>
+                <span>{{ loading ? '登录中...' : '登录' }}</span>
+                <svg v-if="!loading" class="btn-arrow" viewBox="0 0 24 24" fill="none">
                   <path d="M5 12H19M19 12L12 5M19 12L12 19" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
                 </svg>
               </span>
-              <span v-else>登录中...</span>
             </a-button>
           </a-form-item>
           </div>
