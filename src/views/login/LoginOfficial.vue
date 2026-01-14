@@ -1,75 +1,69 @@
 <template>
   <div class="official-login">
-    <!-- Left side - Branding -->
-    <div class="brand-side">
-      <div class="brand-content animate__animated animate__fadeInLeft">
-        <div class="brand-logo animate__animated animate__zoomIn" style="animation-delay: 0.2s">
-          <svg viewBox="0 0 24 24" fill="none">
-            <path d="M12 2L2 7V12C2 17.55 5.84 22.74 11 24C16.16 22.74 20 17.55 20 12V7L12 2Z" fill="currentColor"/>
-          </svg>
-        </div>
-        <h1 class="brand-title animate__animated animate__fadeInUp" style="animation-delay: 0.3s">
-          Secure Chat
-        </h1>
-        <p class="brand-tagline animate__animated animate__fadeInUp" style="animation-delay: 0.4s">
-          企业级端对端加密通讯平台
-        </p>
-        
-        <!-- Feature list -->
-        <div class="feature-list">
-          <div class="feature-item animate__animated animate__fadeInUp" style="animation-delay: 0.5s">
-            <div class="feature-icon">
-              <svg viewBox="0 0 24 24" fill="none">
-                <path d="M12 1L3 5V11C3 16.55 6.84 21.74 12 23C17.16 21.74 21 16.55 21 11V5L12 1Z" stroke="currentColor" stroke-width="2" fill="none"/>
-              </svg>
-            </div>
-            <div class="feature-text">
-              <h3>端对端加密</h3>
-              <p>军事级 AES-256 加密保护</p>
-            </div>
+    <!-- Single unified card with brand content on left and form on right -->
+    <div class="unified-login-card">
+      <!-- Left side - Brand content (hidden on mobile) -->
+      <div class="card-brand-section">
+        <div class="brand-content animate__animated animate__fadeInLeft">
+          <div class="brand-logo animate__animated animate__zoomIn" style="animation-delay: 0.2s">
+            <svg viewBox="0 0 24 24" fill="none">
+              <path d="M12 2L2 7V12C2 17.55 5.84 22.74 11 24C16.16 22.74 20 17.55 20 12V7L12 2Z" fill="currentColor"/>
+            </svg>
           </div>
+          <h1 class="brand-title animate__animated animate__fadeInUp" style="animation-delay: 0.3s">
+            Secure Chat
+          </h1>
+          <p class="brand-tagline animate__animated animate__fadeInUp" style="animation-delay: 0.4s">
+            企业级端对端加密通讯平台
+          </p>
           
-          <div class="feature-item animate__animated animate__fadeInUp" style="animation-delay: 0.6s">
-            <div class="feature-icon">
-              <svg viewBox="0 0 24 24" fill="none">
-                <path d="M12 22C17.5228 22 22 17.5228 22 12C22 6.47715 17.5228 2 12 2C6.47715 2 2 6.47715 2 12C2 17.5228 6.47715 22 12 22Z" stroke="currentColor" stroke-width="2" fill="none"/>
-                <path d="M12 6V12L16 14" stroke="currentColor" stroke-width="2" stroke-linecap="round"/>
-              </svg>
+          <!-- Feature list -->
+          <div class="feature-list">
+            <div class="feature-item animate__animated animate__fadeInUp" style="animation-delay: 0.5s">
+              <div class="feature-icon">
+                <svg viewBox="0 0 24 24" fill="none">
+                  <path d="M12 1L3 5V11C3 16.55 6.84 21.74 12 23C17.16 21.74 21 16.55 21 11V5L12 1Z" stroke="currentColor" stroke-width="2" fill="none"/>
+                </svg>
+              </div>
+              <div class="feature-text">
+                <h3>端对端加密</h3>
+                <p>军事级 AES-256 加密保护</p>
+              </div>
             </div>
-            <div class="feature-text">
-              <h3>实时通讯</h3>
-              <p>毫秒级消息送达</p>
+            
+            <div class="feature-item animate__animated animate__fadeInUp" style="animation-delay: 0.6s">
+              <div class="feature-icon">
+                <svg viewBox="0 0 24 24" fill="none">
+                  <path d="M12 22C17.5228 22 22 17.5228 22 12C22 6.47715 17.5228 2 12 2C6.47715 2 2 6.47715 2 12C2 17.5228 6.47715 22 12 22Z" stroke="currentColor" stroke-width="2" fill="none"/>
+                  <path d="M12 6V12L16 14" stroke="currentColor" stroke-width="2" stroke-linecap="round"/>
+                </svg>
+              </div>
+              <div class="feature-text">
+                <h3>实时通讯</h3>
+                <p>毫秒级消息送达</p>
+              </div>
             </div>
-          </div>
-          
-          <div class="feature-item animate__animated animate__fadeInUp" style="animation-delay: 0.7s">
-            <div class="feature-icon">
-              <svg viewBox="0 0 24 24" fill="none">
-                <path d="M17 21V19C17 17.9391 16.5786 16.9217 15.8284 16.1716C15.0783 15.4214 14.0609 15 13 15H5C3.93913 15 2.92172 15.4214 2.17157 16.1716C1.42143 16.9217 1 17.9391 1 19V21" stroke="currentColor" stroke-width="2" stroke-linecap="round"/>
-                <path d="M9 11C11.2091 11 13 9.20914 13 7C13 4.79086 11.2091 3 9 3C6.79086 3 5 4.79086 5 7C5 9.20914 6.79086 11 9 11Z" stroke="currentColor" stroke-width="2"/>
-                <path d="M23 21V19C22.9993 18.1137 22.7044 17.2528 22.1614 16.5523C21.6184 15.8519 20.8581 15.3516 20 15.13" stroke="currentColor" stroke-width="2" stroke-linecap="round"/>
-                <path d="M16 3.13C16.8604 3.35031 17.623 3.85071 18.1676 4.55232C18.7122 5.25392 19.0078 6.11683 19.0078 7.005C19.0078 7.89318 18.7122 8.75608 18.1676 9.45769C17.623 10.1593 16.8604 10.6597 16 10.88" stroke="currentColor" stroke-width="2" stroke-linecap="round"/>
-              </svg>
-            </div>
-            <div class="feature-text">
-              <h3>团队协作</h3>
-              <p>支持多人群组聊天</p>
+            
+            <div class="feature-item animate__animated animate__fadeInUp" style="animation-delay: 0.7s">
+              <div class="feature-icon">
+                <svg viewBox="0 0 24 24" fill="none">
+                  <path d="M17 21V19C17 17.9391 16.5786 16.9217 15.8284 16.1716C15.0783 15.4214 14.0609 15 13 15H5C3.93913 15 2.92172 15.4214 2.17157 16.1716C1.42143 16.9217 1 17.9391 1 19V21" stroke="currentColor" stroke-width="2" stroke-linecap="round"/>
+                  <path d="M9 11C11.2091 11 13 9.20914 13 7C13 4.79086 11.2091 3 9 3C6.79086 3 5 4.79086 5 7C5 9.20914 6.79086 11 9 11Z" stroke="currentColor" stroke-width="2"/>
+                  <path d="M23 21V19C22.9993 18.1137 22.7044 17.2528 22.1614 16.5523C21.6184 15.8519 20.8581 15.3516 20 15.13" stroke="currentColor" stroke-width="2" stroke-linecap="round"/>
+                  <path d="M16 3.13C16.8604 3.35031 17.623 3.85071 18.1676 4.55232C18.7122 5.25392 19.0078 6.11683 19.0078 7.005C19.0078 7.89318 18.7122 8.75608 18.1676 9.45769C17.623 10.1593 16.8604 10.6597 16 10.88" stroke="currentColor" stroke-width="2" stroke-linecap="round"/>
+                </svg>
+              </div>
+              <div class="feature-text">
+                <h3>团队协作</h3>
+                <p>支持多人群组聊天</p>
+              </div>
             </div>
           </div>
         </div>
       </div>
-    </div>
 
-    <!-- Right side - Login form -->
-    <div class="form-side">
-      <div class="form-container">
-        <!-- Decorative elements -->
-        <div class="card-decoration">
-          <div class="deco-circle deco-1"></div>
-          <div class="deco-circle deco-2"></div>
-          <div class="deco-square"></div>
-        </div>
-
+      <!-- Right side - Login form -->
+      <div class="card-form-section">
         <div class="form-header">
           <div class="header-card animate__animated animate__fadeInDown" style="animation-delay: 0.1s">
             <div class="header-top">
