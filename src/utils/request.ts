@@ -1,6 +1,5 @@
 import axios from 'axios'
 import type { AxiosInstance, InternalAxiosRequestConfig, AxiosResponse } from 'axios'
-import { ElMessage } from 'element-plus'
 
 // 创建axios实例
 const service: AxiosInstance = axios.create({
@@ -15,9 +14,16 @@ const service: AxiosInstance = axios.create({
 service.interceptors.request.use(
   (config: InternalAxiosRequestConfig) => {
     // 在发送请求之前做些什么
-    const token = localStorage.getItem('token')
-    if (token && config.headers) {
-      config.headers.Authorization = `Bearer ${token}`
+    try {
+      const userInfo = localStorage.getItem('userInfo')
+      if (userInfo) {
+        const { token } = JSON.parse(userInfo)
+        if (token && config.headers) {
+          config.headers.Authorization = `Bearer ${token}`
+        }
+      }
+    } catch (error) {
+      console.error('获取token失败:', error)
     }
     return config
   },
@@ -31,15 +37,8 @@ service.interceptors.request.use(
 // 响应拦截器
 service.interceptors.response.use(
   (response: AxiosResponse) => {
-    // 对响应数据做点什么
-    const { code, message, data } = response.data
-    
-    if (code === 200) {
-      return data
-    } else {
-      ElMessage.error(message || '请求失败')
-      return Promise.reject(new Error(message || '请求失败'))
-    }
+    // 直接返回完整的响应数据，让业务层处理
+    return response.data
   },
   (error) => {
     // 对响应错误做点什么
@@ -50,27 +49,27 @@ service.interceptors.response.use(
       
       switch (status) {
         case 401:
-          ElMessage.error('未授权，请重新登录')
+          console.error('未授权，请重新登录')
           // 清除token并跳转到登录页
-          localStorage.removeItem('token')
+          localStorage.removeItem('userInfo')
           window.location.href = '/login'
           break
         case 403:
-          ElMessage.error('拒绝访问')
+          console.error('拒绝访问')
           break
         case 404:
-          ElMessage.error('请求地址出错')
+          console.error('请求地址出错')
           break
         case 500:
-          ElMessage.error('服务器内部错误')
+          console.error('服务器内部错误')
           break
         default:
-          ElMessage.error(data?.message || '请求失败')
+          console.error(data?.msg || '请求失败')
       }
     } else if (error.request) {
-      ElMessage.error('网络错误，请检查网络连接')
+      console.error('网络错误，请检查网络连接')
     } else {
-      ElMessage.error('请求配置错误')
+      console.error('请求配置错误')
     }
     
     return Promise.reject(error)

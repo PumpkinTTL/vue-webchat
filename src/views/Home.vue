@@ -42,14 +42,6 @@
         </div>
       </div>
     </a-card>
-
-    <!-- 组件示例 -->
-    <!-- <DemoComponent /> -->
-    <!-- 图标示例 -->
-    <!-- <IconDemo /> -->
-    <!-- 测ant组件 -->
-    
-
   </div>
 </template>
 
