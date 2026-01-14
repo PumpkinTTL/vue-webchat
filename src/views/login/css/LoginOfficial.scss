@@ -435,15 +435,19 @@
   background: linear-gradient(135deg, #2563EB 0%, #1E40AF 100%);
   border: none;
   box-shadow: 0 4px 16px rgba(37, 99, 235, 0.3);
-  transition: all 0.3s ease;
+  transition: box-shadow 0.3s ease !important;
 
-  &:hover {
-    transform: translateY(-2px);
+  &:not(:disabled):hover {
     box-shadow: 0 6px 24px rgba(37, 99, 235, 0.4);
 
     .btn-arrow {
       transform: translateX(4px);
     }
+  }
+  
+  &:disabled {
+    cursor: not-allowed;
+    opacity: 0.8;
   }
 }
 
@@ -452,6 +456,7 @@
   align-items: center;
   justify-content: center;
   gap: 0.5rem;
+  height: 100%;
 }
 
 .btn-arrow {
