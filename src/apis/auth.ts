@@ -32,3 +32,14 @@ export function login(data: LoginParams) {
     data
   })
 }
+
+/**
+ * 记录页面访问
+ */
+export function logAccess(data: { client_ip: string; page: string }) {
+  return request({
+    url: '/logAccess',
+    method: 'post',
+    data
+  })
+}

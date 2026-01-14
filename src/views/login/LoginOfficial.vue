@@ -216,7 +216,7 @@
 <script setup lang="ts">
 import { reactive, ref, onMounted } from 'vue'
 import { useRouter } from 'vue-router'
-import { login } from '@/apis/auth'
+import { login, logAccess } from '@/apis/auth'
 import { getRealIpFromThirdParty } from '@/utils/ip'
 import {
   saveUserInfo,
@@ -247,13 +247,9 @@ const showPassword = ref(false)
 const logPageAccess = async (pageName: string) => {
   try {
     const clientIp = await getRealIpFromThirdParty()
-    await fetch('/api/logAccess', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({
-        client_ip: clientIp || '',
-        page: pageName
-      })
+    await logAccess({
+      client_ip: clientIp || '',
+      page: pageName
     })
   } catch (e: any) {
     console.warn('记录访问失败:', e.message)
