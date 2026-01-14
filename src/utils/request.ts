@@ -37,7 +37,8 @@ service.interceptors.request.use(
 // 响应拦截器
 service.interceptors.response.use(
   (response: AxiosResponse) => {
-    // 直接返回完整的响应数据，让业务层处理
+    // 直接返回响应的 data 部分（后端返回的 JSON 数据）
+    console.log('📥 API响应:', response.config.url, response.data)
     return response.data
   },
   (error) => {

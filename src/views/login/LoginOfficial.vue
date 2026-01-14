@@ -154,7 +154,7 @@
             <a-checkbox v-model:checked="formState.rememberMe">
               记住登录状态
             </a-checkbox>
-            <a href="#" class="forgot-link">忘记密码？</a>
+            <a href="javascript:void(0)" class="forgot-link" @click.prevent>忘记密码？</a>
           </div>
 
           <div class="submit-group animate__animated animate__fadeInUp" style="animation-delay: 0.7s">
@@ -263,11 +263,18 @@ const handleLogin = async () => {
       requestData.client_ip = clientIp
     }
 
-    const response = await login(requestData)
-    const result = response.data
+    console.log('🔍 发送登录请求:', requestData)
+    
+    // axios 拦截器已经返回了 response.data，所以这里直接就是结果
+    const result = await login(requestData)
+    
+    console.log('🔍 后端返回的完整响应:', result)
+    console.log('🔍 result.code:', result.code)
+    console.log('🔍 result.token:', result.token)
 
     if (result.code === 0) {
       if (!result.token) {
+        console.error('❌ 后端未返回token')
         Message.error('登录失败：未获取到token')
         return
       }
@@ -279,6 +286,7 @@ const handleLogin = async () => {
         token: result.token
       }
 
+      console.log('✅ 保存用户信息:', userInfo)
       saveUserInfo(userInfo)
 
       if (formState.rememberMe) {
@@ -291,13 +299,19 @@ const handleLogin = async () => {
       }
 
       Message.success('登录成功')
-      setTimeout(() => router.push('/'), 100)
+      
+      // 延迟跳转，确保消息显示
+      setTimeout(() => {
+        console.log('🔄 准备跳转到首页')
+        router.push('/')
+      }, 500)
     } else if (result.code === 403) {
       Message.error('账号无限期停用')
     } else {
       Message.error(result.msg || '登录失败')
     }
   } catch (error: any) {
+    console.error('❌ 登录请求失败:', error)
     Message.error('请求失败：' + (error.message || '未知错误'))
   } finally {
     loading.value = false
