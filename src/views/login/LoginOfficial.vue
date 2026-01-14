@@ -159,22 +159,25 @@
 
           <div class="submit-group animate__animated animate__fadeInUp" style="animation-delay: 0.7s">
             <a-form-item>
-            <button
-              type="submit"
+            <a-button
+              type="primary"
+              html-type="submit"
               :disabled="loading"
+              size="large"
+              block
               class="official-submit-btn"
             >
               <span class="btn-content">
-                <span class="btn-text">登录</span>
-                <svg class="btn-arrow" viewBox="0 0 24 24" fill="none">
+                <span>登录</span>
+                <svg v-if="!loading" class="btn-icon" viewBox="0 0 24 24" fill="none">
                   <path d="M5 12H19M19 12L12 5M19 12L12 19" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
                 </svg>
+                <svg v-else class="btn-icon btn-loading" viewBox="0 0 24 24" fill="none">
+                  <circle cx="12" cy="12" r="10" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-dasharray="60" stroke-dashoffset="15" opacity="0.3"/>
+                  <circle cx="12" cy="12" r="10" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-dasharray="60" stroke-dashoffset="15"/>
+                </svg>
               </span>
-              <span v-if="loading" class="btn-loading-overlay">
-                <span class="loading-spinner"></span>
-                <span class="loading-text">登录中</span>
-              </span>
-            </button>
+            </a-button>
           </a-form-item>
           </div>
         </a-form>
