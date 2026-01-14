@@ -5,17 +5,17 @@
       <!-- Left side - Brand content (hidden on mobile) -->
       <div class="card-brand-section">
         <div class="brand-content animate__animated animate__fadeInLeft">
-          <div class="brand-logo animate__animated animate__zoomIn" style="animation-delay: 0.2s">
-            <svg viewBox="0 0 24 24" fill="none">
-              <path d="M12 2L2 7V12C2 17.55 5.84 22.74 11 24C16.16 22.74 20 17.55 20 12V7L12 2Z" fill="currentColor"/>
-            </svg>
+          <div class="brand-header animate__animated animate__zoomIn" style="animation-delay: 0.2s">
+            <div class="brand-logo">
+              <svg viewBox="0 0 24 24" fill="none">
+                <path d="M12 2L2 7V12C2 17.55 5.84 22.74 11 24C16.16 22.74 20 17.55 20 12V7L12 2Z" fill="currentColor"/>
+              </svg>
+            </div>
+            <div class="brand-info">
+              <h1 class="brand-title">Secure Chat</h1>
+              <p class="brand-tagline">企业级端对端加密通讯平台</p>
+            </div>
           </div>
-          <h1 class="brand-title animate__animated animate__fadeInUp" style="animation-delay: 0.3s">
-            Secure Chat
-          </h1>
-          <p class="brand-tagline animate__animated animate__fadeInUp" style="animation-delay: 0.4s">
-            企业级端对端加密通讯平台
-          </p>
           
           <!-- Feature list -->
           <div class="feature-list">
