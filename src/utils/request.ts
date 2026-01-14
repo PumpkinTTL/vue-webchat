@@ -5,6 +5,7 @@ import type { AxiosInstance, InternalAxiosRequestConfig, AxiosResponse } from 'a
 const service: AxiosInstance = axios.create({
   baseURL: import.meta.env.VITE_API_BASE_URL || '/api',
   timeout: 10000,
+  withCredentials: true, // 允许携带 cookie
   headers: {
     'Content-Type': 'application/json;charset=UTF-8'
   }
@@ -14,17 +15,25 @@ const service: AxiosInstance = axios.create({
 service.interceptors.request.use(
   (config: InternalAxiosRequestConfig) => {
     // 在发送请求之前做些什么
-    try {
-      const userInfo = localStorage.getItem('userInfo')
-      if (userInfo) {
-        const { token } = JSON.parse(userInfo)
-        if (token && config.headers) {
-          config.headers.Authorization = `Bearer ${token}`
+    
+    // 登录接口不需要添加 token
+    const isLoginRequest = config.url?.includes('/user/login')
+    
+    if (!isLoginRequest) {
+      try {
+        const userInfo = localStorage.getItem('userInfo')
+        if (userInfo) {
+          const { token } = JSON.parse(userInfo)
+          if (token && config.headers) {
+            config.headers.Authorization = `Bearer ${token}`
+          }
         }
+      } catch (error) {
+        console.error('获取token失败:', error)
       }
-    } catch (error) {
-      console.error('获取token失败:', error)
     }
+    
+    console.log('📤 发送请求:', config.url, config.data)
     return config
   },
   (error) => {
