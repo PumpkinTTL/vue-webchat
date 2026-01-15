@@ -58,6 +58,10 @@ service.interceptors.response.use(
       const { status, data } = error.response
       
       switch (status) {
+        case 400:
+          // 业务错误，返回后端的响应数据（包含code和msg）
+          console.error('业务错误:', data?.msg || '请求失败')
+          return Promise.resolve(data)
         case 401:
           console.error('未授权，请重新登录')
           // 清除token并跳转到登录页
