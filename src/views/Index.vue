@@ -85,7 +85,7 @@
           <a-textarea v-model:value="createRoomForm.description" placeholder="请输入房间简介（可选）" :maxlength="100" show-count :rows="2" />
         </a-form-item>
         <a-form-item label="房间密码" class="mb-0">
-          <a-input-password v-model:value="createRoomForm.password" placeholder="设置密码后为私密房间（可选）" :maxlength="20" />
+          <a-input-password v-model:value="createRoomForm.password" placeholder="设置密码后为私密房间（可选）" :maxlength="20" autocomplete="new-password" />
         </a-form-item>
       </a-form>
       <template #footer>
@@ -94,8 +94,8 @@
           取消
         </a-button>
         <a-button type="primary" :loading="createRoomLoading" @click="submitCreateRoom">
-          <font-awesome-icon :icon="['fas', 'plus']" style="margin-right: 6px" />
-          创建
+          <font-awesome-icon :icon="['fas', 'check']" style="margin-right: 6px" />
+          确定
         </a-button>
       </template>
     </a-modal>
@@ -112,7 +112,7 @@
           <a-input v-model:value="joinRoomForm.roomId" placeholder="请输入房间ID" :maxlength="20" />
         </a-form-item>
         <a-form-item label="房间密码" class="mb-0">
-          <a-input-password v-model:value="joinRoomForm.password" placeholder="私密房间需要输入密码（可选）" :maxlength="20" />
+          <a-input-password v-model:value="joinRoomForm.password" placeholder="私密房间需要输入密码（可选）" :maxlength="20" autocomplete="off" />
         </a-form-item>
       </a-form>
       <template #footer>
@@ -121,8 +121,8 @@
           取消
         </a-button>
         <a-button type="primary" :loading="joinRoomLoading" @click="submitJoinRoom">
-          <font-awesome-icon :icon="['fas', 'arrow-right']" style="margin-right: 6px" />
-          加入
+          <font-awesome-icon :icon="['fas', 'check']" style="margin-right: 6px" />
+          确定
         </a-button>
       </template>
     </a-modal>
@@ -244,6 +244,7 @@ const handleCreateRoom = () => {
 }
 
 const resetCreateRoomForm = () => {
+  createRoomVisible.value = false
   createRoomForm.name = ''
   createRoomForm.description = ''
   createRoomForm.password = ''
@@ -296,6 +297,7 @@ const handleJoinRoom = () => {
 }
 
 const resetJoinRoomForm = () => {
+  joinRoomVisible.value = false
   joinRoomForm.roomId = ''
   joinRoomForm.password = ''
 }

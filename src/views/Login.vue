@@ -57,7 +57,7 @@ class="login-form"
               </svg>
               <a-input
                 v-model:value="formState.username"
-                placeholder="请输入用户ID或昵称"
+placeholder="请输入用户ID或昵称"
                 size="large"
                 autocomplete="username"
                 class="glass-input"

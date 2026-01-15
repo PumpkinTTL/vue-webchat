@@ -8,49 +8,16 @@ import App from './App.vue'
 // Element Plus 的样式会通过 vite.config.ts 中的配置自动处理
 import 'animate.css'
 import '@/style.css'
-import 'ant-design-vue/dist/reset.css';
-// Font Awesome 图标
-import { library } from '@fortawesome/fontawesome-svg-core'
-import { FontAwesomeIcon } from '@fortawesome/vue-fontawesome'
-import {
-  faUser,
-  faLock,
-  faHome,
-  faCog,
-  faPlus,
-  faMinus,
-  faRefresh,
-  faSearch,
-  faEdit,
-  faTrash,
-  faSave,
-  faCheck,
-  faTimes,
-  faEye,
-  faEyeSlash,
-  faDownload,
-  faUpload,
-  faArrowLeft,
-  faArrowRight,
-  faComments,
-  faShieldAlt,
-  faSignOutAlt,
-  faRightFromBracket
-} from '@fortawesome/free-solid-svg-icons'
+import 'ant-design-vue/dist/reset.css'
 
-// 添加图标到库
-library.add(
-  faUser, faLock, faHome, faCog, faPlus, faMinus, faRefresh,
-  faSearch, faEdit, faTrash, faSave, faCheck, faTimes,
-  faEye, faEyeSlash, faDownload, faUpload, faArrowLeft, faArrowRight,
-  faComments, faShieldAlt, faSignOutAlt, faRightFromBracket
-)
+// 插件导入
+import fontawesomePlugin from '@/plugins/fontawesome'
 
 const app = createApp(App)
 const pinia = createPinia()
 
 app.use(pinia)
 app.use(router)
-app.component('font-awesome-icon', FontAwesomeIcon)
+app.use(fontawesomePlugin)
 
 app.mount('#app')

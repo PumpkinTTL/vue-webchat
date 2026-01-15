@@ -35,11 +35,12 @@
 </template>
 
 <script setup lang="ts">
-import { computed } from 'vue'
+import { computed, h, createVNode } from 'vue'
 import { useRouter } from 'vue-router'
 import { Modal } from 'ant-design-vue'
 import { getUserInfo, clearUserInfo } from '@/utils/storage'
 import { Message } from '@/utils/message'
+import { FontAwesomeIcon } from '@fortawesome/vue-fontawesome'
 
 // 服务器地址
 const serverUrl = import.meta.env.VITE_SERVER_URL || ''
