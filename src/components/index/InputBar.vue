@@ -459,10 +459,10 @@ const cancelRecording = () => {
   position: absolute;
   bottom: 100%;
   left: 0;
-  margin-bottom: $spacing-sm;
+  margin-bottom: 16px;
   display: flex;
   gap: $spacing-md;
-  padding: $spacing-md;
+  padding: $spacing-md $spacing-lg;
   background: $bg-color-elevated;
   border: 1px solid $border-base;
   border-radius: $border-radius-lg;

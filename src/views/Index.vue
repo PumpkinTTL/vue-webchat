@@ -385,9 +385,10 @@ const handleTyping = () => {}
 // 输入区域 - 固定高度
 .input-area {
   flex: 0 0 auto;
-  padding: 10px 12px;
+  padding: 12px 16px;
   background: $bg-color-elevated;
   border-top: 1px solid $border-base;
+  position: relative;
 }
 
 // 移动端遮罩
