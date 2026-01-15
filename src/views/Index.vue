@@ -79,10 +79,10 @@
     >
       <a-form :model="createRoomForm" layout="vertical" class="compact-form">
         <a-form-item label="房间名称" required>
-          <a-input v-model:value="createRoomForm.name" placeholder="请输入房间名称" :maxlength="20" show-count />
+          <a-input v-model:value="createRoomForm.name" placeholder="请输入房间名称" :maxlength="20" show-count autocomplete="off" />
         </a-form-item>
         <a-form-item label="房间简介">
-          <a-textarea v-model:value="createRoomForm.description" placeholder="请输入房间简介（可选）" :maxlength="100" show-count :rows="2" />
+          <a-textarea v-model:value="createRoomForm.description" placeholder="请输入房间简介（可选）" :maxlength="100" show-count :rows="2" autocomplete="off" />
         </a-form-item>
         <a-form-item label="房间密码" class="mb-0">
           <a-input-password v-model:value="createRoomForm.password" placeholder="设置密码后为私密房间（可选）" :maxlength="20" autocomplete="new-password" />
@@ -109,7 +109,7 @@
     >
       <a-form :model="joinRoomForm" layout="vertical" class="compact-form">
         <a-form-item label="房间ID" required>
-          <a-input v-model:value="joinRoomForm.roomId" placeholder="请输入房间ID" :maxlength="20" />
+          <a-input v-model:value="joinRoomForm.roomId" placeholder="请输入房间ID" :maxlength="20" autocomplete="off" />
         </a-form-item>
         <a-form-item label="房间密码" class="mb-0">
           <a-input-password v-model:value="joinRoomForm.password" placeholder="私密房间需要输入密码（可选）" :maxlength="20" autocomplete="off" />
