@@ -70,6 +70,7 @@ const handleLogout = () => {
     content: '确定要退出登录吗？',
     okText: '退出',
     cancelText: '取消',
+    okButtonProps: { danger: true },
     onOk: () => {
       clearUserInfo()
       Message.success('已退出登录')

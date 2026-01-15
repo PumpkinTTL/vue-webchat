@@ -74,10 +74,7 @@
     <a-modal
       v-model:open="createRoomVisible"
       title="创建房间"
-      ok-text="创建"
-      cancel-text="取消"
       :confirm-loading="createRoomLoading"
-      @ok="submitCreateRoom"
       @cancel="resetCreateRoomForm"
     >
       <a-form :model="createRoomForm" layout="vertical" class="compact-form">
@@ -91,16 +88,23 @@
           <a-input-password v-model:value="createRoomForm.password" placeholder="设置密码后为私密房间（可选）" :maxlength="20" />
         </a-form-item>
       </a-form>
+      <template #footer>
+        <a-button @click="resetCreateRoomForm">
+          <font-awesome-icon :icon="['fas', 'times']" style="margin-right: 6px" />
+          取消
+        </a-button>
+        <a-button type="primary" :loading="createRoomLoading" @click="submitCreateRoom">
+          <font-awesome-icon :icon="['fas', 'plus']" style="margin-right: 6px" />
+          创建
+        </a-button>
+      </template>
     </a-modal>
 
     <!-- 加入房间弹窗 -->
     <a-modal
       v-model:open="joinRoomVisible"
       title="加入房间"
-      ok-text="加入"
-      cancel-text="取消"
       :confirm-loading="joinRoomLoading"
-      @ok="submitJoinRoom"
       @cancel="resetJoinRoomForm"
     >
       <a-form :model="joinRoomForm" layout="vertical" class="compact-form">
@@ -111,6 +115,16 @@
           <a-input-password v-model:value="joinRoomForm.password" placeholder="私密房间需要输入密码（可选）" :maxlength="20" />
         </a-form-item>
       </a-form>
+      <template #footer>
+        <a-button @click="resetJoinRoomForm">
+          <font-awesome-icon :icon="['fas', 'times']" style="margin-right: 6px" />
+          取消
+        </a-button>
+        <a-button type="primary" :loading="joinRoomLoading" @click="submitJoinRoom">
+          <font-awesome-icon :icon="['fas', 'arrow-right']" style="margin-right: 6px" />
+          加入
+        </a-button>
+      </template>
     </a-modal>
   </div>
 </template>

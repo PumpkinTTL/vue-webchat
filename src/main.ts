@@ -33,7 +33,9 @@ import {
   faArrowLeft,
   faArrowRight,
   faComments,
-  faShieldAlt
+  faShieldAlt,
+  faSignOutAlt,
+  faRightFromBracket
 } from '@fortawesome/free-solid-svg-icons'
 
 // 添加图标到库
@@ -41,7 +43,7 @@ library.add(
   faUser, faLock, faHome, faCog, faPlus, faMinus, faRefresh,
   faSearch, faEdit, faTrash, faSave, faCheck, faTimes,
   faEye, faEyeSlash, faDownload, faUpload, faArrowLeft, faArrowRight,
-  faComments, faShieldAlt
+  faComments, faShieldAlt, faSignOutAlt, faRightFromBracket
 )
 
 const app = createApp(App)

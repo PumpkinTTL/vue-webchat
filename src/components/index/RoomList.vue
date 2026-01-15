@@ -84,6 +84,7 @@ const handleLeaveRoom = (room: Room) => {
     content: `确定要退出房间"${room.name}"吗？`,
     okText: '退出',
     cancelText: '取消',
+    okButtonProps: { danger: true },
     onOk: () => {
       emit('leaveRoom', room)
     }
