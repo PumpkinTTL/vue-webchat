@@ -75,10 +75,17 @@
       </svg>
     </button>
 
+    <!-- 附件菜单遮罩 -->
+    <div v-if="showAttachMenu" class="attach-overlay" @click="closeAttachMenu"></div>
+
     <!-- 附件菜单 -->
-    <transition name="menu-slide">
-      <div v-if="showAttachMenu" class="attach-menu animate__animated animate__fadeInUp" style="--animate-duration: 0.25s">
-        <button class="attach-item animate__animated animate__bounceIn" style="--animate-duration: 0.4s; --animate-delay: 0.03s" @click="selectImage">
+    <Transition
+      enter-active-class="animate__animated animate__fadeInUp"
+      leave-active-class="animate__animated animate__fadeOutDown"
+      :duration="200"
+    >
+      <div v-if="showAttachMenu" class="attach-menu">
+        <button class="attach-item" @click="selectImage">
           <div class="attach-icon attach-icon-image">
             <svg viewBox="0 0 24 24" fill="none" stroke="currentColor">
               <rect x="3" y="3" width="18" height="18" rx="2" ry="2" stroke-width="2"/>
@@ -89,7 +96,7 @@
           <span>图片</span>
         </button>
 
-        <button class="attach-item animate__animated animate__bounceIn" style="--animate-duration: 0.4s; --animate-delay: 0.06s" @click="selectVideo">
+        <button class="attach-item" @click="selectVideo">
           <div class="attach-icon attach-icon-video">
             <svg viewBox="0 0 24 24" fill="none" stroke="currentColor">
               <path d="M23 7l-7 5 7 5V7zM14 5H3a2 2 0 00-2 2v10a2 2 0 002 2h11a2 2 0 002-2V7a2 2 0 00-2-2z" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
@@ -98,7 +105,7 @@
           <span>视频</span>
         </button>
 
-        <button class="attach-item animate__animated animate__bounceIn" style="--animate-duration: 0.4s; --animate-delay: 0.09s" @click="selectFile">
+        <button class="attach-item" @click="selectFile">
           <div class="attach-icon attach-icon-file">
             <svg viewBox="0 0 24 24" fill="none" stroke="currentColor">
               <path d="M13 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V9z" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
@@ -108,7 +115,7 @@
           <span>文件</span>
         </button>
       </div>
-    </transition>
+    </Transition>
 
     <!-- 隐藏的文件输入 -->
     <input ref="imageInput" type="file" accept="image/*" hidden @change="handleImageSelect">
@@ -156,6 +163,11 @@ const canSend = computed(() => inputText.value.trim().length > 0)
 const toggleAttachMenu = () => {
   showAttachMenu.value = !showAttachMenu.value
   showEmojiPicker.value = false
+}
+
+// 关闭附件菜单
+const closeAttachMenu = () => {
+  showAttachMenu.value = false
 }
 
 // 切换表情选择器
@@ -455,6 +467,15 @@ const cancelRecording = () => {
 }
 
 // ==================== 附件菜单 ====================
+.attach-overlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  z-index: $z-index-dropdown - 1;
+}
+
 .attach-menu {
   position: absolute;
   bottom: 100%;
@@ -468,6 +489,7 @@ const cancelRecording = () => {
   border-radius: $border-radius-lg;
   box-shadow: $box-shadow-lg;
   z-index: $z-index-dropdown;
+  --animate-duration: 0.2s;
 }
 
 .dark-mode .attach-menu {
@@ -527,6 +549,7 @@ const cancelRecording = () => {
   display: flex;
   align-items: center;
   justify-content: center;
+  transition: transform 0.2s ease;
 
   svg {
     width: 24px;
@@ -546,18 +569,6 @@ const cancelRecording = () => {
   &.attach-icon-file {
     background: linear-gradient(135deg, $warning-color, darken($warning-color, 10%));
   }
-}
-
-// ==================== 动画 ====================
-.menu-slide-enter-active,
-.menu-slide-leave-active {
-  transition: all $transition-base;
-}
-
-.menu-slide-enter-from,
-.menu-slide-leave-to {
-  opacity: 0;
-  transform: translateY(10px);
 }
 
 // ==================== 移动端适配 ====================
@@ -608,10 +619,12 @@ const cancelRecording = () => {
   }
 
   .attach-menu {
-    left: 50%;
-    transform: translateX(-50%);
+    left: 0;
+    right: 0;
+    transform: none;
     gap: $spacing-sm;
     padding: $spacing-sm;
+    justify-content: space-around;
   }
 
   .attach-item {
