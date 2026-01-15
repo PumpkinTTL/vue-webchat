@@ -1,9 +1,10 @@
 <template>
   <div 
-    class="msg-row animate__animated animate__fadeIn" style="--animate-duration: 0.3s"
+    class="msg-row"
     :class="{ 
       'msg-own': message.isOwn,
-      'msg-system-row': message.type === 'system'
+      'msg-system-row': message.type === 'system',
+      'msg-new': message.isNew
     }"
   >
     <!-- 系统消息 -->
@@ -123,6 +124,7 @@ interface Message {
   username?: string
   status?: 'sending' | 'sent' | 'delivered' | 'read' | 'failed'
   readCount?: number
+  isNew?: boolean
 }
 
 const props = defineProps<{
@@ -171,7 +173,6 @@ const formatFileSize = (bytes?: number) => {
   gap: 10px;
   padding: 6px 0;
   width: 100%;
-  --animate-duration: 0.3s;
 
   &.msg-own {
     flex-direction: row-reverse;
@@ -179,6 +180,24 @@ const formatFileSize = (bytes?: number) => {
 
   &.msg-system-row {
     justify-content: center;
+  }
+
+  // 新消息发送动画
+  &.msg-new {
+    animation: msgSendIn 0.45s cubic-bezier(0.34, 1.56, 0.64, 1) forwards;
+    transform-origin: bottom right;
+  }
+}
+
+// 发送消息动画 - 纯缩放
+@keyframes msgSendIn {
+  0% {
+    opacity: 0;
+    transform: scale(0.4);
+  }
+  100% {
+    opacity: 1;
+    transform: scale(1);
   }
 }
 

@@ -45,6 +45,7 @@
       <!-- 消息区域 -->
       <section class="messages-area">
         <MessageList 
+          ref="messageListRef"
           :messages="messages"
           :loading="false"
           :has-more="false"
@@ -114,12 +115,18 @@
 </template>
 
 <script setup lang="ts">
-import { ref, reactive } from 'vue'
+import { ref, reactive, nextTick } from 'vue'
 import { message } from 'ant-design-vue'
 import Sidebar from '@/components/index/Sidebar.vue'
 import ChatHeader from '@/components/index/ChatHeader.vue'
 import MessageList from '@/components/index/MessageList.vue'
 import InputBar from '@/components/index/InputBar.vue'
+
+// 消息列表引用
+const messageListRef = ref<InstanceType<typeof MessageList>>()
+
+// 消息ID计数器
+let messageIdCounter = 100
 
 // 响应式状态
 const isDarkMode = ref(false)
@@ -263,7 +270,37 @@ const handleSelectRoom = (room: any) => { currentRoom.value = room; closeSidebar
 const handleAddContact = () => { console.log('添加联系人') }
 const handleRefresh = () => { console.log('刷新') }
 const handleLoadMore = () => { console.log('加载更多消息') }
-const handleSendMessage = (text: string) => { console.log('发送消息:', text) }
+
+// 发送消息
+const handleSendMessage = (text: string) => {
+  const newMessage = {
+    id: ++messageIdCounter,
+    type: 'text' as const,
+    text,
+    time: new Date(),
+    isOwn: true,
+    sender: { nickname: '我', avatar: '' },
+    username: '我',
+    status: 'sending' as const,
+    isNew: true // 标记为新消息，用于触发动画
+  }
+  
+  messages.value.push(newMessage)
+  
+  // 滚动到底部
+  nextTick(() => {
+    messageListRef.value?.scrollToBottom(true)
+  })
+  
+  // 模拟发送过程
+  setTimeout(() => {
+    const msg = messages.value.find(m => m.id === newMessage.id)
+    if (msg) {
+      msg.status = 'sent'
+      msg.isNew = false
+    }
+  }, 800)
+}
 const handleSendImage = (file: File) => { console.log('发送图片:', file) }
 const handleSendVideo = (file: File) => { console.log('发送视频:', file) }
 const handleSendFile = (file: File) => { console.log('发送文件:', file) }
