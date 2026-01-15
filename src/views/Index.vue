@@ -13,6 +13,7 @@
         @add-contact="handleAddContact"
         @toggle-theme="toggleTheme"
         @refresh="handleRefresh"
+        @leave-room="handleLeaveRoomAction"
       />
     </aside>
 
@@ -115,12 +116,14 @@
 </template>
 
 <script setup lang="ts">
-import { ref, reactive, nextTick } from 'vue'
+import { ref, reactive, nextTick, onMounted } from 'vue'
 import { message } from 'ant-design-vue'
 import Sidebar from '@/components/index/Sidebar.vue'
 import ChatHeader from '@/components/index/ChatHeader.vue'
 import MessageList from '@/components/index/MessageList.vue'
 import InputBar from '@/components/index/InputBar.vue'
+import { getUserRooms, createRoom, joinRoom, leaveRoom } from '@/apis/room'
+import type { CreateRoomParams, JoinRoomParams } from '@/apis/room'
 
 // 消息列表引用
 const messageListRef = ref<InstanceType<typeof MessageList>>()
@@ -134,7 +137,9 @@ const sidebarOpen = ref(false)
 const wsConnected = ref(true)
 const typingUsers = ref<any[]>([])
 
-const currentRoom = ref<any>({
+// 从localStorage恢复上次选中的房间ID
+const savedRoomId = localStorage.getItem('currentRoomId')
+const currentRoom = ref<any>(savedRoomId ? null : {
   id: 1,
   name: '测试房间',
   description: '这是一个测试房间',
@@ -143,19 +148,45 @@ const currentRoom = ref<any>({
   isPrivate: true
 })
 
-// 房间列表虚拟数据
-const roomList = ref([
-  { id: 1, name: '测试房间', description: '这是一个测试房间', unreadCount: 3 },
-  { id: 2, name: '技术交流', description: '讨论技术问题的地方', unreadCount: 0 },
-  { id: 3, name: '闲聊群', description: '随便聊聊天', unreadCount: 12 },
-  { id: 4, name: '项目协作', description: '项目开发协作讨论', unreadCount: 0 }
-])
+// 房间列表
+const roomList = ref<any[]>([])
 
 // 联系人列表虚拟数据
 const contactList = ref([
   { id: 1, nickname: '张三', avatar: '', sign: '今天天气不错', online: true },
   { id: 2, nickname: '李四', avatar: '', sign: '忙碌中...', online: false }
 ])
+
+// 加载用户房间列表
+const loadUserRooms = async () => {
+  try {
+    const result = await getUserRooms()
+    if (result.code === 0) {
+      roomList.value = result.data || []
+      
+      // 恢复上次选中的房间
+      const savedRoomId = localStorage.getItem('currentRoomId')
+      if (savedRoomId && roomList.value.length > 0) {
+        const savedRoom = roomList.value.find(r => r.id == savedRoomId)
+        if (savedRoom) {
+          currentRoom.value = {
+            ...savedRoom,
+            totalUsers: 15,
+            onlineUsers: 8,
+            isPrivate: savedRoom.private === 1
+          }
+        }
+      }
+    }
+  } catch (error) {
+    console.error('加载房间列表失败:', error)
+  }
+}
+
+// 页面加载时获取房间列表
+onMounted(() => {
+  loadUserRooms()
+})
 
 const messages = ref<any[]>([
   { id: 1, type: 'system', text: '欢迎来到聊天室', time: new Date(), isOwn: false },
@@ -212,13 +243,27 @@ const submitCreateRoom = async () => {
   
   createRoomLoading.value = true
   try {
-    // TODO: 调用创建房间API
-    console.log('创建房间:', createRoomForm)
-    message.success('房间创建成功')
-    createRoomVisible.value = false
-    resetCreateRoomForm()
-  } catch (error) {
-    message.error('创建房间失败')
+    const params: CreateRoomParams = {
+      name: createRoomForm.name.trim(),
+      description: createRoomForm.description.trim(),
+    }
+    
+    if (createRoomForm.password.trim()) {
+      params.password = createRoomForm.password.trim()
+    }
+    
+    const result = await createRoom(params)
+    if (result.code === 0) {
+      message.success('房间创建成功')
+      createRoomVisible.value = false
+      resetCreateRoomForm()
+      // 刷新房间列表
+      await loadUserRooms()
+    } else {
+      message.error(result.msg || '创建房间失败')
+    }
+  } catch (error: any) {
+    message.error(error.message || '创建房间失败')
   } finally {
     createRoomLoading.value = false
   }
@@ -249,13 +294,26 @@ const submitJoinRoom = async () => {
   
   joinRoomLoading.value = true
   try {
-    // TODO: 调用加入房间API
-    console.log('加入房间:', joinRoomForm)
-    message.success('加入房间成功')
-    joinRoomVisible.value = false
-    resetJoinRoomForm()
-  } catch (error) {
-    message.error('加入房间失败')
+    const params: JoinRoomParams = {
+      room_id: parseInt(joinRoomForm.roomId.trim())
+    }
+    
+    if (joinRoomForm.password.trim()) {
+      params.password = joinRoomForm.password.trim()
+    }
+    
+    const result = await joinRoom(params)
+    if (result.code === 0) {
+      message.success('加入房间成功')
+      joinRoomVisible.value = false
+      resetJoinRoomForm()
+      // 刷新房间列表
+      await loadUserRooms()
+    } else {
+      message.error(result.msg || '加入房间失败')
+    }
+  } catch (error: any) {
+    message.error(error.message || '加入房间失败')
   } finally {
     joinRoomLoading.value = false
   }
@@ -266,9 +324,40 @@ const toggleSidebar = () => { sidebarOpen.value = !sidebarOpen.value }
 const closeSidebar = () => { sidebarOpen.value = false }
 const toggleTheme = () => { isDarkMode.value = !isDarkMode.value }
 const handleSelectContact = (contact: any) => { console.log('选择联系人:', contact) }
-const handleSelectRoom = (room: any) => { currentRoom.value = room; closeSidebar() }
+const handleSelectRoom = (room: any) => { 
+  currentRoom.value = {
+    ...room,
+    totalUsers: 15,
+    onlineUsers: 8,
+    isPrivate: room.private === 1
+  }
+  // 保存到localStorage
+  localStorage.setItem('currentRoomId', room.id)
+  closeSidebar()
+}
 const handleAddContact = () => { console.log('添加联系人') }
-const handleRefresh = () => { console.log('刷新') }
+const handleRefresh = () => { loadUserRooms() }
+
+// 退出房间
+const handleLeaveRoomAction = async (room: any) => {
+  try {
+    const result = await leaveRoom(room.id)
+    if (result.code === 0) {
+      message.success('已退出房间')
+      // 刷新房间列表
+      await loadUserRooms()
+      // 如果退出的是当前房间，清空当前房间
+      if (currentRoom.value?.id === room.id) {
+        currentRoom.value = null
+      }
+    } else {
+      message.error(result.msg || '退出房间失败')
+    }
+  } catch (error: any) {
+    message.error(error.message || '退出房间失败')
+  }
+}
+
 const handleLoadMore = () => { console.log('加载更多消息') }
 
 // 发送消息

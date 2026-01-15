@@ -86,4 +86,7 @@ service.interceptors.response.use(
   }
 )
 
-export default service
+// 导出类型安全的request函数
+export default function request<T = any>(config: any): Promise<T> {
+  return service(config)
+}

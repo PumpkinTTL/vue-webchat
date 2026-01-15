@@ -1,0 +1,106 @@
+/**
+ * 房间相关 API
+ */
+import request from '@/utils/request'
+
+export interface Room {
+  id: number
+  name: string
+  description?: string
+  private?: number
+  password?: string
+  owner_id?: number
+  lock?: number
+  status?: number
+  create_time?: string
+}
+
+export interface CreateRoomParams {
+  name: string
+  description?: string
+  password?: string
+}
+
+export interface JoinRoomParams {
+  room_id: number
+  password?: string
+}
+
+export interface RoomListResponse {
+  total: number
+  list: Room[]
+}
+
+/**
+ * 获取房间列表
+ */
+export function getRoomList(params?: { page?: number; limit?: number; name?: string }) {
+  return request<RoomListResponse>({
+    url: '/room/index',
+    method: 'get',
+    params
+  })
+}
+
+/**
+ * 获取用户加入的房间列表
+ */
+export function getUserRooms() {
+  return request<{ code: number; msg: string; data: Room[] }>({
+    url: '/roomUser/userRooms',
+    method: 'get'
+  })
+}
+
+/**
+ * 创建房间
+ */
+export function createRoom(data: CreateRoomParams) {
+  return request<{ code: number; msg: string; data: any }>({
+    url: '/room/save',
+    method: 'post',
+    data
+  })
+}
+
+/**
+ * 加入房间
+ */
+export function joinRoom(data: JoinRoomParams) {
+  return request<{ code: number; msg: string; data?: any }>({
+    url: '/roomUser/join',
+    method: 'post',
+    data
+  })
+}
+
+/**
+ * 退出房间
+ */
+export function leaveRoom(roomId: number) {
+  return request<{ code: number; msg: string }>({
+    url: '/roomUser/leave',
+    method: 'post',
+    data: { room_id: roomId }
+  })
+}
+
+/**
+ * 获取房间详情
+ */
+export function getRoomInfo(roomId: number) {
+  return request<Room>({
+    url: `/room/read/${roomId}`,
+    method: 'get'
+  })
+}
+
+/**
+ * 获取房间在线人数
+ */
+export function getRoomUserCount(roomId: number) {
+  return request<{ total_count: number; online_count: number }>({
+    url: `/roomUser/count/${roomId}`,
+    method: 'get'
+  })
+}

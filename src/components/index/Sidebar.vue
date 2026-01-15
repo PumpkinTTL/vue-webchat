@@ -61,6 +61,7 @@
           :rooms="props.rooms"
           :active-room-id="props.activeRoomId"
           @select-room="handleSelectRoom"
+          @leave-room="handleLeaveRoom"
         />
       </Transition>
     </div>
@@ -147,6 +148,7 @@ const emit = defineEmits<{
   addContact: []
   toggleTheme: []
   refresh: []
+  leaveRoom: [room: any]
 }>()
 
 // 方法
@@ -177,6 +179,10 @@ const handleSelectContact = (contact: any) => {
 
 const handleSelectRoom = (room: any) => {
   emit('selectRoom', room)
+}
+
+const handleLeaveRoom = (room: any) => {
+  emit('leaveRoom', room)
 }
 
 const handleAddContact = () => {

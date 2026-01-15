@@ -41,6 +41,13 @@
           <div v-if="room.unreadCount" class="unread-badge animate__animated animate__pulse" style="--animate-duration: 0.5s">
             {{ room.unreadCount > 99 ? '99+' : room.unreadCount }}
           </div>
+          
+          <!-- 退出房间按钮 -->
+          <button class="leave-room-btn" @click.stop="handleLeaveRoom(room)" title="退出房间">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor">
+              <path d="M9 21H5a2 2 0 01-2-2V5a2 2 0 012-2h4M16 17l5-5-5-5M21 12H9" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+            </svg>
+          </button>
         </div>
       </TransitionGroup>
     </div>
@@ -48,6 +55,8 @@
 </template>
 
 <script setup lang="ts">
+import { Modal } from 'ant-design-vue'
+
 interface Room {
   id: string | number
   name: string
@@ -62,10 +71,23 @@ defineProps<{
 
 const emit = defineEmits<{
   selectRoom: [room: Room]
+  leaveRoom: [room: Room]
 }>()
 
 const selectRoom = (room: Room) => {
   emit('selectRoom', room)
+}
+
+const handleLeaveRoom = (room: Room) => {
+  Modal.confirm({
+    title: '确认退出',
+    content: `确定要退出房间"${room.name}"吗？`,
+    okText: '退出',
+    cancelText: '取消',
+    onOk: () => {
+      emit('leaveRoom', room)
+    }
+  })
 }
 </script>
 
@@ -300,6 +322,36 @@ const selectRoom = (room: Room) => {
   font-size: $font-size-xs;
   font-weight: $font-weight-bold;
   flex-shrink: 0;
+}
+
+// ==================== 退出房间按钮 ====================
+.leave-room-btn {
+  width: 32px;
+  height: 32px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: transparent;
+  color: $text-tertiary;
+  border: none;
+  border-radius: $border-radius-sm;
+  cursor: pointer;
+  flex-shrink: 0;
+  transition: all $transition-fast;
+
+  svg {
+    width: 18px;
+    height: 18px;
+  }
+
+  &:hover {
+    background: rgba($danger-color, 0.1);
+    color: $danger-color;
+  }
+
+  &:active {
+    transform: scale(0.95);
+  }
 }
 
 // ==================== 移动端适配 ====================
