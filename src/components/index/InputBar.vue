@@ -77,8 +77,8 @@
 
     <!-- 附件菜单 -->
     <transition name="menu-slide">
-      <div v-if="showAttachMenu" class="attach-menu">
-        <button class="attach-item" @click="selectImage">
+      <div v-if="showAttachMenu" class="attach-menu animate__animated animate__fadeInUp" style="--animate-duration: 0.25s">
+        <button class="attach-item animate__animated animate__bounceIn" style="--animate-duration: 0.4s; --animate-delay: 0.03s" @click="selectImage">
           <div class="attach-icon attach-icon-image">
             <svg viewBox="0 0 24 24" fill="none" stroke="currentColor">
               <rect x="3" y="3" width="18" height="18" rx="2" ry="2" stroke-width="2"/>
@@ -89,7 +89,7 @@
           <span>图片</span>
         </button>
 
-        <button class="attach-item" @click="selectVideo">
+        <button class="attach-item animate__animated animate__bounceIn" style="--animate-duration: 0.4s; --animate-delay: 0.06s" @click="selectVideo">
           <div class="attach-icon attach-icon-video">
             <svg viewBox="0 0 24 24" fill="none" stroke="currentColor">
               <path d="M23 7l-7 5 7 5V7zM14 5H3a2 2 0 00-2 2v10a2 2 0 002 2h11a2 2 0 002-2V7a2 2 0 00-2-2z" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
@@ -98,7 +98,7 @@
           <span>视频</span>
         </button>
 
-        <button class="attach-item" @click="selectFile">
+        <button class="attach-item animate__animated animate__bounceIn" style="--animate-duration: 0.4s; --animate-delay: 0.09s" @click="selectFile">
           <div class="attach-icon attach-icon-file">
             <svg viewBox="0 0 24 24" fill="none" stroke="currentColor">
               <path d="M13 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V9z" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>

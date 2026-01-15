@@ -67,11 +67,55 @@
         />
       </footer>
     </main>
+
+    <!-- 创建房间弹窗 -->
+    <a-modal
+      v-model:open="createRoomVisible"
+      title="创建房间"
+      ok-text="创建"
+      cancel-text="取消"
+      :confirm-loading="createRoomLoading"
+      @ok="submitCreateRoom"
+      @cancel="resetCreateRoomForm"
+    >
+      <a-form :model="createRoomForm" layout="vertical" class="compact-form">
+        <a-form-item label="房间名称" required>
+          <a-input v-model:value="createRoomForm.name" placeholder="请输入房间名称" :maxlength="20" show-count />
+        </a-form-item>
+        <a-form-item label="房间简介">
+          <a-textarea v-model:value="createRoomForm.description" placeholder="请输入房间简介（可选）" :maxlength="100" show-count :rows="2" />
+        </a-form-item>
+        <a-form-item label="房间密码" class="mb-0">
+          <a-input-password v-model:value="createRoomForm.password" placeholder="设置密码后为私密房间（可选）" :maxlength="20" />
+        </a-form-item>
+      </a-form>
+    </a-modal>
+
+    <!-- 加入房间弹窗 -->
+    <a-modal
+      v-model:open="joinRoomVisible"
+      title="加入房间"
+      ok-text="加入"
+      cancel-text="取消"
+      :confirm-loading="joinRoomLoading"
+      @ok="submitJoinRoom"
+      @cancel="resetJoinRoomForm"
+    >
+      <a-form :model="joinRoomForm" layout="vertical" class="compact-form">
+        <a-form-item label="房间ID" required>
+          <a-input v-model:value="joinRoomForm.roomId" placeholder="请输入房间ID" :maxlength="20" />
+        </a-form-item>
+        <a-form-item label="房间密码" class="mb-0">
+          <a-input-password v-model:value="joinRoomForm.password" placeholder="私密房间需要输入密码（可选）" :maxlength="20" />
+        </a-form-item>
+      </a-form>
+    </a-modal>
   </div>
 </template>
 
 <script setup lang="ts">
-import { ref } from 'vue'
+import { ref, reactive } from 'vue'
+import { message } from 'ant-design-vue'
 import Sidebar from '@/components/index/Sidebar.vue'
 import ChatHeader from '@/components/index/ChatHeader.vue'
 import MessageList from '@/components/index/MessageList.vue'
@@ -134,12 +178,86 @@ const messages = ref<any[]>([
   { id: 25, type: 'text', text: '测试消息 25 - 最后', time: new Date(), isOwn: false, sender: { nickname: '用户A', avatar: '' }, username: '用户A' }
 ])
 
+// ==================== 创建房间 ====================
+const createRoomVisible = ref(false)
+const createRoomLoading = ref(false)
+const createRoomForm = reactive({
+  name: '',
+  description: '',
+  password: ''
+})
+
+const handleCreateRoom = () => {
+  createRoomVisible.value = true
+}
+
+const resetCreateRoomForm = () => {
+  createRoomForm.name = ''
+  createRoomForm.description = ''
+  createRoomForm.password = ''
+}
+
+const submitCreateRoom = async () => {
+  if (!createRoomForm.name.trim()) {
+    message.warning('请输入房间名称')
+    return
+  }
+  
+  createRoomLoading.value = true
+  try {
+    // TODO: 调用创建房间API
+    console.log('创建房间:', createRoomForm)
+    message.success('房间创建成功')
+    createRoomVisible.value = false
+    resetCreateRoomForm()
+  } catch (error) {
+    message.error('创建房间失败')
+  } finally {
+    createRoomLoading.value = false
+  }
+}
+
+// ==================== 加入房间 ====================
+const joinRoomVisible = ref(false)
+const joinRoomLoading = ref(false)
+const joinRoomForm = reactive({
+  roomId: '',
+  password: ''
+})
+
+const handleJoinRoom = () => {
+  joinRoomVisible.value = true
+}
+
+const resetJoinRoomForm = () => {
+  joinRoomForm.roomId = ''
+  joinRoomForm.password = ''
+}
+
+const submitJoinRoom = async () => {
+  if (!joinRoomForm.roomId.trim()) {
+    message.warning('请输入房间ID')
+    return
+  }
+  
+  joinRoomLoading.value = true
+  try {
+    // TODO: 调用加入房间API
+    console.log('加入房间:', joinRoomForm)
+    message.success('加入房间成功')
+    joinRoomVisible.value = false
+    resetJoinRoomForm()
+  } catch (error) {
+    message.error('加入房间失败')
+  } finally {
+    joinRoomLoading.value = false
+  }
+}
+
 // 方法
 const toggleSidebar = () => { sidebarOpen.value = !sidebarOpen.value }
 const closeSidebar = () => { sidebarOpen.value = false }
 const toggleTheme = () => { isDarkMode.value = !isDarkMode.value }
-const handleCreateRoom = () => { console.log('创建房间') }
-const handleJoinRoom = () => { console.log('加入房间') }
 const handleSelectContact = (contact: any) => { console.log('选择联系人:', contact) }
 const handleSelectRoom = (room: any) => { currentRoom.value = room; closeSidebar() }
 const handleAddContact = () => { console.log('添加联系人') }
@@ -394,6 +512,18 @@ const handleTyping = () => {}
 // 移动端遮罩
 .mobile-overlay {
   display: none;
+}
+
+// 紧凑表单样式
+:deep(.compact-form) {
+  .ant-form-item {
+    margin-bottom: 12px;
+  }
+  
+  &.mb-0,
+  .mb-0 {
+    margin-bottom: 0;
+  }
 }
 
 // 移动端适配

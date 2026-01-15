@@ -1,48 +1,52 @@
 <template>
   <div class="chat-header">
     <div class="header-left">
-      <h2 class="room-title">{{ roomName || '选择房间开始聊天' }}</h2>
+      <h2 class="room-title animate__animated animate__fadeInLeft" style="--animate-duration: 0.4s">{{ roomName || '选择房间开始聊天' }}</h2>
       
       <!-- 房间信息徽章 -->
-      <div v-if="roomName" class="header-badges">
-        <!-- 在线人数 -->
-        <div class="badge badge-online">
-          <div class="online-dot"></div>
-          <span>{{ totalUsers }}人 / {{ onlineUsers }}在线</span>
+      <Transition name="badges-fade">
+        <div v-if="roomName" class="header-badges">
+          <!-- 在线人数 -->
+          <div class="badge badge-online animate__animated animate__zoomIn" style="--animate-duration: 0.35s; --animate-delay: 0.06s">
+            <div class="online-dot"></div>
+            <span>{{ totalUsers }}人 / {{ onlineUsers }}在线</span>
+          </div>
+          
+          <!-- 连接状态 -->
+          <div class="badge badge-connection animate__animated animate__zoomIn" style="--animate-duration: 0.35s; --animate-delay: 0.12s" :class="{ 'ws-connected': wsConnected }">
+            <svg v-if="wsConnected" viewBox="0 0 24 24" fill="none" stroke="currentColor">
+              <path d="M13 10V3L4 14h7v7l9-11h-7z" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+            </svg>
+            <svg v-else viewBox="0 0 24 24" fill="none" stroke="currentColor">
+              <circle cx="12" cy="12" r="10" stroke-width="2"/>
+              <path d="M2 12h20" stroke-width="2" stroke-linecap="round"/>
+            </svg>
+            <span>{{ wsConnected ? 'Socket' : 'HTTP' }}</span>
+          </div>
+          
+          <!-- 私密房间标识 -->
+          <div v-if="isPrivateRoom" class="badge badge-private animate__animated animate__zoomIn" style="--animate-duration: 0.35s; --animate-delay: 0.18s">
+            <svg viewBox="0 0 24 24" fill="currentColor">
+              <path d="M20.84 4.61a5.5 5.5 0 00-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 00-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 000-7.78z"/>
+            </svg>
+            <span>私密</span>
+          </div>
         </div>
-        
-        <!-- 连接状态 -->
-        <div class="badge badge-connection" :class="{ 'ws-connected': wsConnected }">
-          <svg v-if="wsConnected" viewBox="0 0 24 24" fill="none" stroke="currentColor">
-            <path d="M13 10V3L4 14h7v7l9-11h-7z" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
-          </svg>
-          <svg v-else viewBox="0 0 24 24" fill="none" stroke="currentColor">
-            <circle cx="12" cy="12" r="10" stroke-width="2"/>
-            <path d="M2 12h20" stroke-width="2" stroke-linecap="round"/>
-          </svg>
-          <span>{{ wsConnected ? 'Socket' : 'HTTP' }}</span>
-        </div>
-        
-        <!-- 私密房间标识 -->
-        <div v-if="isPrivateRoom" class="badge badge-private">
-          <svg viewBox="0 0 24 24" fill="currentColor">
-            <path d="M20.84 4.61a5.5 5.5 0 00-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 00-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 000-7.78z"/>
-          </svg>
-          <span>私密</span>
-        </div>
-      </div>
+      </Transition>
     </div>
 
     <div class="header-right">
       <!-- 正在输入提示 -->
-      <div v-if="typingUsers.length > 0" class="typing-indicator">
-        <div class="typing-dots">
-          <span></span>
-          <span></span>
-          <span></span>
+      <Transition name="typing-fade">
+        <div v-if="typingUsers.length > 0" class="typing-indicator animate__animated animate__fadeIn" style="--animate-duration: 0.3s">
+          <div class="typing-dots">
+            <span></span>
+            <span></span>
+            <span></span>
+          </div>
+          <span class="typing-text">{{ typingText }}</span>
         </div>
-        <span class="typing-text">{{ typingText }}</span>
-      </div>
+      </Transition>
     </div>
   </div>
 </template>
@@ -274,6 +278,30 @@ const typingText = computed(() => {
 .typing-text {
   font-weight: $font-weight-medium;
   white-space: nowrap;
+}
+
+// 徽章过渡动画
+.badges-fade-enter-active,
+.badges-fade-leave-active {
+  transition: all 0.3s ease;
+}
+
+.badges-fade-enter-from,
+.badges-fade-leave-to {
+  opacity: 0;
+  transform: translateX(-10px);
+}
+
+// 正在输入过渡动画
+.typing-fade-enter-active,
+.typing-fade-leave-active {
+  transition: all 0.2s ease;
+}
+
+.typing-fade-enter-from,
+.typing-fade-leave-to {
+  opacity: 0;
+  transform: scale(0.9);
 }
 
 // ==================== 移动端适配 ====================

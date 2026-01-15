@@ -1,6 +1,6 @@
 <template>
   <div 
-    class="msg-row"
+    class="msg-row animate__animated animate__fadeIn" style="--animate-duration: 0.3s"
     :class="{ 
       'msg-own': message.isOwn,
       'msg-system-row': message.type === 'system'
@@ -171,6 +171,7 @@ const formatFileSize = (bytes?: number) => {
   gap: 10px;
   padding: 6px 0;
   width: 100%;
+  --animate-duration: 0.3s;
 
   &.msg-own {
     flex-direction: row-reverse;

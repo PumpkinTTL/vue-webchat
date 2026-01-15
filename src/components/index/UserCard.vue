@@ -1,7 +1,7 @@
 <template>
-  <div class="user-card">
+  <div class="user-card animate__animated animate__fadeIn" style="--animate-duration: 0.4s">
     <div class="user-avatar-wrapper">
-      <div class="user-avatar">
+      <div class="user-avatar animate__animated animate__bounceIn" style="--animate-duration: 0.5s">
         <img 
           v-if="userInfo.avatar" 
           :src="userInfo.avatar" 
@@ -11,19 +11,19 @@
           {{ userInfo.nick_name?.charAt(0) || 'U' }}
         </span>
       </div>
-      <div class="status-indicator"></div>
+      <div class="status-indicator animate__animated animate__bounceIn" style="--animate-duration: 0.4s; --animate-delay: 0.15s"></div>
     </div>
 
     <div class="user-info">
-      <div class="user-name">{{ userInfo.nick_name || '用户' }}</div>
-      <div class="user-id">
+      <div class="user-name animate__animated animate__fadeInLeft" style="--animate-duration: 0.35s; --animate-delay: 0.05s">{{ userInfo.nick_name || '用户' }}</div>
+      <div class="user-id animate__animated animate__fadeInLeft" style="--animate-duration: 0.35s; --animate-delay: 0.1s">
         <span class="id-label">ID</span>
         <span class="id-value">{{ userInfo.id || '---' }}</span>
       </div>
     </div>
 
     <button 
-      class="logout-btn" 
+      class="logout-btn animate__animated animate__fadeIn" style="--animate-duration: 0.3s; --animate-delay: 0.15s"
       @click="handleLogout"
       title="退出登录"
     >
@@ -37,19 +37,34 @@
 <script setup lang="ts">
 import { computed } from 'vue'
 import { useRouter } from 'vue-router'
+import { Modal } from 'ant-design-vue'
 import { getUserInfo, clearUserInfo } from '@/utils/storage'
 import { Message } from '@/utils/message'
+
+interface UserInfo {
+  id?: string | number
+  nick_name?: string
+  avatar?: string
+}
 
 const router = useRouter()
 
 // 获取用户信息
-const userInfo = computed(() => getUserInfo() || {})
+const userInfo = computed<UserInfo>(() => getUserInfo() || {})
 
 // 退出登录
 const handleLogout = () => {
-  clearUserInfo()
-  Message.success('已退出登录')
-  router.push('/login')
+  Modal.confirm({
+    title: '确认退出',
+    content: '确定要退出登录吗？',
+    okText: '退出',
+    cancelText: '取消',
+    onOk: () => {
+      clearUserInfo()
+      Message.success('已退出登录')
+      router.push('/login')
+    }
+  })
 }
 </script>
 

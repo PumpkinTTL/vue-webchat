@@ -5,7 +5,7 @@
 
     <!-- 操作按钮 -->
     <div class="action-buttons">
-      <button class="action-btn action-btn-secondary" @click="handleCreateRoom">
+      <button class="action-btn action-btn-secondary animate__animated animate__fadeInDown" style="--animate-duration: 0.4s; --animate-delay: 0.05s" @click="handleCreateRoom">
         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor">
           <rect x="3" y="3" width="18" height="18" rx="2" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
           <path d="M12 8v8M8 12h8" stroke-width="2" stroke-linecap="round"/>
@@ -13,7 +13,7 @@
         <span>创建房间</span>
       </button>
       
-      <button class="action-btn action-btn-primary" @click="handleJoinRoom">
+      <button class="action-btn action-btn-primary animate__animated animate__fadeInDown" style="--animate-duration: 0.4s; --animate-delay: 0.1s" @click="handleJoinRoom">
         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor">
           <path d="M15 3h4a2 2 0 012 2v14a2 2 0 01-2 2h-4M10 17l5-5-5-5M15 12H3" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
         </svg>
@@ -24,7 +24,7 @@
     <!-- 标签切换 -->
     <div class="tab-switcher">
       <button 
-        class="tab-btn"
+        class="tab-btn animate__animated animate__fadeInUp" style="--animate-duration: 0.35s; --animate-delay: 0.1s"
         :class="{ 'tab-active': activeTab === 'contacts' }"
         @click="switchTab('contacts')"
       >
@@ -35,7 +35,7 @@
       </button>
       
       <button 
-        class="tab-btn"
+        class="tab-btn animate__animated animate__fadeInUp" style="--animate-duration: 0.35s; --animate-delay: 0.15s"
         :class="{ 'tab-active': activeTab === 'rooms' }"
         @click="switchTab('rooms')"
       >
@@ -48,37 +48,39 @@
 
     <!-- 列表区域 -->
     <div class="list-container">
-      <ContactList 
-        v-if="activeTab === 'contacts'"
-        :contacts="props.contacts"
-        @select-contact="handleSelectContact"
-        @add-contact="handleAddContact"
-      />
-      
-      <RoomList 
-        v-else
-        :rooms="props.rooms"
-        :active-room-id="props.activeRoomId"
-        @select-room="handleSelectRoom"
-      />
+      <Transition name="tab-fade" mode="out-in">
+        <ContactList 
+          v-if="activeTab === 'contacts'"
+          :contacts="props.contacts"
+          @select-contact="handleSelectContact"
+          @add-contact="handleAddContact"
+        />
+        
+        <RoomList 
+          v-else
+          :rooms="props.rooms"
+          :active-room-id="props.activeRoomId"
+          @select-room="handleSelectRoom"
+        />
+      </Transition>
     </div>
 
     <!-- 底部工具栏 -->
     <div class="sidebar-footer">
       <div class="footer-tools">
         <button 
-          class="tool-btn"
+          class="tool-btn animate__animated animate__fadeInUp" style="--animate-duration: 0.3s; --animate-delay: 0.15s"
           :class="{ 'tool-active': autoRefresh }"
           @click="toggleAutoRefresh"
           :title="autoRefresh ? '关闭自动刷新' : '开启自动刷新'"
         >
-          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" :class="{ 'spin-slow': autoRefresh }">
             <path d="M21.5 2v6h-6M2.5 22v-6h6M2 11.5a10 10 0 0118.8-4.3M22 12.5a10 10 0 01-18.8 4.2" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
           </svg>
         </button>
         
         <button 
-          class="tool-btn"
+          class="tool-btn animate__animated animate__fadeInUp" style="--animate-duration: 0.3s; --animate-delay: 0.18s"
           @click="handleManualRefresh"
           title="手动刷新"
         >
@@ -89,7 +91,7 @@
         </button>
         
         <button 
-          class="tool-btn"
+          class="tool-btn animate__animated animate__fadeInUp" style="--animate-duration: 0.3s; --animate-delay: 0.21s"
           @click="toggleTheme"
           title="切换主题"
         >
@@ -103,7 +105,7 @@
         </button>
       </div>
       
-      <div class="footer-status">
+      <div class="footer-status animate__animated animate__fadeIn" style="--animate-duration: 0.4s; --animate-delay: 0.2s">
         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor">
           <rect x="3" y="11" width="18" height="11" rx="2" ry="2" stroke-width="2"/>
           <path d="M7 11V7a5 5 0 0110 0v4" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
@@ -115,7 +117,7 @@
 </template>
 
 <script setup lang="ts">
-import { ref, defineProps, defineEmits } from 'vue'
+import { ref } from 'vue'
 import UserCard from './UserCard.vue'
 import ContactList from './ContactList.vue'
 import RoomList from './RoomList.vue'
@@ -321,6 +323,32 @@ const handleManualRefresh = () => {
   flex: 1;
   overflow-y: auto;
   overflow-x: hidden;
+}
+
+// 标签切换过渡动画
+.tab-fade-enter-active,
+.tab-fade-leave-active {
+  transition: all 0.2s ease;
+}
+
+.tab-fade-enter-from {
+  opacity: 0;
+  transform: translateY(10px);
+}
+
+.tab-fade-leave-to {
+  opacity: 0;
+  transform: translateY(-10px);
+}
+
+// 自动刷新旋转动画
+.spin-slow {
+  animation: spin-slow 3s linear infinite;
+}
+
+@keyframes spin-slow {
+  from { transform: rotate(0deg); }
+  to { transform: rotate(360deg); }
 }
 
 // ==================== 底部工具栏 ====================

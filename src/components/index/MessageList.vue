@@ -1,66 +1,61 @@
 <template>
   <div class="message-list" ref="messageContainer">
     <!-- 加载中状态 -->
-    <div v-if="loading" class="loading-state">
+    <div v-if="loading" class="loading-state animate__animated animate__fadeIn" style="--animate-duration: 0.4s">
       <div class="loading-spinner">
         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor">
-          <path d="M12 2v4M12 18v4M4.93 4.93l2.83 2.83M16.24 16.24l2.83 2.83M2 12h4M18 12h4M4.93 19.07l2.83-2.83M16.24 7.76l2.83-2.83" stroke-width="2" stroke-linecap="round"/>
+          <path
+            d="M12 2v4M12 18v4M4.93 4.93l2.83 2.83M16.24 16.24l2.83 2.83M2 12h4M18 12h4M4.93 19.07l2.83-2.83M16.24 7.76l2.83-2.83"
+            stroke-width="2" stroke-linecap="round" />
         </svg>
       </div>
       <p>加载消息中...</p>
     </div>
 
     <!-- 空状态 -->
-    <div v-else-if="messages.length === 0" class="empty-state">
-      <div class="empty-icon">
+    <div v-else-if="messages.length === 0" class="empty-state animate__animated animate__fadeIn" style="--animate-duration: 0.5s">
+      <div class="empty-icon animate__animated animate__bounceIn" style="--animate-duration: 0.6s; --animate-delay: 0.1s">
         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor">
-          <path d="M21 15a2 2 0 01-2 2H7l-4 4V5a2 2 0 012-2h14a2 2 0 012 2z" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+          <path d="M21 15a2 2 0 01-2 2H7l-4 4V5a2 2 0 012-2h14a2 2 0 012 2z" stroke-width="2" stroke-linecap="round"
+            stroke-linejoin="round" />
         </svg>
       </div>
-      <p class="empty-text">{{ emptyText }}</p>
-      <p class="empty-hint">{{ emptyHint }}</p>
+      <p class="empty-text animate__animated animate__fadeInUp" style="--animate-duration: 0.4s; --animate-delay: 0.2s">{{ emptyText }}</p>
+      <p class="empty-hint animate__animated animate__fadeInUp" style="--animate-duration: 0.4s; --animate-delay: 0.25s">{{ emptyHint }}</p>
     </div>
 
     <!-- 消息列表 -->
     <div v-else class="messages">
       <!-- 加载更多按钮 -->
       <div v-if="hasMore" class="load-more">
-        <button 
-          class="load-more-btn"
-          :disabled="loadingMore"
-          @click="handleLoadMore"
-        >
+        <button class="load-more-btn animate__animated animate__fadeIn" style="--animate-duration: 0.3s" :disabled="loadingMore" @click="handleLoadMore">
           <svg v-if="loadingMore" class="spin" viewBox="0 0 24 24" fill="none" stroke="currentColor">
-            <path d="M12 2v4M12 18v4M4.93 4.93l2.83 2.83M16.24 16.24l2.83 2.83M2 12h4M18 12h4M4.93 19.07l2.83-2.83M16.24 7.76l2.83-2.83" stroke-width="2" stroke-linecap="round"/>
+            <path
+              d="M12 2v4M12 18v4M4.93 4.93l2.83 2.83M16.24 16.24l2.83 2.83M2 12h4M18 12h4M4.93 19.07l2.83-2.83M16.24 7.76l2.83-2.83"
+              stroke-width="2" stroke-linecap="round" />
           </svg>
           <svg v-else viewBox="0 0 24 24" fill="none" stroke="currentColor">
-            <path d="M1 4v6h6M23 20v-6h-6" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
-            <path d="M20.49 9A9 9 0 005.64 5.64L1 10m22 4l-4.64 4.36A9 9 0 013.51 15" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+            <path d="M1 4v6h6M23 20v-6h-6" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" />
+            <path d="M20.49 9A9 9 0 005.64 5.64L1 10m22 4l-4.64 4.36A9 9 0 013.51 15" stroke-width="2"
+              stroke-linecap="round" stroke-linejoin="round" />
           </svg>
           <span>{{ loadingMore ? '加载中...' : '加载更多历史消息' }}</span>
         </button>
       </div>
 
       <!-- 消息项 -->
-      <MessageItem 
-        v-for="message in messages"
-        :key="message.id"
-        :message="message"
-      />
+      <MessageItem v-for="message in messages" :key="message.id" :message="message" />
     </div>
 
     <!-- 回到底部按钮 -->
-    <transition name="slide-up">
-      <button 
-        v-if="showScrollToBottom"
-        class="scroll-to-bottom"
-        @click="handleScrollToBottom"
-      >
+    <Transition enter-active-class="animate__animated animate__zoomIn animate__faster"
+      leave-active-class="animate__animated animate__zoomOut animate__faster">
+      <button v-if="showScrollToBottom" class="scroll-to-bottom" @click="handleScrollToBottom">
         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor">
-          <path d="M12 5v14M19 12l-7 7-7-7" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+          <path d="M12 5v14M19 12l-7 7-7-7" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" />
         </svg>
       </button>
-    </transition>
+    </Transition>
   </div>
 </template>
 
@@ -194,7 +189,7 @@ defineExpose({ scrollToBottom })
   .empty-text {
     color: $text-primary-dark;
   }
-  
+
   .empty-hint {
     color: $text-tertiary-dark;
   }
@@ -331,7 +326,7 @@ defineExpose({ scrollToBottom })
   z-index: 100;
   transition: all $transition-base;
   backdrop-filter: blur(8px);
-  
+
   // 使用主题变量的边框
   border: 2px solid rgba(255, 255, 255, 0.15);
 
@@ -346,7 +341,7 @@ defineExpose({ scrollToBottom })
     transform: translateY(-2px) scale(1.05);
     background: linear-gradient(135deg, $primary-hover 0%, $primary-color 100%);
     box-shadow: $box-shadow-lg, 0 8px 24px rgba($primary-color, 0.35);
-    
+
     svg {
       transform: translateY(1px);
     }
@@ -379,10 +374,12 @@ defineExpose({ scrollToBottom })
     transform: scale(1);
     opacity: 0.2;
   }
+
   50% {
     transform: scale(1.1);
     opacity: 0.08;
   }
+
   100% {
     transform: scale(1.2);
     opacity: 0;
@@ -391,7 +388,9 @@ defineExpose({ scrollToBottom })
 
 // 动画
 @keyframes spin {
-  to { transform: rotate(360deg); }
+  to {
+    transform: rotate(360deg);
+  }
 }
 
 .spin {
@@ -421,12 +420,12 @@ defineExpose({ scrollToBottom })
     width: 44px;
     height: 44px;
     box-shadow: $box-shadow-base, 0 4px 16px rgba($primary-color, 0.2);
-    
+
     // 移动端减少动画效果，提升性能
     &::before {
       display: none;
     }
-    
+
     svg {
       width: 20px;
       height: 20px;

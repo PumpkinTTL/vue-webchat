@@ -1,52 +1,53 @@
 <template>
   <div class="room-list">
     <!-- 空状态 -->
-    <div v-if="rooms.length === 0" class="empty-state">
-      <div class="empty-icon">
+    <div v-if="rooms.length === 0" class="empty-state animate__animated animate__fadeIn" style="--animate-duration: 0.5s">
+      <div class="empty-icon animate__animated animate__bounceIn" style="--animate-duration: 0.6s; --animate-delay: 0.1s">
         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor">
           <path d="M3 7v10a2 2 0 002 2h14a2 2 0 002-2V9a2 2 0 00-2-2h-6l-2-2H5a2 2 0 00-2 2z" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
         </svg>
       </div>
-      <p class="empty-text">暂无房间</p>
-      <p class="empty-hint">创建或加入房间开始聊天</p>
+      <p class="empty-text animate__animated animate__fadeInUp" style="--animate-duration: 0.4s; --animate-delay: 0.2s">暂无房间</p>
+      <p class="empty-hint animate__animated animate__fadeInUp" style="--animate-duration: 0.4s; --animate-delay: 0.25s">创建或加入房间开始聊天</p>
     </div>
 
     <!-- 房间列表 -->
     <div v-else class="room-items">
-      <div
-        v-for="room in rooms"
-        :key="room.id"
-        class="room-item"
-        :class="{ 'room-active': room.id === activeRoomId }"
-        @click="selectRoom(room)"
-      >
-        <div class="room-icon">
-          {{ room.name?.charAt(0) || 'R' }}
-        </div>
-        
-        <div class="room-content">
-          <div class="room-header">
-            <span class="room-name">{{ room.name }}</span>
-            <span class="room-badge">
-              <span class="badge-label">ID</span>
-              <span class="badge-value">{{ room.id }}</span>
-            </span>
+      <TransitionGroup name="room-list" tag="div" class="room-items-inner">
+        <div
+          v-for="(room, index) in rooms"
+          :key="room.id"
+          class="room-item animate__animated animate__fadeInLeft"
+          :class="{ 'room-active': room.id === activeRoomId }"
+          :style="{ '--animate-duration': '0.35s', '--animate-delay': `${index * 0.04}s` }"
+          @click="selectRoom(room)"
+        >
+          <div class="room-icon">
+            {{ room.name?.charAt(0) || 'R' }}
           </div>
-          <p class="room-desc">{{ room.description || '暂无简介' }}</p>
-        </div>
+          
+          <div class="room-content">
+            <div class="room-header">
+              <span class="room-name">{{ room.name }}</span>
+              <span class="room-badge">
+                <span class="badge-label">ID</span>
+                <span class="badge-value">{{ room.id }}</span>
+              </span>
+            </div>
+            <p class="room-desc">{{ room.description || '暂无简介' }}</p>
+          </div>
 
-        <!-- 未读消息数 -->
-        <div v-if="room.unreadCount" class="unread-badge">
-          {{ room.unreadCount > 99 ? '99+' : room.unreadCount }}
+          <!-- 未读消息数 -->
+          <div v-if="room.unreadCount" class="unread-badge animate__animated animate__pulse" style="--animate-duration: 0.5s">
+            {{ room.unreadCount > 99 ? '99+' : room.unreadCount }}
+          </div>
         </div>
-      </div>
+      </TransitionGroup>
     </div>
   </div>
 </template>
 
 <script setup lang="ts">
-import { defineProps, defineEmits } from 'vue'
-
 interface Room {
   id: string | number
   name: string
@@ -134,6 +135,28 @@ const selectRoom = (room: Room) => {
   display: flex;
   flex-direction: column;
   gap: $spacing-xs;
+}
+
+.room-items-inner {
+  display: flex;
+  flex-direction: column;
+  gap: $spacing-xs;
+}
+
+// 列表过渡动画
+.room-list-enter-active,
+.room-list-leave-active {
+  transition: all 0.3s ease;
+}
+
+.room-list-enter-from {
+  opacity: 0;
+  transform: translateX(-20px);
+}
+
+.room-list-leave-to {
+  opacity: 0;
+  transform: translateX(20px);
 }
 
 .room-item {

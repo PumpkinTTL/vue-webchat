@@ -11,50 +11,51 @@
     </div>
 
     <!-- 空状态 -->
-    <div v-if="contacts.length === 0" class="empty-state">
-      <div class="empty-icon">
+    <div v-if="contacts.length === 0" class="empty-state animate__animated animate__fadeIn" style="--animate-duration: 0.5s">
+      <div class="empty-icon animate__animated animate__bounceIn" style="--animate-duration: 0.6s; --animate-delay: 0.1s">
         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor">
           <path d="M17 21v-2a4 4 0 00-4-4H5a4 4 0 00-4 4v2M9 11a4 4 0 100-8 4 4 0 000 8z" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
         </svg>
       </div>
-      <p class="empty-text">暂无联系人</p>
-      <p class="empty-hint">添加好友开始私聊</p>
+      <p class="empty-text animate__animated animate__fadeInUp" style="--animate-duration: 0.4s; --animate-delay: 0.2s">暂无联系人</p>
+      <p class="empty-hint animate__animated animate__fadeInUp" style="--animate-duration: 0.4s; --animate-delay: 0.25s">添加好友开始私聊</p>
     </div>
 
     <!-- 联系人列表 -->
     <div v-else class="contact-items">
-      <div
-        v-for="contact in contacts"
-        :key="contact.id"
-        class="contact-item"
-        @click="selectContact(contact)"
-      >
-        <div class="contact-avatar">
-          <img 
-            v-if="contact.avatar" 
-            :src="contact.avatar" 
-            :alt="contact.nickname"
-          >
-          <span v-else class="avatar-placeholder">
-            {{ contact.nickname?.charAt(0) || 'U' }}
-          </span>
-        </div>
+      <TransitionGroup name="contact-list" tag="div" class="contact-items-inner">
+        <div
+          v-for="(contact, index) in contacts"
+          :key="contact.id"
+          class="contact-item animate__animated animate__fadeInLeft"
+          :style="{ '--animate-duration': '0.35s', '--animate-delay': `${index * 0.04}s` }"
+          @click="selectContact(contact)"
+        >
+          <div class="contact-avatar">
+            <img 
+              v-if="contact.avatar" 
+              :src="contact.avatar" 
+              :alt="contact.nickname"
+            >
+            <span v-else class="avatar-placeholder">
+              {{ contact.nickname?.charAt(0) || 'U' }}
+            </span>
+          </div>
 
-        <div class="contact-info">
-          <div class="contact-name">{{ contact.nickname }}</div>
-          <div class="contact-sign">{{ contact.sign || '这个人很懒，什么都没留下' }}</div>
-        </div>
+          <div class="contact-info">
+            <div class="contact-name">{{ contact.nickname }}</div>
+            <div class="contact-sign">{{ contact.sign || '这个人很懒，什么都没留下' }}</div>
+          </div>
 
-        <!-- 在线状态 -->
-        <div v-if="contact.online" class="online-dot"></div>
-      </div>
+          <!-- 在线状态 -->
+          <div v-if="contact.online" class="online-dot animate__animated animate__pulse" style="--animate-duration: 1.5s; animation-iteration-count: infinite"></div>
+        </div>
+      </TransitionGroup>
     </div>
   </div>
 </template>
 
 <script setup lang="ts">
-import { defineProps, defineEmits } from 'vue'
-
 interface Contact {
   id: string | number
   nickname: string
@@ -186,6 +187,28 @@ const handleAddContact = () => {
   flex-direction: column;
   gap: $spacing-xs;
   padding: $spacing-md;
+}
+
+.contact-items-inner {
+  display: flex;
+  flex-direction: column;
+  gap: $spacing-xs;
+}
+
+// 列表过渡动画
+.contact-list-enter-active,
+.contact-list-leave-active {
+  transition: all 0.3s ease;
+}
+
+.contact-list-enter-from {
+  opacity: 0;
+  transform: translateX(-20px);
+}
+
+.contact-list-leave-to {
+  opacity: 0;
+  transform: translateX(20px);
 }
 
 .contact-item {
