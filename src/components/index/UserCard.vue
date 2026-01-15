@@ -4,7 +4,7 @@
       <div class="user-avatar animate__animated animate__bounceIn" style="--animate-duration: 0.5s">
         <img 
           v-if="userInfo.avatar" 
-          :src="userInfo.avatar" 
+          :src="avatarUrl" 
           :alt="userInfo.nick_name"
         >
         <span v-else class="avatar-placeholder">
@@ -41,6 +41,9 @@ import { Modal } from 'ant-design-vue'
 import { getUserInfo, clearUserInfo } from '@/utils/storage'
 import { Message } from '@/utils/message'
 
+// 服务器地址
+const serverUrl = import.meta.env.VITE_SERVER_URL || ''
+
 interface UserInfo {
   id?: string | number
   nick_name?: string
@@ -51,6 +54,14 @@ const router = useRouter()
 
 // 获取用户信息
 const userInfo = computed<UserInfo>(() => getUserInfo() || {})
+
+// 拼接头像URL
+const avatarUrl = computed(() => {
+  if (!userInfo.value.avatar) return ''
+  // 如果已经是完整URL则直接返回
+  if (userInfo.value.avatar.startsWith('http')) return userInfo.value.avatar
+  return `${serverUrl}/${userInfo.value.avatar}`
+})
 
 // 退出登录
 const handleLogout = () => {
