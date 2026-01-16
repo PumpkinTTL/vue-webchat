@@ -710,7 +710,7 @@ const handleSendMessage = async (text: string) => {
       
       // 通过 WebSocket 广播消息给其他用户
       broadcastMessage({
-        message_id: result.data.id,
+        message_id: Number(result.data.id),
         message_type: 'text',
         content: text,
         reply_to: currentReplyTo ? Number(currentReplyTo.id) : undefined,
@@ -819,25 +819,24 @@ const handleSendImage = async (file: File) => {
         // 直接更新临时消息，不删除重新添加
         const msg = chatStore.messages.find(m => m.id === tempId)
         if (msg) {
-          msg.id = result.data.id // 更新为真实ID
+          msg.id = Number(result.data.id) // 更新为真实ID
           msg.imageUrl = fullImageUrl // 更新为服务器URL
           msg.status = 'sent' // 更新状态
-          msg.intimacy = result.data.intimacy
+          if (result.data.intimacy) {
+            msg.intimacy = {
+              currentExp: result.data.intimacy.current_exp,
+              currentLevel: result.data.intimacy.current_level
+            }
+          }
           msg.isNew = false // 取消新消息标记，避免重复动画
         }
         
         // 广播消息（携带图片路径）
         console.log('[图片上传] 广播消息, content:', imageUrl)
         broadcastMessage({
-          message_id: result.data.id,
+          message_id: Number(result.data.id),
           message_type: 'image',
           content: imageUrl,
-          intimacy: result.data.intimacy
-        })
-      }, 300)
-          message_id: result.data.id,
-          message_type: 'image',
-          content: imageUrl, // 携带图片路径
           intimacy: result.data.intimacy
         })
       }, 300)
@@ -885,7 +884,7 @@ const handleSendVideo = async (file: File) => {
     const result = await sendVideoMessage(currentRoom.value.id, file)
     if (result.code === 0 && result.data) {
       broadcastMessage({
-        message_id: result.data.id,
+        message_id: Number(result.data.id),
         message_type: 'video',
         content: '',
         intimacy: result.data.intimacy
@@ -909,7 +908,7 @@ const handleSendFile = async (file: File) => {
     const result = await sendFileMessage(currentRoom.value.id, file)
     if (result.code === 0 && result.data) {
       broadcastMessage({
-        message_id: result.data.id,
+        message_id: Number(result.data.id),
         message_type: 'file',
         content: '',
         file_name: file.name,
