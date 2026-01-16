@@ -149,23 +149,22 @@
                       <circle
                         cx="50"
                         cy="50"
-                        r="45"
+                        r="42"
                         fill="none"
-                        stroke="rgba(255, 255, 255, 0.2)"
-                        stroke-width="4"
+                        stroke="rgba(255, 255, 255, 0.15)"
+                        stroke-width="6"
                       />
-                      <!-- 进度圆环 -->
+                      <!-- 进度圆环 - 使用主题色 -->
                       <circle
                         cx="50"
                         cy="50"
-                        r="45"
+                        r="42"
                         fill="none"
-                        stroke="white"
-                        stroke-width="4"
+                        stroke="#3B82F6"
+                        stroke-width="6"
                         stroke-linecap="round"
                         :stroke-dasharray="circumference"
                         :stroke-dashoffset="progressOffset"
-                        class="progress-circle"
                       />
                     </svg>
                     <div class="progress-text">{{ Math.round(uploadProgress) }}%</div>
@@ -291,7 +290,7 @@ const popoverVisible = ref(false)
 const isHighlighted = ref(false)
 
 // 进度圆环计算
-const circumference = 2 * Math.PI * 45 // 半径45
+const circumference = 2 * Math.PI * 42 // 半径42
 const progressOffset = computed(() => {
   if (props.uploadProgress === undefined) return circumference
   const progress = props.uploadProgress / 100
@@ -656,8 +655,7 @@ defineExpose({
   left: 0;
   right: 0;
   bottom: 0;
-  background: rgba(0, 0, 0, 0.75);
-  backdrop-filter: blur(4px);
+  background: rgba(15, 23, 42, 0.85); // slate-900 with opacity
   display: flex;
   align-items: center;
   justify-content: center;
@@ -667,17 +665,18 @@ defineExpose({
 
 .progress-ring {
   position: relative;
-  width: 80px;
-  height: 80px;
+  width: 72px;
+  height: 72px;
   
   svg {
     width: 100%;
     height: 100%;
     transform: rotate(-90deg);
+    filter: drop-shadow(0 2px 8px rgba(37, 99, 235, 0.3));
   }
   
-  .progress-circle {
-    transition: stroke-dashoffset 0.3s ease;
+  circle {
+    transition: stroke-dashoffset 0.3s cubic-bezier(0.4, 0, 0.2, 1);
   }
 }
 
@@ -687,10 +686,10 @@ defineExpose({
   left: 50%;
   transform: translate(-50%, -50%);
   color: white;
-  font-size: 16px;
+  font-size: 15px;
   font-weight: 600;
-  font-family: 'SF Mono', 'Monaco', 'Consolas', monospace;
-  letter-spacing: -0.5px;
+  letter-spacing: -0.02em;
+  text-shadow: 0 1px 2px rgba(0, 0, 0, 0.2);
 }
 
 // 文件

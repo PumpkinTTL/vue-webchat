@@ -853,8 +853,6 @@ const handleSendImage = async (file: File) => {
           content: imageUrl, // 携带图片路径
           intimacy: result.data.intimacy
         })
-        
-        message.success('图片发送成功')
       }, 300)
     } else {
       // 发送失败，更新临时消息状态
@@ -864,7 +862,7 @@ const handleSendImage = async (file: File) => {
       if (msg) {
         msg.status = 'failed'
       }
-      message.error(result.msg || '发送图片失败')
+      message.error(result.msg || '图片发送失败')
     }
   } catch (error: any) {
     // 发送失败，更新临时消息状态
@@ -874,7 +872,19 @@ const handleSendImage = async (file: File) => {
     if (msg) {
       msg.status = 'failed'
     }
-    message.error(error.message || '发送图片失败')
+    
+    // 优化错误提示
+    let errorMsg = '图片发送失败'
+    if (error.message) {
+      if (error.message.includes('timeout')) {
+        errorMsg = '图片上传超时，请检查网络连接'
+      } else if (error.message.includes('Network Error')) {
+        errorMsg = '网络连接失败，请检查网络'
+      } else {
+        errorMsg = error.message
+      }
+    }
+    message.error(errorMsg)
   }
 }
 
