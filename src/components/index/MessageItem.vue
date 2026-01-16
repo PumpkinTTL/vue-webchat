@@ -696,20 +696,35 @@ defineExpose({
   }
 }
 
-// 已读状态切换动画
-.read-fade-enter-active,
+// 已读状态切换动画 - 小拉伸形变效果
+.read-fade-enter-active {
+  animation: readStatusChange 0.4s cubic-bezier(0.34, 1.56, 0.64, 1);
+}
+
 .read-fade-leave-active {
-  transition: all 0.3s ease;
+  transition: opacity 0.2s ease;
 }
 
 .read-fade-enter-from {
   opacity: 0;
-  transform: scale(0.95);
 }
 
 .read-fade-leave-to {
   opacity: 0;
-  transform: scale(1.05);
+}
+
+@keyframes readStatusChange {
+  0% {
+    opacity: 0;
+    transform: scaleX(0.8) scaleY(1.2);
+  }
+  50% {
+    transform: scaleX(1.05) scaleY(0.95);
+  }
+  100% {
+    opacity: 1;
+    transform: scaleX(1) scaleY(1);
+  }
 }
 
 .msg-read-count {

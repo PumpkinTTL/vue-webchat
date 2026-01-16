@@ -150,6 +150,11 @@ export const useChatStore = defineStore('chat', () => {
       isNew: true
     }
 
+    // 图片消息
+    if (data.message_type === 'image') {
+      message.imageUrl = data.content
+    }
+
     // 视频消息
     if (data.message_type === 'video') {
       message.videoUrl = data.video_url
