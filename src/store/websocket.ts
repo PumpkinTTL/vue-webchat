@@ -83,7 +83,24 @@ export const useWebSocketStore = defineStore('websocket', () => {
       return
     }
 
-    const url = wsUrl || import.meta.env.VITE_WS_URL || 'ws://localhost:2346'
+    // 如果没有提供wsUrl，则根据VITE_SERVER_URL构建
+    let url = wsUrl
+    if (!url) {
+      const serverUrl = import.meta.env.VITE_SERVER_URL
+      if (serverUrl) {
+        // 从 http://8.138.90.156:5000 转换为 ws://8.138.90.156:5000/ws
+        // 或从 https://... 转换为 wss://...
+        const urlObj = new URL(serverUrl)
+        const protocol = urlObj.protocol === 'https:' ? 'wss:' : 'ws:'
+        url = `${protocol}//${urlObj.host}/ws`
+      } else {
+        // 降级方案：使用当前页面地址
+        const protocol = window.location.protocol === 'https:' ? 'wss:' : 'ws:'
+        const host = window.location.host
+        url = `${protocol}//${host}/ws`
+      }
+    }
+    
     console.log('[WebSocket] 正在连接:', url)
     status.value = 'connecting'
 
