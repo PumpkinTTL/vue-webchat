@@ -113,7 +113,8 @@ export function sendImageMessage(roomId: number, image: File) {
     data: formData,
     headers: {
       'Content-Type': 'multipart/form-data'
-    }
+    },
+    timeout: 60000 // 60秒超时，适配3M带宽上传大图片
   })
 }
 
@@ -131,7 +132,8 @@ export function sendVideoMessage(roomId: number, video: File) {
     data: formData,
     headers: {
       'Content-Type': 'multipart/form-data'
-    }
+    },
+    timeout: 120000 // 120秒超时，视频文件通常更大
   })
 }
 
@@ -149,7 +151,8 @@ export function sendFileMessage(roomId: number, file: File) {
     data: formData,
     headers: {
       'Content-Type': 'multipart/form-data'
-    }
+    },
+    timeout: 120000 // 120秒超时
   })
 }
 
