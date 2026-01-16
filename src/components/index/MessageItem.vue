@@ -92,10 +92,6 @@
               <!-- 文本 -->
               <div v-else class="text-wrapper">
                 <div class="text-content">{{ message.text || message.content }}</div>
-                <!-- 编辑标记 -->
-                <div v-if="message.edited" class="edited-badge">
-                  编辑于 {{ formatTime(message.editedAt) }}
-                </div>
                 <!-- 引用显示 -->
                 <div 
                   v-if="message.replyTo" 
@@ -116,6 +112,14 @@
         <div class="msg-sender">
           <span>{{ senderName }}</span>
           <span class="msg-time">{{ formatTime(message.time) }}</span>
+          <!-- 编辑标记 -->
+          <span v-if="message.edited" class="msg-edited">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+              <path d="M11 4H4a2 2 0 00-2 2v14a2 2 0 002 2h14a2 2 0 002-2v-7"/>
+              <path d="M18.5 2.5a2.121 2.121 0 013 3L12 15l-4 1 1-4 9.5-9.5z"/>
+            </svg>
+            修改于 {{ formatTime(message.editedAt) }}
+          </span>
         </div>
       </div>
 
@@ -269,10 +273,6 @@
               <!-- 文本 -->
               <div v-else class="text-wrapper">
                 <div class="text-content">{{ message.text || message.content }}</div>
-                <!-- 编辑标记 -->
-                <div v-if="message.edited" class="edited-badge">
-                  编辑于 {{ formatTime(message.editedAt) }}
-                </div>
                 <!-- 引用显示 -->
                 <div 
                   v-if="message.replyTo" 
@@ -291,6 +291,14 @@
         </div>
         <!-- 已读回执、时间、状态 -->
         <div class="msg-meta-own">
+          <!-- 编辑标记 -->
+          <span v-if="message.edited" class="msg-edited">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+              <path d="M11 4H4a2 2 0 00-2 2v14a2 2 0 002 2h14a2 2 0 002-2v-7"/>
+              <path d="M18.5 2.5a2.121 2.121 0 013 3L12 15l-4 1 1-4 9.5-9.5z"/>
+            </svg>
+            修改于 {{ formatTime(message.editedAt) }}
+          </span>
           <!-- 已读状态文字 -->
           <span class="msg-read-status" :class="{ 'read': message.readCount && message.readCount > 0 }">
             <span v-if="message.readCount && message.readCount > 0">{{ message.readCount }}人已读</span>
@@ -738,15 +746,21 @@ defineExpose({
   white-space: pre-wrap;
 }
 
-.edited-badge {
+.msg-edited {
+  display: inline-flex;
+  align-items: center;
+  gap: 3px;
   font-size: 11px;
   color: rgba(0, 0, 0, 0.45);
-  margin-top: 4px;
-  font-style: italic;
+  
+  svg {
+    width: 12px;
+    height: 12px;
+  }
 }
 
 // 深色模式
-.dark-mode .edited-badge {
+.dark-mode .msg-edited {
   color: rgba(255, 255, 255, 0.45);
 }
 

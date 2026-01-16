@@ -38,6 +38,9 @@ export interface Message {
   // 已读信息
   is_read?: boolean
   read_count?: number
+  // 编辑信息
+  edited?: boolean
+  edited_at?: string
 }
 
 export interface MessageListResponse {

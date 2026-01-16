@@ -333,7 +333,10 @@ const loadRoomMessages = async (roomId: number) => {
           fileExtension: msg.fileExtension,
           fileUrl: msg.fileUrl,
           // 引用
-          replyTo: msg.reply_to
+          replyTo: msg.reply_to,
+          // 编辑
+          edited: msg.edited || false,
+          editedAt: msg.edited_at
         }
       })
 
@@ -392,7 +395,10 @@ const handleLoadMore = async () => {
           status: msg.isOwn ? 'sent' : undefined,
           readCount: msg.read_count || 0,
           // 引用
-          replyTo: msg.reply_to
+          replyTo: msg.reply_to,
+          // 编辑
+          edited: msg.edited || false,
+          editedAt: msg.edited_at
         }
       })
 
