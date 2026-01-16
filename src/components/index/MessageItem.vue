@@ -141,6 +141,20 @@
               <!-- 图片 -->
               <div v-if="message.type === 'image'" class="image-wrapper">
                 <a-image :src="imageUrl" alt="Image" :preview="{ src: imageUrl }" />
+                <!-- 上传进度遮罩 -->
+                <div v-if="message.status === 'sending' && uploadProgress !== undefined" class="upload-progress-overlay">
+                  <div class="progress-content">
+                    <a-progress 
+                      type="circle" 
+                      :percent="Math.round(uploadProgress)" 
+                      :width="60"
+                      :stroke-color="{
+                        '0%': '#108ee9',
+                        '100%': '#87d068',
+                      }"
+                    />
+                  </div>
+                </div>
               </div>
               <!-- 文件 -->
               <div v-else-if="message.type === 'file'" class="file-message">
@@ -245,6 +259,7 @@ interface Message {
 
 const props = defineProps<{
   message: Message
+  uploadProgress?: number
 }>()
 
 const emit = defineEmits<{
@@ -594,6 +609,7 @@ defineExpose({
   border-radius: 8px;
   overflow: hidden;
   line-height: 0;
+  position: relative;
 
   :deep(.ant-image) {
     display: block;
@@ -606,6 +622,28 @@ defineExpose({
       border-radius: 8px;
     }
   }
+}
+
+// 上传进度遮罩
+.upload-progress-overlay {
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: rgba(0, 0, 0, 0.6);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 8px;
+  z-index: 1;
+}
+
+.progress-content {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 8px;
 }
 
 // 文件

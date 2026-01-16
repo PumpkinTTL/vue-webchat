@@ -51,6 +51,7 @@
           :loading="messagesLoading"
           :has-more="hasMoreMessages"
           :loading-more="loadingMoreMessages"
+          :upload-progress="uploadProgress"
           @load-more="handleLoadMore"
           @reply="handleReplyMessage"
           @burn="handleBurnMessage"
@@ -205,6 +206,9 @@ const replyToMessage = ref<any>(null)
 
 // 输入状态防抖
 let typingTimer: ReturnType<typeof setTimeout> | null = null
+
+// 上传进度管理
+const uploadProgress = ref<Record<string, number>>({})
 
 // ==================== 生命周期 ====================
 
@@ -736,6 +740,9 @@ const handleSendImage = async (file: File) => {
   // 创建临时图片URL用于预览
   const tempImageUrl = URL.createObjectURL(file)
   
+  // 初始化上传进度
+  uploadProgress.value[tempId] = 0
+  
   // 添加临时消息到列表（占位）
   const tempMessage: ChatMessageItem = {
     id: tempId,
@@ -761,69 +768,91 @@ const handleSendImage = async (file: File) => {
     messageListRef.value?.scrollToBottom(true)
   })
   
+  // 模拟上传进度（因为实际上传可能很快，模拟一个平滑的进度）
+  const progressInterval = setInterval(() => {
+    if (uploadProgress.value[tempId] < 90) {
+      uploadProgress.value[tempId] += Math.random() * 15
+      if (uploadProgress.value[tempId] > 90) {
+        uploadProgress.value[tempId] = 90
+      }
+    }
+  }, 200)
+  
   try {
     // 上传图片
     const result = await sendImageMessage(currentRoom.value.id, file)
     
+    // 清除进度模拟
+    clearInterval(progressInterval)
+    uploadProgress.value[tempId] = 100
+    
     console.log('[图片上传] 后端返回:', result)
     
     if (result.code === 0 && result.data) {
-      // 移除临时消息
-      chatStore.removeMessage(tempId as any)
-      
-      // 释放临时URL
-      URL.revokeObjectURL(tempImageUrl)
-      
-      // 获取图片路径 - 尝试多个可能的字段
-      const imageUrl = result.data.imageUrl || result.data.image_url || result.data.content || result.data.text || ''
-      console.log('[图片上传] 图片路径:', imageUrl)
-      
-      // 拼接完整URL
-      const serverUrl = import.meta.env.VITE_SERVER_URL || ''
-      const fullImageUrl = imageUrl && !imageUrl.startsWith('http://') && !imageUrl.startsWith('https://') 
-        ? serverUrl + imageUrl 
-        : imageUrl
-      
-      console.log('[图片上传] 完整URL:', fullImageUrl)
-      
-      // 添加真实消息
-      const realMessage: ChatMessageItem = {
-        id: result.data.id,
-        type: 'image',
-        text: '',
-        time: new Date(),
-        isOwn: true,
-        sender: {
-          id: userInfo?.id || 0,
-          nickname: userInfo?.nick_name || '我',
-          avatar: userInfo?.avatar || ''
-        },
-        username: userInfo?.nick_name || '我',
-        status: 'sent',
-        imageUrl: fullImageUrl,
-        intimacy: result.data.intimacy,
-        isNew: true
-      }
-      
-      chatStore.addMessage(realMessage)
-      
-      // 滚动到底部
-      nextTick(() => {
-        messageListRef.value?.scrollToBottom(true)
-      })
-      
-      // 广播消息（携带图片路径）
-      console.log('[图片上传] 广播消息, content:', imageUrl)
-      broadcastMessage({
-        message_id: result.data.id,
-        message_type: 'image',
-        content: imageUrl, // 携带图片路径
-        intimacy: result.data.intimacy
-      })
-      
-      message.success('图片发送成功')
+      // 短暂延迟后移除临时消息（让用户看到100%）
+      setTimeout(() => {
+        // 移除临时消息
+        chatStore.removeMessage(tempId as any)
+        
+        // 释放临时URL
+        URL.revokeObjectURL(tempImageUrl)
+        
+        // 清除进度
+        delete uploadProgress.value[tempId]
+        
+        // 获取图片路径 - 尝试多个可能的字段
+        const imageUrl = result.data.imageUrl || result.data.image_url || result.data.content || result.data.text || ''
+        console.log('[图片上传] 图片路径:', imageUrl)
+        
+        // 拼接完整URL
+        const serverUrl = import.meta.env.VITE_SERVER_URL || ''
+        const fullImageUrl = imageUrl && !imageUrl.startsWith('http://') && !imageUrl.startsWith('https://') 
+          ? serverUrl + imageUrl 
+          : imageUrl
+        
+        console.log('[图片上传] 完整URL:', fullImageUrl)
+        
+        // 添加真实消息
+        const realMessage: ChatMessageItem = {
+          id: result.data.id,
+          type: 'image',
+          text: '',
+          time: new Date(),
+          isOwn: true,
+          sender: {
+            id: userInfo?.id || 0,
+            nickname: userInfo?.nick_name || '我',
+            avatar: userInfo?.avatar || ''
+          },
+          username: userInfo?.nick_name || '我',
+          status: 'sent',
+          imageUrl: fullImageUrl,
+          intimacy: result.data.intimacy,
+          isNew: true
+        }
+        
+        chatStore.addMessage(realMessage)
+        
+        // 滚动到底部
+        nextTick(() => {
+          messageListRef.value?.scrollToBottom(true)
+        })
+        
+        // 广播消息（携带图片路径）
+        console.log('[图片上传] 广播消息, content:', imageUrl)
+        broadcastMessage({
+          message_id: result.data.id,
+          message_type: 'image',
+          content: imageUrl, // 携带图片路径
+          intimacy: result.data.intimacy
+        })
+        
+        message.success('图片发送成功')
+      }, 300)
     } else {
       // 发送失败，更新临时消息状态
+      clearInterval(progressInterval)
+      delete uploadProgress.value[tempId]
       const msg = chatStore.messages.find(m => m.id === tempId)
       if (msg) {
         msg.status = 'failed'
@@ -832,6 +861,8 @@ const handleSendImage = async (file: File) => {
     }
   } catch (error: any) {
     // 发送失败，更新临时消息状态
+    clearInterval(progressInterval)
+    delete uploadProgress.value[tempId]
     const msg = chatStore.messages.find(m => m.id === tempId)
     if (msg) {
       msg.status = 'failed'

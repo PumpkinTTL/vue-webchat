@@ -49,6 +49,7 @@
         :key="message.animationKey || message.id" 
         :ref="(el) => setMessageRef(message.id, el)"
         :message="message"
+        :upload-progress="uploadProgress?.[message.id]"
         @reply="handleReply"
         @burn="handleBurn"
         @scroll-to-message="handleScrollToMessage"
@@ -96,6 +97,7 @@ interface Props {
   loadingMore?: boolean
   emptyText?: string
   emptyHint?: string
+  uploadProgress?: Record<string, number>
 }
 
 const props = withDefaults(defineProps<Props>(), {
