@@ -70,6 +70,13 @@ export interface MessageBurnedMessage {
   message_id: number
 }
 
+export interface MessageEditedMessage {
+  type: 'message_edited'
+  message_id: number
+  content: string
+  edited_at: string
+}
+
 export interface RoomClearedMessage {
   type: 'room_cleared'
   hard_delete?: boolean
@@ -96,6 +103,7 @@ export type ClientMessage =
   | TypingMessage
   | MarkReadMessage
   | MessageBurnedMessage
+  | MessageEditedMessage
   | RoomClearedMessage
   | RoomLockChangedMessage
   | IntimacyRestartMessage
@@ -199,6 +207,15 @@ export interface MessageBurnedResponse {
   burned_by_nickname: string
 }
 
+export interface MessageEditedResponse {
+  type: 'message_edited'
+  message_id: number
+  content: string
+  edited_at: string
+  edited_by: number
+  edited_by_nickname: string
+}
+
 export interface RoomClearedResponse {
   type: 'room_cleared'
   cleared_by: number
@@ -246,6 +263,7 @@ export type ServerMessage =
   | MessageReadResponse
   | MarkReadSuccessResponse
   | MessageBurnedResponse
+  | MessageEditedResponse
   | RoomClearedResponse
   | RoomLockChangedResponse
   | IntimacyStartResponse

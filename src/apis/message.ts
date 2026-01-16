@@ -205,3 +205,17 @@ export function clearRoomMessages(roomId: number, hardDelete: boolean = false) {
     data: { room_id: roomId, hard_delete: hardDelete }
   })
 }
+
+/**
+ * 编辑文本消息
+ */
+export function editMessage(messageId: number, content: string) {
+  return request<SendMessageResponse>({
+    url: '/message/edit',
+    method: 'put',
+    data: {
+      message_id: messageId,
+      content
+    }
+  })
+}

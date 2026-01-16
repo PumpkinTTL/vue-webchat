@@ -38,6 +38,9 @@ export interface ChatMessageItem {
     currentExp: number
     currentLevel: number
   }
+  // 编辑信息
+  edited?: boolean
+  editedAt?: string
   // 动画标记
   isNew?: boolean
   // 动画唯一标识（用于 v-for key，避免 id 变化导致重新渲染）
@@ -324,6 +327,18 @@ export const useChatStore = defineStore('chat', () => {
   }
 
   /**
+   * 编辑消息
+   */
+  function editMessage(messageId: number | string, content: string, editedAt: string) {
+    const message = messages.value.find(m => m.id == messageId)
+    if (message) {
+      message.text = content
+      message.edited = true
+      message.editedAt = editedAt
+    }
+  }
+
+  /**
    * 清空消息
    */
   function clearMessages() {
@@ -409,6 +424,7 @@ export const useChatStore = defineStore('chat', () => {
     updateMessageStatus,
     handleMessageRead,
     removeMessage,
+    editMessage,
     clearMessages,
     prependMessages,
     clearNewFlag,

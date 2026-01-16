@@ -44,6 +44,10 @@ export function useChat() {
       chatStore.addSystemMessage(`${data.burned_by_nickname} 焚毁了一条消息`)
     })
 
+    wsStore.setOnMessageEdited((data) => {
+      chatStore.editMessage(data.message_id, data.content, data.edited_at)
+    })
+
     wsStore.setOnRoomCleared((data) => {
       chatStore.clearMessages()
       chatStore.addSystemMessage(`${data.cleared_by_nickname} 清空了聊天记录`)
@@ -159,6 +163,16 @@ export function useChat() {
   }
 
   /**
+   * 编辑消息（通过WebSocket广播）
+   */
+  function broadcastEditMessage(messageId: number, content: string, editedAt: string) {
+    // 先更新本地
+    chatStore.editMessage(messageId, content, editedAt)
+    // 广播给其他用户
+    return wsStore.broadcastMessageEdited(messageId, content, editedAt)
+  }
+
+  /**
    * 清空房间消息
    */
   function clearRoomMessages(hardDelete: boolean = false) {
@@ -218,6 +232,7 @@ export function useChat() {
     sendTyping,
     markMessagesRead,
     burnMessage,
+    broadcastEditMessage,
     clearRoomMessages,
     toggleRoomLock,
     restartIntimacy

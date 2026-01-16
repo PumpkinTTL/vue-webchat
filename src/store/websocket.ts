@@ -11,6 +11,7 @@ import type {
   TypingResponse,
   MessageReadResponse,
   MessageBurnedResponse,
+  MessageEditedResponse,
   RoomClearedResponse,
   RoomLockChangedResponse,
   IntimacyStartResponse,
@@ -64,6 +65,7 @@ export const useWebSocketStore = defineStore('websocket', () => {
   let onUserLeft: ((data: UserLeftResponse) => void) | null = null
   let onMessageRead: ((data: MessageReadResponse) => void) | null = null
   let onMessageBurned: ((data: MessageBurnedResponse) => void) | null = null
+  let onMessageEdited: ((data: MessageEditedResponse) => void) | null = null
   let onRoomCleared: ((data: RoomClearedResponse) => void) | null = null
   let onRoomLockChanged: ((data: RoomLockChangedResponse) => void) | null = null
   let onIntimacyStart: ((data: IntimacyStartResponse) => void) | null = null
@@ -268,6 +270,18 @@ export const useWebSocketStore = defineStore('websocket', () => {
   }
 
   /**
+   * 广播消息编辑
+   */
+  function broadcastMessageEdited(messageId: number, content: string, editedAt: string) {
+    return send({ 
+      type: 'message_edited', 
+      message_id: messageId,
+      content,
+      edited_at: editedAt
+    })
+  }
+
+  /**
    * 广播房间清理
    */
   function broadcastRoomCleared(hardDelete: boolean = false) {
@@ -363,6 +377,12 @@ export const useWebSocketStore = defineStore('websocket', () => {
       case 'message_burned':
         if (onMessageBurned) {
           onMessageBurned(data)
+        }
+        break
+
+      case 'message_edited':
+        if (onMessageEdited) {
+          onMessageEdited(data)
         }
         break
 
@@ -508,6 +528,10 @@ export const useWebSocketStore = defineStore('websocket', () => {
     onMessageBurned = callback
   }
 
+  function setOnMessageEdited(callback: typeof onMessageEdited) {
+    onMessageEdited = callback
+  }
+
   function setOnRoomCleared(callback: typeof onRoomCleared) {
     onRoomCleared = callback
   }
@@ -563,6 +587,7 @@ export const useWebSocketStore = defineStore('websocket', () => {
     markRead,
     markMessagesAsRead,
     broadcastMessageBurned,
+    broadcastMessageEdited,
     broadcastRoomCleared,
     broadcastRoomLockChanged,
     restartIntimacy,
@@ -573,6 +598,7 @@ export const useWebSocketStore = defineStore('websocket', () => {
     setOnUserLeft,
     setOnMessageRead,
     setOnMessageBurned,
+    setOnMessageEdited,
     setOnRoomCleared,
     setOnRoomLockChanged,
     setOnIntimacyStart,
