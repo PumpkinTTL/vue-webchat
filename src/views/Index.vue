@@ -239,6 +239,7 @@ watch(() => wsStore.isAuthed, (isAuthed) => {
 
 // 监听房间在线人数变化
 watch(() => wsStore.onlineCount, (count) => {
+  console.log('[房间] WebSocket在线人数变化:', count)
   if (currentRoom.value) {
     currentRoom.value.onlineUsers = count
   }
@@ -557,11 +558,15 @@ const handleSelectRoom = async (room: any) => {
   
   const roomId = typeof room.id === 'string' ? parseInt(room.id) : room.id
   
+  // 先保留旧的人数，避免显示0
+  const oldTotalUsers = currentRoom.value?.totalUsers || 0
+  const oldOnlineUsers = currentRoom.value?.onlineUsers || 0
+  
   currentRoom.value = {
     ...room,
     id: roomId,
-    totalUsers: 0,
-    onlineUsers: 0,
+    totalUsers: oldTotalUsers,
+    onlineUsers: oldOnlineUsers,
     isPrivate: room.private === 1
   }
   
@@ -571,18 +576,23 @@ const handleSelectRoom = async (room: any) => {
   // 加载房间消息
   await loadRoomMessages(roomId)
   
-  // 获取房间人数
+  // 获取房间人数（仅获取总人数，在线人数等WebSocket更新）
   try {
     const result = await getRoomUserCount(roomId)
     if (result.code === 0 && currentRoom.value?.id === roomId) {
       currentRoom.value.totalUsers = result.data.total_count
-      currentRoom.value.onlineUsers = result.data.online_count
+      // 只有当WebSocket还没连接时才使用HTTP返回的在线人数
+      // 如果HTTP返回0，至少显示1（自己）
+      if (!wsStore.isConnected) {
+        currentRoom.value.onlineUsers = Math.max(1, result.data.online_count)
+      }
+      console.log('[房间] HTTP获取人数 - 总数:', result.data.total_count, '在线:', result.data.online_count, '(实际显示:', currentRoom.value.onlineUsers, ')')
     }
   } catch (error) {
     console.error('获取房间人数失败:', error)
   }
   
-  // 加入 WebSocket 房间
+  // 加入 WebSocket 房间（会触发room_joined事件，更新准确的在线人数）
   if (wsStore.isAuthed) {
     enterRoom(roomId)
   }
