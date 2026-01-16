@@ -765,6 +765,8 @@ const handleSendImage = async (file: File) => {
     // 上传图片
     const result = await sendImageMessage(currentRoom.value.id, file)
     
+    console.log('[图片上传] 后端返回:', result)
+    
     if (result.code === 0 && result.data) {
       // 移除临时消息
       chatStore.removeMessage(tempId as any)
@@ -772,13 +774,19 @@ const handleSendImage = async (file: File) => {
       // 释放临时URL
       URL.revokeObjectURL(tempImageUrl)
       
-      // 添加真实消息
+      // 获取图片路径 - 尝试多个可能的字段
+      const imageUrl = result.data.imageUrl || result.data.image_url || result.data.content || result.data.text || ''
+      console.log('[图片上传] 图片路径:', imageUrl)
+      
+      // 拼接完整URL
       const serverUrl = import.meta.env.VITE_SERVER_URL || ''
-      const imageUrl = result.data.image_url || result.data.content || ''
       const fullImageUrl = imageUrl && !imageUrl.startsWith('http://') && !imageUrl.startsWith('https://') 
         ? serverUrl + imageUrl 
         : imageUrl
       
+      console.log('[图片上传] 完整URL:', fullImageUrl)
+      
+      // 添加真实消息
       const realMessage: ChatMessageItem = {
         id: result.data.id,
         type: 'image',
@@ -805,6 +813,7 @@ const handleSendImage = async (file: File) => {
       })
       
       // 广播消息（携带图片路径）
+      console.log('[图片上传] 广播消息, content:', imageUrl)
       broadcastMessage({
         message_id: result.data.id,
         message_type: 'image',

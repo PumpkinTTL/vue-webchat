@@ -53,12 +53,13 @@ export interface SendMessageResponse {
   code: number
   msg: string
   data: {
-    id: number  // 后端返回的是 id，不是 message_id
+    id: number | string  // 后端返回的是 id，可能是数字或字符串
     type?: string
     text?: string
     time?: string
     reply_to?: any
-    image_url?: string  // 图片URL
+    imageUrl?: string   // 图片URL（后端返回的字段名）
+    image_url?: string  // 备用字段
     content?: string    // 内容（可能包含图片路径）
     intimacy?: {
       current_exp: number

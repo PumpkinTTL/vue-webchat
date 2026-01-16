@@ -135,6 +135,8 @@ export const useChatStore = defineStore('chat', () => {
     const isOwn = data.from_user_id === currentUserId
     const serverUrl = import.meta.env.VITE_SERVER_URL || ''
     
+    console.log('[Chat Store] 转换WebSocket消息:', data)
+    
     const message: ChatMessageItem = {
       id: data.message_id,
       type: data.message_type,
@@ -154,11 +156,13 @@ export const useChatStore = defineStore('chat', () => {
     // 图片消息 - 处理URL
     if (data.message_type === 'image') {
       const url = data.content
+      console.log('[Chat Store] 图片消息, 原始URL:', url)
       if (url && !url.startsWith('http://') && !url.startsWith('https://')) {
         message.imageUrl = serverUrl + url
       } else {
         message.imageUrl = url
       }
+      console.log('[Chat Store] 图片消息, 完整URL:', message.imageUrl)
     }
 
     // 视频消息 - 处理URL
