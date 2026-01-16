@@ -229,11 +229,17 @@ watch(() => wsStore.onlineCount, (count) => {
   }
 })
 
-// 监听新消息，滚动到底部
-watch(() => chatStore.messages.length, () => {
-  nextTick(() => {
-    messageListRef.value?.scrollToBottom(true)
-  })
+// 是否正在加载历史消息的标志
+const isLoadingHistory = ref(false)
+
+// 监听新消息，滚动到底部（仅在非加载历史消息时）
+watch(() => chatStore.messages.length, (newLength, oldLength) => {
+  // 只有在消息增加且不是加载历史消息时才滚动到底部
+  if (newLength > oldLength && !isLoadingHistory.value) {
+    nextTick(() => {
+      messageListRef.value?.scrollToBottom(true)
+    })
+  }
 })
 
 // ==================== 房间列表 ====================
@@ -329,6 +335,11 @@ const handleLoadMore = async () => {
   }
   
   loadingMoreMessages.value = true
+  isLoadingHistory.value = true // 设置标志位
+  
+  // 记录加载前的滚动高度
+  const container = messageListRef.value?.$el as HTMLElement
+  const oldScrollHeight = container?.scrollHeight || 0
   
   try {
     const oldestMessage = chatStore.messages[0]
@@ -354,15 +365,30 @@ const handleLoadMore = async () => {
             avatar: msg.sender.avatar || ''
           } : undefined,
           username: msg.sender?.nickname,
-          status: msg.isOwn ? 'sent' : undefined
+          status: msg.isOwn ? 'sent' : undefined,
+          // 引用
+          replyTo: msg.reply_to
         }
       })
       
       chatStore.prependMessages(convertedMessages)
       hasMoreMessages.value = result.data.has_more
+      
+      // 恢复滚动位置（保持在原来的消息位置）
+      nextTick(() => {
+        if (container) {
+          const newScrollHeight = container.scrollHeight
+          container.scrollTop = newScrollHeight - oldScrollHeight
+        }
+        // 延迟重置标志位，确保 watch 不会触发
+        setTimeout(() => {
+          isLoadingHistory.value = false
+        }, 100)
+      })
     }
   } catch (error) {
     console.error('加载更多消息失败:', error)
+    isLoadingHistory.value = false
   } finally {
     loadingMoreMessages.value = false
   }
