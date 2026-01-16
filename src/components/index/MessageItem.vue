@@ -784,45 +784,49 @@ defineExpose({
   position: relative;
 }
 
-// 视频上传占位容器
+// 视频上传占位容器 - Swiss Modernism 2.0
 .video-upload-placeholder {
   width: 280px;
   height: 200px;
-  background: linear-gradient(135deg, rgba(99, 102, 241, 0.08) 0%, rgba(59, 130, 246, 0.08) 100%);
-  border-radius: 12px;
+  background: rgba($primary-color, 0.06);
+  border: 1px solid rgba($primary-color, 0.12);
+  border-radius: $border-radius-base;
   display: flex;
   align-items: center;
   justify-content: center;
   position: relative;
+  transition: all $transition-base;
 }
 
 .video-upload-content {
   display: flex;
   flex-direction: column;
   align-items: center;
-  gap: 16px;
+  gap: $spacing-lg; // 24px - 数学化间距
 }
 
 .video-upload-icon {
-  width: 64px;
-  height: 64px;
-  background: rgba(99, 102, 241, 0.15);
-  border-radius: 50%;
+  width: 56px;
+  height: 56px;
+  background: rgba($primary-color, 0.1);
+  border-radius: $border-radius-round;
   display: flex;
   align-items: center;
   justify-content: center;
-  
+  transition: all $transition-base;
+
   svg {
-    width: 32px;
-    height: 32px;
-    color: $info-color;
+    width: 28px;
+    height: 28px;
+    color: $primary-color;
   }
 }
 
 .video-upload-text {
-  font-size: 14px;
-  font-weight: 500;
+  font-size: $font-size-sm;
+  font-weight: $font-weight-medium;
   color: $text-secondary;
+  font-family: $font-family-body;
 }
 
 // 视频缩略图
@@ -1233,6 +1237,20 @@ defineExpose({
     &.action-danger:hover {
       background: rgba($danger-color, 0.12);
     }
+  }
+
+  // 深色模式 - 视频上传占位
+  .video-upload-placeholder {
+    background: rgba($primary-color, 0.1);
+    border-color: rgba($primary-color, 0.2);
+  }
+
+  .video-upload-icon {
+    background: rgba($primary-color, 0.18);
+  }
+
+  .video-upload-text {
+    color: $text-secondary-dark;
   }
 }
 
