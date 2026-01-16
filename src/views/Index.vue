@@ -52,13 +52,17 @@
           :has-more="hasMoreMessages"
           :loading-more="loadingMoreMessages"
           @load-more="handleLoadMore"
+          @reply="handleReplyMessage"
+          @burn="handleBurnMessage"
         />
       </section>
 
       <!-- 输入区域 -->
       <footer class="input-area">
         <InputBar 
+          ref="inputBarRef"
           :disabled="false"
+          :reply-to="replyToMessage"
           @send="handleSendMessage"
           @send-image="handleSendImage"
           @send-video="handleSendVideo"
@@ -66,10 +70,11 @@
           @start-recording="handleStartRecording"
           @stop-recording="handleStopRecording"
           @typing="handleTyping"
+          @cancel-reply="handleCancelReply"
         />
       </footer>
     </main>
-
+    
     <!-- 创建房间弹窗 -->
     <a-modal
       v-model:open="createRoomVisible"
@@ -149,6 +154,9 @@ const { wsStore, chatStore, initChat, destroyChat, enterRoom, broadcastMessage, 
 // 消息列表引用
 const messageListRef = ref<InstanceType<typeof MessageList>>()
 
+// 输入栏引用
+const inputBarRef = ref<InstanceType<typeof InputBar>>()
+
 // 响应式状态
 const isDarkMode = ref(false)
 const sidebarOpen = ref(false)
@@ -178,6 +186,9 @@ const contactList = ref([
 const messagesLoading = ref(false)
 const hasMoreMessages = ref(false)
 const loadingMoreMessages = ref(false)
+
+// 引用回复状态
+const replyToMessage = ref<any>(null)
 
 // 输入状态防抖
 let typingTimer: ReturnType<typeof setTimeout> | null = null
@@ -541,6 +552,9 @@ const handleSendMessage = async (text: string) => {
     return
   }
   
+  // 保存引用信息（发送后清除）
+  const currentReplyTo = replyToMessage.value
+  
   // 先添加到本地消息列表（显示发送中状态）
   const tempId = Date.now()
   const animKey = `anim-${tempId}`  // 动画key，不会被修改
@@ -558,10 +572,22 @@ const handleSendMessage = async (text: string) => {
     username: userInfo.nick_name,
     status: 'sending',
     isNew: true,
-    animationKey: animKey  // 用于动画的唯一标识
+    animationKey: animKey,  // 用于动画的唯一标识
+    // 如果有引用，添加到本地消息
+    replyTo: currentReplyTo ? {
+      message_id: currentReplyTo.id,
+      content: getReplyPreviewText(currentReplyTo),
+      nickname: currentReplyTo.sender?.nickname || '用户',
+      user_id: currentReplyTo.sender?.id,
+      message_type: getMessageTypeNumber(currentReplyTo.type),
+      deleted: false
+    } : undefined
   }
   
   chatStore.addMessage(newMessage)
+  
+  // 清除引用状态
+  replyToMessage.value = null
   
   // 滚动到底部
   nextTick(() => {
@@ -569,8 +595,12 @@ const handleSendMessage = async (text: string) => {
   })
   
   try {
-    // 通过 HTTP API 发送消息
-    const result = await sendTextMessage(currentRoom.value.id, text)
+    // 通过 HTTP API 发送消息（带引用参数）
+    const result = await sendTextMessage(
+      currentRoom.value.id, 
+      text, 
+      currentReplyTo ? Number(currentReplyTo.id) : undefined
+    )
     
     if (result.code === 0 && result.data) {
       // 更新消息ID和状态
@@ -593,6 +623,7 @@ const handleSendMessage = async (text: string) => {
         message_id: result.data.id,
         message_type: 'text',
         content: text,
+        reply_to: currentReplyTo ? Number(currentReplyTo.id) : undefined,
         intimacy: result.data.intimacy
       })
     } else {
@@ -697,6 +728,74 @@ const handleTyping = () => {
   typingTimer = setTimeout(() => {
     sendTyping(false)
   }, 3000)
+}
+
+// ==================== 消息引用相关 ====================
+
+// 获取引用预览文本
+const getReplyPreviewText = (msg: any): string => {
+  if (!msg) return ''
+  
+  if (msg.type === 'image') return '[图片]'
+  if (msg.type === 'video') return '[视频]'
+  if (msg.type === 'file') return '[文件]'
+  
+  const text = msg.text || msg.content || ''
+  return text.length > 30 ? text.substring(0, 30) + '...' : text
+}
+
+// 获取消息类型数字
+const getMessageTypeNumber = (type: string): number => {
+  const typeMap: Record<string, number> = {
+    'text': 1,
+    'image': 2,
+    'file': 3,
+    'system': 4,
+    'video': 5
+  }
+  return typeMap[type] || 1
+}
+
+// 回复消息
+const handleReplyMessage = (msg: any) => {
+  replyToMessage.value = {
+    id: msg.id,
+    type: msg.type,
+    text: msg.text || msg.content || '',
+    content: msg.text || msg.content || '',
+    sender: msg.sender || {
+      id: msg.senderId,
+      nickname: msg.username || '用户'
+    }
+  }
+  
+  // 聚焦输入框
+  nextTick(() => {
+    inputBarRef.value?.focusInput()
+  })
+}
+
+// 取消引用
+const handleCancelReply = () => {
+  replyToMessage.value = null
+}
+
+// 焚毁消息
+const handleBurnMessage = async (messageId: string | number) => {
+  try {
+    const { burnMessage: burnMessageApi } = await import('@/apis/message')
+    const result = await burnMessageApi(Number(messageId))
+    if (result.code === 0) {
+      chatStore.removeMessage(Number(messageId))
+      // 广播给其他用户
+      wsStore.broadcastMessageBurned(Number(messageId))
+      message.success('消息已焚毁')
+    } else {
+      message.error(result.msg || '焚毁失败')
+    }
+  } catch (error: any) {
+    message.error(error.message || '焚毁失败')
+  }
 }
 </script>
 

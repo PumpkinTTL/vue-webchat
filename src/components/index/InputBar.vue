@@ -1,140 +1,177 @@
 <template>
-  <div class="input-bar">
-    <!-- 工具栏 -->
-    <div class="input-toolbar">
-      <!-- 附件按钮 -->
-      <button 
-        class="tool-btn"
-        @click="toggleAttachMenu"
-        :disabled="disabled"
-        title="附件"
-      >
-        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor">
-          <path d="M21.44 11.05l-9.19 9.19a6 6 0 01-8.49-8.49l9.19-9.19a4 4 0 015.66 5.66l-9.2 9.19a2 2 0 01-2.83-2.83l8.49-8.48" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
-        </svg>
-      </button>
-
-      <!-- 语音按钮 -->
-      <button 
-        class="tool-btn"
-        :class="{ 'recording': isRecording }"
-        @mousedown="startRecording"
-        @mouseup="stopRecording"
-        @mouseleave="cancelRecording"
-        @touchstart.prevent="startRecording"
-        @touchend.prevent="stopRecording"
-        :disabled="disabled"
-        :title="isRecording ? '松开发送' : '按住说话'"
-      >
-        <svg v-if="!isRecording" viewBox="0 0 24 24" fill="none" stroke="currentColor">
-          <path d="M12 1a3 3 0 00-3 3v8a3 3 0 006 0V4a3 3 0 00-3-3z" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
-          <path d="M19 10v2a7 7 0 01-14 0v-2M12 19v4M8 23h8" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
-        </svg>
-        <svg v-else viewBox="0 0 24 24" fill="currentColor">
-          <rect x="6" y="6" width="12" height="12" rx="2"/>
-        </svg>
-      </button>
-    </div>
-
-    <!-- 输入区域 -->
-    <div class="input-wrapper">
-      <input
-        v-model="inputText"
-        type="text"
-        class="text-input"
-        :placeholder="placeholder"
-        :disabled="disabled"
-        @keyup.enter="handleSend"
-        @input="handleInput"
-        @focus="handleFocus"
-        @blur="handleBlur"
-      >
-      
-      <!-- 表情按钮（在输入框内） -->
-      <button 
-        class="emoji-btn"
-        @click="toggleEmojiPicker"
-        :disabled="disabled"
-        title="表情"
-      >
-        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor">
-          <circle cx="12" cy="12" r="10" stroke-width="2"/>
-          <path d="M8 14s1.5 2 4 2 4-2 4-2M9 9h.01M15 9h.01" stroke-width="2" stroke-linecap="round"/>
-        </svg>
-      </button>
-    </div>
-
-    <!-- 发送按钮 -->
-    <button 
-      class="send-btn"
-      :disabled="!canSend || disabled"
-      @click="handleSend"
-    >
-      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor">
-        <path d="M22 2L11 13M22 2l-7 20-4-9-9-4 20-7z" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
-      </svg>
-    </button>
-
-    <!-- 附件菜单遮罩 -->
-    <div v-if="showAttachMenu" class="attach-overlay" @click="closeAttachMenu"></div>
-
-    <!-- 附件菜单 -->
-    <Transition
-      enter-active-class="animate__animated animate__fadeInUp"
-      leave-active-class="animate__animated animate__fadeOutDown"
-      :duration="200"
-    >
-      <div v-if="showAttachMenu" class="attach-menu">
-        <button class="attach-item" @click="selectImage">
-          <div class="attach-icon attach-icon-image">
-            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor">
-              <rect x="3" y="3" width="18" height="18" rx="2" ry="2" stroke-width="2"/>
-              <circle cx="8.5" cy="8.5" r="1.5" stroke-width="2"/>
-              <path d="M21 15l-5-5L5 21" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
-            </svg>
+  <div class="input-section">
+    <!-- 引用预览条 -->
+    <Transition name="reply-slide">
+      <div v-if="replyTo" class="reply-preview-bar">
+        <div class="reply-preview-content">
+          <svg class="reply-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <path d="M9 17H4a2 2 0 01-2-2V5a2 2 0 012-2h16a2 2 0 012 2v10a2 2 0 01-2 2h-5l-5 5v-5z"/>
+          </svg>
+          <div class="reply-preview-info">
+            <span class="reply-preview-nickname">{{ replyTo.sender?.nickname || '用户' }}</span>
+            <span class="reply-preview-text">{{ replyPreviewText }}</span>
           </div>
-          <span>图片</span>
-        </button>
-
-        <button class="attach-item" @click="selectVideo">
-          <div class="attach-icon attach-icon-video">
-            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor">
-              <path d="M23 7l-7 5 7 5V7zM14 5H3a2 2 0 00-2 2v10a2 2 0 002 2h11a2 2 0 002-2V7a2 2 0 00-2-2z" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
-            </svg>
-          </div>
-          <span>视频</span>
-        </button>
-
-        <button class="attach-item" @click="selectFile">
-          <div class="attach-icon attach-icon-file">
-            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor">
-              <path d="M13 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V9z" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
-              <path d="M13 2v7h7" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
-            </svg>
-          </div>
-          <span>文件</span>
+        </div>
+        <button class="reply-cancel-btn" @click="cancelReply" type="button">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <path d="M18 6L6 18M6 6l12 12"/>
+          </svg>
         </button>
       </div>
     </Transition>
 
-    <!-- 隐藏的文件输入 -->
-    <input ref="imageInput" type="file" accept="image/*" hidden @change="handleImageSelect">
-    <input ref="videoInput" type="file" accept="video/*" hidden @change="handleVideoSelect">
-    <input ref="fileInput" type="file" accept="*/*" hidden @change="handleFileSelect">
+    <div class="input-bar">
+      <!-- 工具栏 -->
+      <div class="input-toolbar">
+        <!-- 附件按钮 -->
+        <button 
+          class="tool-btn"
+          @click="toggleAttachMenu"
+          :disabled="disabled"
+          title="附件"
+        >
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor">
+            <path d="M21.44 11.05l-9.19 9.19a6 6 0 01-8.49-8.49l9.19-9.19a4 4 0 015.66 5.66l-9.2 9.19a2 2 0 01-2.83-2.83l8.49-8.48" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+          </svg>
+        </button>
+
+        <!-- 语音按钮 -->
+        <button 
+          class="tool-btn"
+          :class="{ 'recording': isRecording }"
+          @mousedown="startRecording"
+          @mouseup="stopRecording"
+          @mouseleave="cancelRecording"
+          @touchstart.prevent="startRecording"
+          @touchend.prevent="stopRecording"
+          :disabled="disabled"
+          :title="isRecording ? '松开发送' : '按住说话'"
+        >
+          <svg v-if="!isRecording" viewBox="0 0 24 24" fill="none" stroke="currentColor">
+            <path d="M12 1a3 3 0 00-3 3v8a3 3 0 006 0V4a3 3 0 00-3-3z" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+            <path d="M19 10v2a7 7 0 01-14 0v-2M12 19v4M8 23h8" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+          </svg>
+          <svg v-else viewBox="0 0 24 24" fill="currentColor">
+            <rect x="6" y="6" width="12" height="12" rx="2"/>
+          </svg>
+        </button>
+      </div>
+
+      <!-- 输入区域 -->
+      <div class="input-wrapper">
+        <input
+          ref="inputRef"
+          v-model="inputText"
+          type="text"
+          class="text-input"
+          :placeholder="placeholder"
+          :disabled="disabled"
+          @keyup.enter="handleSend"
+          @input="handleInput"
+          @focus="handleFocus"
+          @blur="handleBlur"
+        >
+        
+        <!-- 表情按钮（在输入框内） -->
+        <button 
+          class="emoji-btn"
+          @click="toggleEmojiPicker"
+          :disabled="disabled"
+          title="表情"
+        >
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor">
+            <circle cx="12" cy="12" r="10" stroke-width="2"/>
+            <path d="M8 14s1.5 2 4 2 4-2 4-2M9 9h.01M15 9h.01" stroke-width="2" stroke-linecap="round"/>
+          </svg>
+        </button>
+      </div>
+
+      <!-- 发送按钮 -->
+      <button 
+        class="send-btn"
+        :disabled="!canSend || disabled"
+        @click="handleSend"
+      >
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor">
+          <path d="M22 2L11 13M22 2l-7 20-4-9-9-4 20-7z" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+        </svg>
+      </button>
+
+      <!-- 附件菜单遮罩 -->
+      <div v-if="showAttachMenu" class="attach-overlay" @click="closeAttachMenu"></div>
+
+      <!-- 附件菜单 -->
+      <Transition
+        enter-active-class="animate__animated animate__fadeInUp"
+        leave-active-class="animate__animated animate__fadeOutDown"
+        :duration="200"
+      >
+        <div v-if="showAttachMenu" class="attach-menu">
+          <button class="attach-item" @click="selectImage">
+            <div class="attach-icon attach-icon-image">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor">
+                <rect x="3" y="3" width="18" height="18" rx="2" ry="2" stroke-width="2"/>
+                <circle cx="8.5" cy="8.5" r="1.5" stroke-width="2"/>
+                <path d="M21 15l-5-5L5 21" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+              </svg>
+            </div>
+            <span>图片</span>
+          </button>
+
+          <button class="attach-item" @click="selectVideo">
+            <div class="attach-icon attach-icon-video">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor">
+                <path d="M23 7l-7 5 7 5V7zM14 5H3a2 2 0 00-2 2v10a2 2 0 002 2h11a2 2 0 002-2V7a2 2 0 00-2-2z" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+              </svg>
+            </div>
+            <span>视频</span>
+          </button>
+
+          <button class="attach-item" @click="selectFile">
+            <div class="attach-icon attach-icon-file">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor">
+                <path d="M13 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V9z" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+                <path d="M13 2v7h7" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+              </svg>
+            </div>
+            <span>文件</span>
+          </button>
+        </div>
+      </Transition>
+
+      <!-- 隐藏的文件输入 -->
+      <input ref="imageInput" type="file" accept="image/*" hidden @change="handleImageSelect">
+      <input ref="videoInput" type="file" accept="video/*" hidden @change="handleVideoSelect">
+      <input ref="fileInput" type="file" accept="*/*" hidden @change="handleFileSelect">
+    </div>
   </div>
 </template>
 
 <script setup lang="ts">
-import { ref, computed } from 'vue'
+import { ref, computed, nextTick } from 'vue'
+
+interface ReplyMessage {
+  id: string | number
+  type: 'text' | 'image' | 'voice' | 'video' | 'file' | 'system'
+  text?: string
+  content?: string
+  sender?: {
+    id?: number
+    nickname: string
+    avatar?: string
+  }
+}
 
 interface Props {
   disabled?: boolean
   placeholder?: string
+  replyTo?: ReplyMessage | null
 }
 
 const props = withDefaults(defineProps<Props>(), {
   disabled: false,
-  placeholder: '说点什么...'
+  placeholder: '说点什么...',
+  replyTo: null
 })
 
 const emit = defineEmits<{
@@ -145,6 +182,7 @@ const emit = defineEmits<{
   startRecording: []
   stopRecording: []
   typing: []
+  cancelReply: []
 }>()
 
 const inputText = ref('')
@@ -152,12 +190,25 @@ const showAttachMenu = ref(false)
 const showEmojiPicker = ref(false)
 const isRecording = ref(false)
 
+const inputRef = ref<HTMLInputElement>()
 const imageInput = ref<HTMLInputElement>()
 const videoInput = ref<HTMLInputElement>()
 const fileInput = ref<HTMLInputElement>()
 
 // 是否可以发送
 const canSend = computed(() => inputText.value.trim().length > 0)
+
+// 引用预览文本
+const replyPreviewText = computed(() => {
+  if (!props.replyTo) return ''
+  
+  if (props.replyTo.type === 'image') return '[图片]'
+  if (props.replyTo.type === 'video') return '[视频]'
+  if (props.replyTo.type === 'file') return '[文件]'
+  
+  const text = props.replyTo.text || props.replyTo.content || ''
+  return text.length > 30 ? text.substring(0, 30) + '...' : text
+})
 
 // 切换附件菜单
 const toggleAttachMenu = () => {
@@ -263,10 +314,117 @@ const cancelRecording = () => {
   isRecording.value = false
   // TODO: 取消录音
 }
+
+// 取消引用
+const cancelReply = () => {
+  emit('cancelReply')
+}
+
+// 聚焦输入框
+const focusInput = () => {
+  nextTick(() => {
+    inputRef.value?.focus()
+  })
+}
+
+// 暴露方法给父组件
+defineExpose({
+  focusInput
+})
 </script>
 
 <style lang="scss" scoped>
 // 变量已通过 vite.config.ts 全局导入
+
+.input-section {
+  display: flex;
+  flex-direction: column;
+  gap: 0;
+}
+
+// ==================== 引用预览条 ====================
+.reply-preview-bar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 10px 14px;
+  margin-bottom: 8px;
+  background: rgba($primary-color, 0.06);
+  border-radius: $border-radius-base;
+  border-left: 3px solid $primary-color;
+}
+
+.reply-preview-content {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  flex: 1;
+  min-width: 0;
+}
+
+.reply-icon {
+  width: 18px;
+  height: 18px;
+  color: $primary-color;
+  flex-shrink: 0;
+}
+
+.reply-preview-info {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  min-width: 0;
+}
+
+.reply-preview-nickname {
+  font-size: 12px;
+  font-weight: 600;
+  color: $primary-color;
+}
+
+.reply-preview-text {
+  font-size: 13px;
+  color: $text-secondary;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.reply-cancel-btn {
+  width: 28px;
+  height: 28px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: transparent;
+  border: none;
+  border-radius: $border-radius-sm;
+  color: $text-tertiary;
+  cursor: pointer;
+  flex-shrink: 0;
+
+  svg {
+    width: 16px;
+    height: 16px;
+  }
+
+  &:hover {
+    background: rgba(0, 0, 0, 0.06);
+    color: $text-secondary;
+  }
+}
+
+// 引用预览动画
+.reply-slide-enter-active,
+.reply-slide-leave-active {
+  transition: all 0.2s ease;
+}
+
+.reply-slide-enter-from,
+.reply-slide-leave-to {
+  opacity: 0;
+  transform: translateY(8px);
+}
 
 .input-bar {
   display: flex;
@@ -317,6 +475,28 @@ const cancelRecording = () => {
     background: $danger-color;
     color: white;
     animation: recordingPulse 1s ease-in-out infinite;
+  }
+}
+
+// 深色模式 - 引用预览
+.dark-mode .reply-preview-bar {
+  background: rgba($primary-color, 0.1);
+}
+
+.dark-mode .reply-preview-nickname {
+  color: #60a5fa;
+}
+
+.dark-mode .reply-preview-text {
+  color: $text-secondary-dark;
+}
+
+.dark-mode .reply-cancel-btn {
+  color: $text-tertiary-dark;
+
+  &:hover {
+    background: rgba(255, 255, 255, 0.08);
+    color: $text-secondary-dark;
   }
 }
 

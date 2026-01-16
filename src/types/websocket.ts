@@ -136,7 +136,14 @@ export interface MessageResponse {
   file_extension?: string
   file_url?: string
   // 引用回复
-  reply_to?: number
+  reply_to?: {
+    message_id: number
+    content: string
+    user_id: number
+    nickname: string
+    message_type: number | string
+    deleted?: boolean
+  }
   // 好感度信息
   intimacy?: IntimacyInfo
 }

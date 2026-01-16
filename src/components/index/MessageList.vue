@@ -44,7 +44,15 @@
       </div>
 
       <!-- 消息项 - 使用 animationKey 或 id 作为 key -->
-      <MessageItem v-for="message in messages" :key="message.animationKey || message.id" :message="message" />
+      <MessageItem 
+        v-for="message in messages" 
+        :key="message.animationKey || message.id" 
+        :ref="(el) => setMessageRef(message.id, el)"
+        :message="message"
+        @reply="handleReply"
+        @burn="handleBurn"
+        @scroll-to-message="handleScrollToMessage"
+      />
     </div>
 
     <!-- 回到底部按钮 -->
@@ -61,6 +69,7 @@
 
 <script setup lang="ts">
 import { ref, onMounted, onUnmounted, nextTick } from 'vue'
+import { message as antMessage } from 'ant-design-vue'
 import MessageItem from './MessageItem.vue'
 
 interface Message {
@@ -71,10 +80,12 @@ interface Message {
   time: Date | string
   isOwn: boolean
   sender?: {
+    id?: number
     nickname: string
     avatar?: string
   }
   animationKey?: string
+  replyTo?: any
 }
 
 interface Props {
@@ -96,10 +107,24 @@ const props = withDefaults(defineProps<Props>(), {
 
 const emit = defineEmits<{
   loadMore: []
+  reply: [message: Message]
+  burn: [messageId: string | number]
 }>()
 
 const messageContainer = ref<HTMLElement>()
 const showScrollToBottom = ref(false)
+
+// 消息元素引用映射
+const messageRefs = ref<Map<string | number, InstanceType<typeof MessageItem>>>(new Map())
+
+// 设置消息引用
+const setMessageRef = (id: string | number, el: any) => {
+  if (el) {
+    messageRefs.value.set(id, el)
+  } else {
+    messageRefs.value.delete(id)
+  }
+}
 
 const scrollToBottom = (smooth = true) => {
   if (!messageContainer.value) return
@@ -124,6 +149,52 @@ const handleLoadMore = () => {
   emit('loadMore')
 }
 
+// 回复消息
+const handleReply = (message: Message) => {
+  emit('reply', message)
+}
+
+// 焚毁消息
+const handleBurn = (messageId: string | number) => {
+  emit('burn', messageId)
+}
+
+// 滚动到指定消息
+const handleScrollToMessage = (messageId: number) => {
+  if (!messageContainer.value) return
+  
+  // 查找目标消息元素
+  const targetEl = messageContainer.value.querySelector(`[data-msg-id="${messageId}"]`) as HTMLElement
+  if (!targetEl) {
+    antMessage.info('原消息不在当前视图中')
+    return
+  }
+  
+  // 计算滚动位置，让目标消息居中
+  const containerRect = messageContainer.value.getBoundingClientRect()
+  const targetRect = targetEl.getBoundingClientRect()
+  const scrollTop = messageContainer.value.scrollTop
+  const targetOffsetTop = targetRect.top - containerRect.top + scrollTop
+  const centerOffset = (containerRect.height - targetRect.height) / 2
+  const scrollTo = Math.max(0, targetOffsetTop - centerOffset)
+  
+  messageContainer.value.scrollTo({
+    top: scrollTo,
+    behavior: 'smooth'
+  })
+  
+  // 高亮目标消息
+  const messageRef = messageRefs.value.get(messageId)
+  if (messageRef?.highlight) {
+    messageRef.highlight()
+  }
+}
+
+// 滚动到指定消息（供外部调用）
+const scrollToMessage = (messageId: number) => {
+  handleScrollToMessage(messageId)
+}
+
 onMounted(() => {
   if (messageContainer.value) {
     messageContainer.value.addEventListener('scroll', handleScroll, { passive: true })
@@ -137,7 +208,7 @@ onUnmounted(() => {
   }
 })
 
-defineExpose({ scrollToBottom })
+defineExpose({ scrollToBottom, scrollToMessage })
 </script>
 
 <style lang="scss" scoped>

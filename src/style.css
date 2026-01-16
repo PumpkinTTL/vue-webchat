@@ -15,3 +15,21 @@
   width: 1440px;
   margin: 0 auto;
 }
+
+
+/* ==================== 消息操作 Popover 样式 ==================== */
+.msg-action-popover .ant-popover-inner {
+  padding: 6px;
+  border-radius: 10px;
+  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.12);
+}
+
+.msg-action-popover .ant-popover-inner-content {
+  padding: 0;
+}
+
+/* 深色模式 */
+.dark-mode .msg-action-popover .ant-popover-inner {
+  background: #1e293b;
+  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.3);
+}
