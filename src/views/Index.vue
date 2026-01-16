@@ -813,13 +813,13 @@ const handleSendImage = async (file: File) => {
         // 释放临时URL
         URL.revokeObjectURL(tempImageUrl)
         
-        // 清除进度
+        // 清除进度（隐藏进度遮罩）
         delete uploadProgress.value[tempId]
         
-        // 直接更新临时消息，不删除重新添加
+        // 直接更新临时消息，不改变ID避免重新渲染
         const msg = chatStore.messages.find(m => m.id === tempId)
         if (msg) {
-          msg.id = Number(result.data.id) // 更新为真实ID
+          // 不更新ID，保持临时ID，避免Vue重新渲染导致跳动
           msg.imageUrl = fullImageUrl // 更新为服务器URL
           msg.status = 'sent' // 更新状态
           if (result.data.intimacy) {
@@ -828,7 +828,9 @@ const handleSendImage = async (file: File) => {
               currentLevel: result.data.intimacy.current_level
             }
           }
-          msg.isNew = false // 取消新消息标记，避免重复动画
+          msg.isNew = false // 取消新消息标记
+          // 保存真实ID到自定义属性，用于后续操作
+          (msg as any).realId = Number(result.data.id)
         }
         
         // 广播消息（携带图片路径）
