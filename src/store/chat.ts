@@ -40,6 +40,8 @@ export interface ChatMessageItem {
   }
   // 动画标记
   isNew?: boolean
+  // 动画唯一标识（用于 v-for key，避免 id 变化导致重新渲染）
+  animationKey?: string
 }
 
 // 房间信息

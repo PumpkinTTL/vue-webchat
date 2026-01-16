@@ -43,8 +43,8 @@
         </button>
       </div>
 
-      <!-- 消息项 -->
-      <MessageItem v-for="message in messages" :key="message.id" :message="message" />
+      <!-- 消息项 - 使用 animationKey 或 id 作为 key -->
+      <MessageItem v-for="message in messages" :key="message.animationKey || message.id" :message="message" />
     </div>
 
     <!-- 回到底部按钮 -->
@@ -74,6 +74,7 @@ interface Message {
     nickname: string
     avatar?: string
   }
+  animationKey?: string
 }
 
 interface Props {

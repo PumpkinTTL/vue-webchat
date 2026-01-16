@@ -53,8 +53,11 @@ export interface SendMessageResponse {
   code: number
   msg: string
   data: {
-    message_id: number
-    create_time: string
+    id: number  // 后端返回的是 id，不是 message_id
+    type?: string
+    text?: string
+    time?: string
+    reply_to?: any
     intimacy?: {
       current_exp: number
       current_level: number

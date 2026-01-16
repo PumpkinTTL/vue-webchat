@@ -543,6 +543,7 @@ const handleSendMessage = async (text: string) => {
   
   // 先添加到本地消息列表（显示发送中状态）
   const tempId = Date.now()
+  const animKey = `anim-${tempId}`  // 动画key，不会被修改
   const newMessage: ChatMessageItem = {
     id: tempId,
     type: 'text',
@@ -556,7 +557,8 @@ const handleSendMessage = async (text: string) => {
     },
     username: userInfo.nick_name,
     status: 'sending',
-    isNew: true
+    isNew: true,
+    animationKey: animKey  // 用于动画的唯一标识
   }
   
   chatStore.addMessage(newMessage)
@@ -574,9 +576,8 @@ const handleSendMessage = async (text: string) => {
       // 更新消息ID和状态
       const msg = chatStore.messages.find(m => m.id === tempId)
       if (msg) {
-        msg.id = result.data.message_id
+        msg.id = result.data.id
         msg.status = 'sent'
-        msg.isNew = false
         
         // 如果有好感度信息，更新
         if (result.data.intimacy) {
@@ -589,7 +590,7 @@ const handleSendMessage = async (text: string) => {
       
       // 通过 WebSocket 广播消息给其他用户
       broadcastMessage({
-        message_id: result.data.message_id,
+        message_id: result.data.id,
         message_type: 'text',
         content: text,
         intimacy: result.data.intimacy
@@ -616,7 +617,7 @@ const handleSendImage = async (file: File) => {
     if (result.code === 0 && result.data) {
       // 广播消息
       broadcastMessage({
-        message_id: result.data.message_id,
+        message_id: result.data.id,
         message_type: 'image',
         content: '',
         intimacy: result.data.intimacy
@@ -640,7 +641,7 @@ const handleSendVideo = async (file: File) => {
     const result = await sendVideoMessage(currentRoom.value.id, file)
     if (result.code === 0 && result.data) {
       broadcastMessage({
-        message_id: result.data.message_id,
+        message_id: result.data.id,
         message_type: 'video',
         content: '',
         intimacy: result.data.intimacy
@@ -664,7 +665,7 @@ const handleSendFile = async (file: File) => {
     const result = await sendFileMessage(currentRoom.value.id, file)
     if (result.code === 0 && result.data) {
       broadcastMessage({
-        message_id: result.data.message_id,
+        message_id: result.data.id,
         message_type: 'file',
         content: '',
         file_name: file.name,

@@ -190,14 +190,32 @@ const formatFileSize = (bytes?: number) => {
     justify-content: center;
   }
 
-  // 新消息发送动画
+  // 新消息动画 - 接收消息（左边）从左往右
   &.msg-new {
-    animation: msgSendIn 0.45s cubic-bezier(0.34, 1.56, 0.64, 1) forwards;
-    transform-origin: bottom right;
+    animation: msgReceiveIn 0.55s cubic-bezier(0.22, 1, 0.36, 1) forwards;
+    transform-origin: left center;
+  }
+
+  // 新消息动画 - 发送消息（右边）从右往左
+  &.msg-new.msg-own {
+    animation: msgSendIn 0.55s cubic-bezier(0.22, 1, 0.36, 1) forwards;
+    transform-origin: right center;
   }
 }
 
-// 发送消息动画 - 纯缩放
+// 接收消息动画 - 从左往右
+@keyframes msgReceiveIn {
+  0% {
+    opacity: 0;
+    transform: scale(0.4);
+  }
+  100% {
+    opacity: 1;
+    transform: scale(1);
+  }
+}
+
+// 发送消息动画 - 从右往左
 @keyframes msgSendIn {
   0% {
     opacity: 0;
