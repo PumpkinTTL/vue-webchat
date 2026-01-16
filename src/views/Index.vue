@@ -729,21 +729,104 @@ const handleSendImage = async (file: File) => {
     return
   }
   
+  // 生成临时消息ID
+  const tempId = `temp_${Date.now()}`
+  const userInfo = getUserInfo()
+  
+  // 创建临时图片URL用于预览
+  const tempImageUrl = URL.createObjectURL(file)
+  
+  // 添加临时消息到列表（占位）
+  const tempMessage: ChatMessageItem = {
+    id: tempId,
+    type: 'image',
+    text: '',
+    time: new Date(),
+    isOwn: true,
+    sender: {
+      id: userInfo?.id || 0,
+      nickname: userInfo?.nick_name || '我',
+      avatar: userInfo?.avatar || ''
+    },
+    username: userInfo?.nick_name || '我',
+    status: 'sending',
+    imageUrl: tempImageUrl,
+    isNew: true
+  }
+  
+  chatStore.addMessage(tempMessage)
+  
+  // 滚动到底部
+  nextTick(() => {
+    messageListRef.value?.scrollToBottom(true)
+  })
+  
   try {
+    // 上传图片
     const result = await sendImageMessage(currentRoom.value.id, file)
+    
     if (result.code === 0 && result.data) {
-      // 广播消息
+      // 移除临时消息
+      chatStore.removeMessage(tempId as any)
+      
+      // 释放临时URL
+      URL.revokeObjectURL(tempImageUrl)
+      
+      // 添加真实消息
+      const serverUrl = import.meta.env.VITE_SERVER_URL || ''
+      const imageUrl = result.data.image_url || result.data.content || ''
+      const fullImageUrl = imageUrl && !imageUrl.startsWith('http://') && !imageUrl.startsWith('https://') 
+        ? serverUrl + imageUrl 
+        : imageUrl
+      
+      const realMessage: ChatMessageItem = {
+        id: result.data.id,
+        type: 'image',
+        text: '',
+        time: new Date(),
+        isOwn: true,
+        sender: {
+          id: userInfo?.id || 0,
+          nickname: userInfo?.nick_name || '我',
+          avatar: userInfo?.avatar || ''
+        },
+        username: userInfo?.nick_name || '我',
+        status: 'sent',
+        imageUrl: fullImageUrl,
+        intimacy: result.data.intimacy,
+        isNew: true
+      }
+      
+      chatStore.addMessage(realMessage)
+      
+      // 滚动到底部
+      nextTick(() => {
+        messageListRef.value?.scrollToBottom(true)
+      })
+      
+      // 广播消息（携带图片路径）
       broadcastMessage({
         message_id: result.data.id,
         message_type: 'image',
-        content: '',
+        content: imageUrl, // 携带图片路径
         intimacy: result.data.intimacy
       })
+      
       message.success('图片发送成功')
     } else {
+      // 发送失败，更新临时消息状态
+      const msg = chatStore.messages.find(m => m.id === tempId)
+      if (msg) {
+        msg.status = 'failed'
+      }
       message.error(result.msg || '发送图片失败')
     }
   } catch (error: any) {
+    // 发送失败，更新临时消息状态
+    const msg = chatStore.messages.find(m => m.id === tempId)
+    if (msg) {
+      msg.status = 'failed'
+    }
     message.error(error.message || '发送图片失败')
   }
 }

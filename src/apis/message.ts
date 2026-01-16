@@ -58,6 +58,8 @@ export interface SendMessageResponse {
     text?: string
     time?: string
     reply_to?: any
+    image_url?: string  // 图片URL
+    content?: string    // 内容（可能包含图片路径）
     intimacy?: {
       current_exp: number
       current_level: number

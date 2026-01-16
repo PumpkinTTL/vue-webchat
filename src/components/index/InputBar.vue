@@ -1,5 +1,23 @@
 <template>
   <div class="input-section">
+    <!-- 图片预览 -->
+    <Transition name="preview-slide">
+      <div v-if="imagePreview" class="upload-preview">
+        <div class="preview-card">
+          <img :src="imagePreview" alt="Preview">
+          <div class="file-info">
+            <span class="fname">{{ selectedImageFile?.name }}</span>
+            <span class="fsize">{{ formatFileSize(selectedImageFile?.size || 0) }}</span>
+          </div>
+          <button class="remove-btn" @click="clearImagePreview">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+              <path d="M18 6L6 18M6 6l12 12"/>
+            </svg>
+          </button>
+        </div>
+      </div>
+    </Transition>
+
     <!-- 引用预览条 -->
     <Transition name="reply-slide">
       <div v-if="replyTo" class="reply-preview-bar">
@@ -190,13 +208,17 @@ const showAttachMenu = ref(false)
 const showEmojiPicker = ref(false)
 const isRecording = ref(false)
 
+// 图片预览相关
+const imagePreview = ref('')
+const selectedImageFile = ref<File | null>(null)
+
 const inputRef = ref<HTMLInputElement>()
 const imageInput = ref<HTMLInputElement>()
 const videoInput = ref<HTMLInputElement>()
 const fileInput = ref<HTMLInputElement>()
 
 // 是否可以发送
-const canSend = computed(() => inputText.value.trim().length > 0)
+const canSend = computed(() => inputText.value.trim().length > 0 || selectedImageFile.value !== null)
 
 // 引用预览文本
 const replyPreviewText = computed(() => {
@@ -231,8 +253,19 @@ const toggleEmojiPicker = () => {
 const handleSend = () => {
   if (!canSend.value || props.disabled) return
   
-  emit('send', inputText.value.trim())
-  inputText.value = ''
+  // 如果有图片预览，发送图片
+  if (selectedImageFile.value) {
+    emit('sendImage', selectedImageFile.value)
+    clearImagePreview()
+    return
+  }
+  
+  // 否则发送文本
+  if (inputText.value.trim()) {
+    emit('send', inputText.value.trim())
+    inputText.value = ''
+  }
+  
   showAttachMenu.value = false
   showEmojiPicker.value = false
 }
@@ -273,9 +306,38 @@ const handleImageSelect = (e: Event) => {
   const target = e.target as HTMLInputElement
   const file = target.files?.[0]
   if (file) {
-    emit('sendImage', file)
+    // 验证文件类型
+    if (!file.type.startsWith('image/')) {
+      // TODO: 显示错误提示
+      target.value = ''
+      return
+    }
+    
+    // 保存文件并生成预览
+    selectedImageFile.value = file
+    const reader = new FileReader()
+    reader.onload = (e) => {
+      imagePreview.value = e.target?.result as string
+    }
+    reader.readAsDataURL(file)
+    
     target.value = ''
   }
+}
+
+// 清除图片预览
+const clearImagePreview = () => {
+  imagePreview.value = ''
+  selectedImageFile.value = null
+}
+
+// 格式化文件大小
+const formatFileSize = (bytes: number): string => {
+  if (bytes === 0) return '0 B'
+  const k = 1024
+  const sizes = ['B', 'KB', 'MB', 'GB']
+  const i = Math.floor(Math.log(bytes) / Math.log(k))
+  return Math.round(bytes / Math.pow(k, i) * 100) / 100 + ' ' + sizes[i]
 }
 
 const handleVideoSelect = (e: Event) => {
@@ -340,6 +402,104 @@ defineExpose({
   display: flex;
   flex-direction: column;
   gap: 0;
+}
+
+// ==================== 图片预览 ====================
+.upload-preview {
+  padding: 12px;
+  margin-bottom: 8px;
+  background: $bg-color-elevated;
+  border-radius: $border-radius-base;
+  border: 1px solid $border-base;
+}
+
+.preview-card {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  position: relative;
+
+  img {
+    width: 60px;
+    height: 60px;
+    object-fit: cover;
+    border-radius: $border-radius-sm;
+    flex-shrink: 0;
+  }
+
+  .file-info {
+    flex: 1;
+    min-width: 0;
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+
+    .fname {
+      font-size: 13px;
+      font-weight: 500;
+      color: $text-primary;
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+    }
+
+    .fsize {
+      font-size: 11px;
+      color: $text-tertiary;
+    }
+  }
+
+  .remove-btn {
+    width: 28px;
+    height: 28px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background: rgba($danger-color, 0.1);
+    color: $danger-color;
+    border: none;
+    border-radius: $border-radius-sm;
+    cursor: pointer;
+    flex-shrink: 0;
+
+    svg {
+      width: 16px;
+      height: 16px;
+    }
+
+    &:hover {
+      background: rgba($danger-color, 0.2);
+    }
+  }
+}
+
+.dark-mode .upload-preview {
+  background: $bg-color-elevated-dark;
+  border-color: $border-base-dark;
+}
+
+.dark-mode .preview-card {
+  .file-info {
+    .fname {
+      color: $text-primary-dark;
+    }
+
+    .fsize {
+      color: $text-tertiary-dark;
+    }
+  }
+}
+
+// 预览动画
+.preview-slide-enter-active,
+.preview-slide-leave-active {
+  transition: all 0.2s ease;
+}
+
+.preview-slide-enter-from,
+.preview-slide-leave-to {
+  opacity: 0;
+  transform: translateY(8px);
 }
 
 // ==================== 引用预览条 ====================

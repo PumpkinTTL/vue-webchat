@@ -265,8 +265,8 @@ export const useChatStore = defineStore('chat', () => {
   /**
    * 删除消息（焚毁）
    */
-  function removeMessage(messageId: number) {
-    const index = messages.value.findIndex(m => m.id === messageId)
+  function removeMessage(messageId: number | string) {
+    const index = messages.value.findIndex(m => m.id == messageId)
     if (index !== -1) {
       messages.value.splice(index, 1)
     }
