@@ -61,6 +61,21 @@
               <div v-if="message.type === 'image'" class="image-wrapper">
                 <a-image :src="imageUrl" alt="Image" :preview="{ src: imageUrl }" />
               </div>
+              <!-- 视频消息 -->
+              <div v-else-if="message.type === 'video'" class="video-wrapper">
+                <div v-if="videoThumbnailUrl" class="video-thumbnail" @click="handleVideoClick">
+                  <img :src="videoThumbnailUrl" alt="Video thumbnail">
+                  <div class="video-play-btn">
+                    <svg viewBox="0 0 24 24" fill="currentColor">
+                      <path d="M8 5v14l11-7z"/>
+                    </svg>
+                  </div>
+                  <div v-if="message.videoDuration" class="video-duration-badge">
+                    {{ formatDuration(message.videoDuration) }}
+                  </div>
+                </div>
+                <video v-else :src="videoUrl" controls preload="metadata" class="video-player"></video>
+              </div>
               <!-- 文件 -->
               <div v-else-if="message.type === 'file'" class="file-message">
                 <div class="file-icon">
