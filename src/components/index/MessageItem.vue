@@ -696,34 +696,37 @@ defineExpose({
   }
 }
 
-// 已读状态切换动画 - 小拉伸形变效果
+// 已读状态切换动画 - 左出右入的Q弹效果
 .read-fade-enter-active {
-  animation: readStatusChange 0.4s cubic-bezier(0.34, 1.56, 0.64, 1);
+  animation: readStatusEnter 0.5s cubic-bezier(0.68, -0.55, 0.265, 1.55);
 }
 
 .read-fade-leave-active {
-  transition: opacity 0.2s ease;
+  animation: readStatusLeave 0.3s ease-out;
 }
 
-.read-fade-enter-from {
-  opacity: 0;
+@keyframes readStatusLeave {
+  0% {
+    opacity: 1;
+    transform: translateX(0) scaleX(1);
+  }
+  100% {
+    opacity: 0;
+    transform: translateX(-20px) scaleX(0.8);
+  }
 }
 
-.read-fade-leave-to {
-  opacity: 0;
-}
-
-@keyframes readStatusChange {
+@keyframes readStatusEnter {
   0% {
     opacity: 0;
-    transform: scaleX(0.8) scaleY(1.2);
+    transform: translateX(20px) scaleX(0.8);
   }
-  50% {
-    transform: scaleX(1.05) scaleY(0.95);
+  60% {
+    transform: translateX(-3px) scaleX(1.05);
   }
   100% {
     opacity: 1;
-    transform: scaleX(1) scaleY(1);
+    transform: translateX(0) scaleX(1);
   }
 }
 

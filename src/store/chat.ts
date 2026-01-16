@@ -133,6 +133,7 @@ export const useChatStore = defineStore('chat', () => {
    */
   function convertWsMessage(data: MessageResponse, currentUserId: number): ChatMessageItem {
     const isOwn = data.from_user_id === currentUserId
+    const serverUrl = import.meta.env.VITE_SERVER_URL || ''
     
     const message: ChatMessageItem = {
       id: data.message_id,
@@ -150,24 +151,50 @@ export const useChatStore = defineStore('chat', () => {
       isNew: true
     }
 
-    // 图片消息
+    // 图片消息 - 处理URL
     if (data.message_type === 'image') {
-      message.imageUrl = data.content
+      const url = data.content
+      if (url && !url.startsWith('http://') && !url.startsWith('https://')) {
+        message.imageUrl = serverUrl + url
+      } else {
+        message.imageUrl = url
+      }
     }
 
-    // 视频消息
+    // 视频消息 - 处理URL
     if (data.message_type === 'video') {
-      message.videoUrl = data.video_url
-      message.videoThumbnail = data.video_thumbnail
+      // 视频URL
+      if (data.video_url) {
+        if (!data.video_url.startsWith('http://') && !data.video_url.startsWith('https://')) {
+          message.videoUrl = serverUrl + data.video_url
+        } else {
+          message.videoUrl = data.video_url
+        }
+      }
+      // 缩略图URL
+      if (data.video_thumbnail) {
+        if (!data.video_thumbnail.startsWith('http://') && !data.video_thumbnail.startsWith('https://')) {
+          message.videoThumbnail = serverUrl + data.video_thumbnail
+        } else {
+          message.videoThumbnail = data.video_thumbnail
+        }
+      }
       message.videoDuration = data.video_duration
     }
 
-    // 文件消息
+    // 文件消息 - 处理URL
     if (data.message_type === 'file') {
       message.fileName = data.file_name
       message.fileSize = data.file_size
       message.fileExtension = data.file_extension
-      message.fileUrl = data.file_url
+      // 文件URL
+      if (data.file_url) {
+        if (!data.file_url.startsWith('http://') && !data.file_url.startsWith('https://')) {
+          message.fileUrl = serverUrl + data.file_url
+        } else {
+          message.fileUrl = data.file_url
+        }
+      }
     }
 
     // 引用回复
