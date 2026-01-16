@@ -930,27 +930,28 @@ defineExpose({
       background: rgba($danger-color, 0.12);
     }
   }
+}
 
-  // 深色模式 - 引用
-  .reply-quote-other {
-    background: rgba($primary-color, 0.15);
+// 深色模式 - 引用（独立写在外面，确保生效）
+.dark-mode .reply-quote-other {
+  background: #394659;
 
-    &:hover {
-      background: rgba($primary-color, 0.22);
-    }
-
-    .reply-quote-nickname {
-      color: $primary-light;
-    }
-
-    .reply-quote-text {
-      color: $text-primary-dark;
-    }
+  &:hover {
+    background: #445163;
   }
+}
 
-  .reply-quote-line {
-    background: $primary-light;
-  }
+.dark-mode .reply-quote-other .reply-quote-nickname {
+  color: #3B82F6;
+  font-weight: 700;
+}
+
+.dark-mode .reply-quote-other .reply-quote-text {
+  color: #CBD5E1;
+}
+
+.dark-mode .reply-quote-line {
+  background: #3B82F6;
 }
 
 // 移动端
