@@ -828,9 +828,9 @@ const handleSendImage = async (file: File) => {
               currentLevel: result.data.intimacy.current_level
             }
           }
-          msg.isNew = false // 取消新消息标记
+          msg.isNew = false; // 取消新消息标记
           // 保存真实ID到自定义属性，用于后续操作
-          (msg as any).realId = Number(result.data.id)
+          (msg as any).realId = Number(result.data.id);
         }
         
         // 广播消息（携带图片路径）

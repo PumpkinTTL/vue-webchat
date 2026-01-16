@@ -221,8 +221,34 @@ export const useChatStore = defineStore('chat', () => {
    * 处理收到的 WebSocket 消息
    */
   function handleWsMessage(data: MessageResponse, currentUserId: number) {
+    console.log('[Chat Store] handleWsMessage 被调用:', {
+      message_id: data.message_id,
+      message_type: data.message_type,
+      from_user_id: data.from_user_id,
+      currentUserId,
+      isOwn: data.from_user_id === currentUserId
+    })
+    
+    const isOwn = data.from_user_id === currentUserId
+    
+    // 如果是自己发送的消息，检查是否已经存在临时消息（通过realId匹配）
+    if (isOwn) {
+      const existingMsg = messages.value.find(m => {
+        // 检查临时消息是否保存了真实ID
+        const realId = (m as any).realId
+        return realId && realId === data.message_id
+      })
+      
+      if (existingMsg) {
+        console.log('[Chat Store] 自己的消息已存在（临时消息），跳过添加')
+        return // 已存在临时消息，不重复添加
+      }
+    }
+    
+    console.log('[Chat Store] 准备添加消息到列表')
     const message = convertWsMessage(data, currentUserId)
     addMessage(message)
+    console.log('[Chat Store] 消息已添加，当前消息数:', messages.value.length)
   }
 
   /**
