@@ -57,10 +57,10 @@
       />
     </div>
 
-    <!-- 回到底部按钮 -->
+    <!-- 回到底部按钮 - 当显示回到历史位置时隐藏 -->
     <Transition enter-active-class="animate__animated animate__zoomIn animate__faster"
       leave-active-class="animate__animated animate__zoomOut animate__faster">
-      <button v-if="showScrollToBottom" class="scroll-to-bottom" :class="{ 'has-reply': hasReply }" @click="handleScrollToBottom">
+      <button v-if="showScrollToBottom && !showBackToHistory" class="scroll-to-bottom" :class="{ 'has-reply': hasReply }" @click="handleScrollToBottom">
         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor">
           <path d="M12 5v14M19 12l-7 7-7-7" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" />
         </svg>
@@ -593,7 +593,7 @@ defineExpose({ scrollToBottom, scrollToBottomWithHistory, scrollToMessage, obser
 // 回到历史位置按钮
 .back-to-history {
   position: fixed;
-  bottom: 140px;
+  bottom: 90px;
   right: 20px;
   display: flex;
   align-items: center;
@@ -635,7 +635,7 @@ defineExpose({ scrollToBottom, scrollToBottomWithHistory, scrollToMessage, obser
 
   // 有引用消息时上移
   &.has-reply {
-    bottom: 180px;
+    bottom: 130px;
   }
 }
 
@@ -710,7 +710,7 @@ defineExpose({ scrollToBottom, scrollToBottomWithHistory, scrollToMessage, obser
   }
 
   .back-to-history {
-    bottom: 125px;
+    bottom: 80px;
     right: 16px;
     padding: 8px 12px;
     font-size: 12px;
@@ -730,7 +730,7 @@ defineExpose({ scrollToBottom, scrollToBottomWithHistory, scrollToMessage, obser
     }
 
     &.has-reply {
-      bottom: 165px;
+      bottom: 120px;
     }
   }
 }
