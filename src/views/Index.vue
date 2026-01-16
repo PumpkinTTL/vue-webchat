@@ -149,7 +149,7 @@
 
 <script setup lang="ts">
 import { ref, reactive, computed, nextTick, watch, onMounted, onUnmounted } from 'vue'
-import { message } from 'ant-design-vue'
+import { message, Modal } from 'ant-design-vue'
 import Sidebar from '@/components/index/Sidebar.vue'
 import ChatHeader from '@/components/index/ChatHeader.vue'
 import MessageList from '@/components/index/MessageList.vue'
@@ -868,20 +868,31 @@ const handleCancelReply = () => {
 
 // 焚毁消息
 const handleBurnMessage = async (messageId: string | number) => {
-  try {
-    const { burnMessage: burnMessageApi } = await import('@/apis/message')
-    const result = await burnMessageApi(Number(messageId))
-    if (result.code === 0) {
-      chatStore.removeMessage(Number(messageId))
-      // 广播给其他用户
-      wsStore.broadcastMessageBurned(Number(messageId))
-      message.success('消息已焚毁')
-    } else {
-      message.error(result.msg || '焚毁失败')
+  // 显示确认框
+  Modal.confirm({
+    title: '确认焚毁',
+    content: '焚毁后消息将永久删除，且所有人都无法查看，确定要焚毁这条消息吗？',
+    okText: '确定焚毁',
+    cancelText: '取消',
+    okType: 'danger',
+    centered: true,
+    onOk: async () => {
+      try {
+        const { burnMessage: burnMessageApi } = await import('@/apis/message')
+        const result = await burnMessageApi(Number(messageId))
+        if (result.code === 0) {
+          chatStore.removeMessage(Number(messageId))
+          // 广播给其他用户
+          wsStore.broadcastMessageBurned(Number(messageId))
+          message.success('消息已焚毁')
+        } else {
+          message.error(result.msg || '焚毁失败')
+        }
+      } catch (error: any) {
+        message.error(error.message || '焚毁失败')
+      }
     }
-  } catch (error: any) {
-    message.error(error.message || '焚毁失败')
-  }
+  })
 }
 </script>
 
