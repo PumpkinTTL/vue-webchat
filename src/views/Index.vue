@@ -682,7 +682,14 @@ const handleSendMessage = async (text: string) => {
         message_id: Number(result.data.id),
         message_type: 'text',
         content: text,
-        reply_to: currentReplyTo ? Number(currentReplyTo.id) : undefined,
+        reply_to: currentReplyTo ? {
+          message_id: Number(currentReplyTo.id),
+          content: currentReplyTo.text || currentReplyTo.content || '',
+          user_id: currentReplyTo.sender?.id || 0,
+          nickname: currentReplyTo.sender?.nickname || currentReplyTo.username || '用户',
+          message_type: currentReplyTo.type,
+          deleted: false
+        } : undefined,
         intimacy: result.data.intimacy
       })
     } else {

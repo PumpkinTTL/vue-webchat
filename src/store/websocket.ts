@@ -222,7 +222,14 @@ export const useWebSocketStore = defineStore('websocket', () => {
     file_size?: number
     file_extension?: string
     file_url?: string
-    reply_to?: number
+    reply_to?: number | {
+      message_id: number
+      content: string
+      user_id: number
+      nickname: string
+      message_type: string
+      deleted?: boolean
+    }
     intimacy?: IntimacyInfo
   }) {
     return send({

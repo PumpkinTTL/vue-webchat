@@ -42,8 +42,15 @@ export interface ChatMessage {
   file_size?: number
   file_extension?: string
   file_url?: string
-  // 引用回复
-  reply_to?: number
+  // 引用回复（支持数字ID或完整对象）
+  reply_to?: number | {
+    message_id: number
+    content: string
+    user_id: number
+    nickname: string
+    message_type: number | string
+    deleted?: boolean
+  }
   // 好感度信息
   intimacy?: IntimacyInfo
 }
