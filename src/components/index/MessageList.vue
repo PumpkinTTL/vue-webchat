@@ -71,6 +71,7 @@
 import { ref, onMounted, onUnmounted, nextTick } from 'vue'
 import { message as antMessage } from 'ant-design-vue'
 import MessageItem from './MessageItem.vue'
+import { useReadStatus } from '@/composables/useReadStatus'
 
 interface Message {
   id: string | number
@@ -118,6 +119,9 @@ const showScrollToBottom = ref(false)
 // 消息元素引用映射
 const messageRefs = ref<Map<string | number, InstanceType<typeof MessageItem>>>(new Map())
 
+// 已读状态管理
+const { initObserver, observeMessageElement, observeAllUnreadMessages, cleanup } = useReadStatus()
+
 // 设置消息引用
 const setMessageRef = (id: string | number, el: any) => {
   if (el) {
@@ -125,14 +129,6 @@ const setMessageRef = (id: string | number, el: any) => {
   } else {
     messageRefs.value.delete(id)
   }
-}
-
-// 检查是否在底部
-const checkIsAtBottom = () => {
-  if (!messageContainer.value) return true
-  const { scrollTop, scrollHeight, clientHeight } = messageContainer.value
-  const distanceFromBottom = scrollHeight - scrollTop - clientHeight
-  return distanceFromBottom < 100 // 距离底部小于100px认为在底部
 }
 
 const scrollToBottom = (smooth = true) => {
@@ -208,10 +204,22 @@ const scrollToMessage = (messageId: number) => {
   handleScrollToMessage(messageId)
 }
 
+// 观察新消息（供外部调用）
+const observeNewMessage = (messageId: number) => {
+  if (messageContainer.value) {
+    observeMessageElement(messageId, messageContainer.value)
+  }
+}
+
 onMounted(() => {
   if (messageContainer.value) {
     messageContainer.value.addEventListener('scroll', handleScroll, { passive: true })
-    nextTick(() => scrollToBottom(false))
+    nextTick(() => {
+      scrollToBottom(false)
+      // 初始化已读检测
+      initObserver(messageContainer.value!)
+      observeAllUnreadMessages(messageContainer.value!)
+    })
   }
 })
 
@@ -219,9 +227,11 @@ onUnmounted(() => {
   if (messageContainer.value) {
     messageContainer.value.removeEventListener('scroll', handleScroll)
   }
+  // 清理已读检测
+  cleanup()
 })
 
-defineExpose({ scrollToBottom, scrollToMessage })
+defineExpose({ scrollToBottom, scrollToMessage, observeNewMessage })
 </script>
 
 <style lang="scss" scoped>

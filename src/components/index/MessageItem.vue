@@ -176,19 +176,26 @@
         </div>
         <!-- 已读回执、时间、状态 -->
         <div class="msg-meta-own">
-          <span v-if="message.readCount && message.readCount > 0" class="msg-read-count">
-            {{ message.readCount }}人已读
+          <!-- 已读状态文字 -->
+          <span class="msg-read-status" :class="{ 'read': message.readCount && message.readCount > 0 }">
+            <span v-if="message.readCount && message.readCount > 0">{{ message.readCount }}人已读</span>
+            <span v-else>未读</span>
           </span>
           <span class="msg-time">{{ formatTime(message.time) }}</span>
+          <!-- 发送状态图标 -->
           <span v-if="message.status" class="msg-status">
+            <!-- 发送中 -->
             <svg v-if="message.status === 'sending'" class="status-sending" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-              <circle cx="12" cy="12" r="10" stroke-dasharray="32" stroke-dashoffset="12"/>
+              <circle cx="12" cy="12" r="10"/>
             </svg>
-            <svg v-else-if="message.status === 'sent' || message.status === 'delivered' || message.status === 'read'" class="status-success" viewBox="0 0 24 24" fill="currentColor">
-              <path d="M9 16.17L4.83 12l-1.42 1.41L9 19 21 7l-1.41-1.41z"/>
+            <!-- 发送成功 -->
+            <svg v-else-if="message.status === 'sent' || message.status === 'delivered' || message.status === 'read'" class="status-success" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+              <path d="M20 6L9 17l-5-5"/>
             </svg>
+            <!-- 发送失败 -->
             <svg v-else-if="message.status === 'failed'" class="status-failed" viewBox="0 0 24 24" fill="currentColor">
-              <path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm1 15h-2v-2h2v2zm0-4h-2V7h2v6z"/>
+              <circle cx="12" cy="12" r="10"/>
+              <path d="M12 7v6M12 15h.01" stroke="white" stroke-width="2" stroke-linecap="round"/>
             </svg>
           </span>
         </div>
@@ -676,6 +683,16 @@ defineExpose({
   padding-right: 2px;
 }
 
+.msg-read-status {
+  font-size: 11px;
+  color: $text-tertiary;
+  
+  &.read {
+    color: $primary-color;
+    font-weight: 500;
+  }
+}
+
 .msg-read-count {
   color: $primary-color;
   font-size: 10px;
@@ -687,13 +704,13 @@ defineExpose({
   align-items: center;
 
   svg {
-    width: 14px;
-    height: 14px;
+    width: 16px;
+    height: 16px;
   }
 }
 
 .status-sending {
-  color: $primary-color;
+  color: $text-tertiary;
   animation: spin 1s linear infinite;
 }
 
@@ -903,6 +920,14 @@ defineExpose({
   .msg-time,
   .msg-meta-own {
     color: $text-tertiary-dark;
+  }
+  
+  .msg-read-status {
+    color: $text-tertiary-dark;
+    
+    &.read {
+      color: $primary-color;
+    }
   }
 
   .file-message {

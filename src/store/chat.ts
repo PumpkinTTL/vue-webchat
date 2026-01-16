@@ -63,6 +63,9 @@ export const useChatStore = defineStore('chat', () => {
   const loading = ref(false)
   const hasMore = ref(false)
   const loadingMore = ref(false)
+  
+  // 已读状态管理
+  const readMessageIds = ref<Set<number>>(new Set())
 
   // ==================== 计算属性 ====================
   
@@ -200,13 +203,30 @@ export const useChatStore = defineStore('chat', () => {
    * 处理已读回执
    */
   function handleMessageRead(data: MessageReadResponse) {
-    // 只处理自己发送的消息被别人读取的情况
-    data.message_ids.forEach(messageId => {
-      const message = messages.value.find(m => m.id === messageId)
-      if (message && message.isOwn) {
-        message.status = 'read'
-        message.readCount = (message.readCount || 0) + 1
+    const messageIds = data.message_ids || []
+    const readerIdStr = String(data.reader_id)
+    
+    // 直接查找对应的消息，不需要遍历所有消息
+    messageIds.forEach(messageId => {
+      const message = messages.value.find(m => m.id == messageId)
+      
+      // 只处理自己发送的消息
+      if (!message || !message.isOwn) return
+      
+      // 初始化已读用户ID Set（用于去重）
+      if (!(message as any)._readUserIds) {
+        (message as any)._readUserIds = new Set<string>()
       }
+      
+      // 检查是否已经记录过这个用户的已读
+      if ((message as any)._readUserIds.has(readerIdStr)) {
+        return // 已存在，跳过
+      }
+      
+      // 新的已读用户
+      (message as any)._readUserIds.add(readerIdStr)
+      message.status = 'read'
+      message.readCount = (message.readCount || 0) + 1
     })
   }
 
@@ -244,6 +264,44 @@ export const useChatStore = defineStore('chat', () => {
     }
   }
 
+  /**
+   * 标记消息为已读
+   */
+  function markMessageAsRead(messageId: number) {
+    readMessageIds.value.add(messageId)
+    const message = messages.value.find(m => m.id === messageId)
+    if (message) {
+      message.status = 'read'
+    }
+  }
+
+  /**
+   * 批量标记消息为已读
+   */
+  function markMessagesAsRead(messageIds: number[]) {
+    messageIds.forEach(id => {
+      readMessageIds.value.add(id)
+      const message = messages.value.find(m => m.id === id)
+      if (message) {
+        message.status = 'read'
+      }
+    })
+  }
+
+  /**
+   * 检查消息是否已读
+   */
+  function isMessageRead(messageId: number): boolean {
+    return readMessageIds.value.has(messageId)
+  }
+
+  /**
+   * 清除已读状态（切换房间时调用）
+   */
+  function clearReadStatus() {
+    readMessageIds.value.clear()
+  }
+
   return {
     // 状态
     messages,
@@ -251,6 +309,7 @@ export const useChatStore = defineStore('chat', () => {
     loading,
     hasMore,
     loadingMore,
+    readMessageIds,
     
     // 计算属性
     messageCount,
@@ -269,6 +328,10 @@ export const useChatStore = defineStore('chat', () => {
     removeMessage,
     clearMessages,
     prependMessages,
-    clearNewFlag
+    clearNewFlag,
+    markMessageAsRead,
+    markMessagesAsRead,
+    isMessageRead,
+    clearReadStatus
   }
 })

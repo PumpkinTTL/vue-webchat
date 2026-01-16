@@ -224,6 +224,14 @@ export const useWebSocketStore = defineStore('websocket', () => {
   }
 
   /**
+   * 批量标记消息为已读（用于已读回执）
+   */
+  function markMessagesAsRead(messageIds: number[]) {
+    if (!messageIds || messageIds.length === 0) return false
+    return markRead(messageIds)
+  }
+
+  /**
    * 广播消息焚毁
    */
   function broadcastMessageBurned(messageId: number) {
@@ -524,6 +532,7 @@ export const useWebSocketStore = defineStore('websocket', () => {
     sendChatMessage,
     sendTyping,
     markRead,
+    markMessagesAsRead,
     broadcastMessageBurned,
     broadcastRoomCleared,
     broadcastRoomLockChanged,

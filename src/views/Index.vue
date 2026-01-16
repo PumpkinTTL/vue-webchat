@@ -267,6 +267,15 @@ watch(() => chatStore.messages.length, (newLength, oldLength) => {
       // 如果不在底部且有非系统消息，增加新消息计数
       newMessageCount.value += nonSystemMessages.length
     }
+    
+    // 对于别人的新消息，触发已读检测
+    nextTick(() => {
+      newMessages.forEach(msg => {
+        if (!msg.isOwn && msg.type !== 'system' && msg.id) {
+          messageListRef.value?.observeNewMessage(Number(msg.id))
+        }
+      })
+    })
   }
 })
 
@@ -325,6 +334,7 @@ const loadRoomMessages = async (roomId: number) => {
           } : undefined,
           username: msg.sender?.nickname,
           status: msg.isOwn ? 'sent' : undefined,
+          readCount: msg.read_count || 0,
           // 图片
           imageUrl: msg.imageUrl,
           // 视频
@@ -394,6 +404,7 @@ const handleLoadMore = async () => {
           } : undefined,
           username: msg.sender?.nickname,
           status: msg.isOwn ? 'sent' : undefined,
+          readCount: msg.read_count || 0,
           // 引用
           replyTo: msg.reply_to
         }
