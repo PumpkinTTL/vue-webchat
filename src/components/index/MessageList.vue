@@ -66,6 +66,17 @@
         </svg>
       </button>
     </Transition>
+
+    <!-- 回到历史位置按钮 -->
+    <Transition enter-active-class="animate__animated animate__zoomIn animate__faster"
+      leave-active-class="animate__animated animate__zoomOut animate__faster">
+      <button v-if="showBackToHistory" class="back-to-history" @click="handleBackToHistory">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor">
+          <path d="M12 19V5M5 12l7-7 7 7" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" />
+        </svg>
+        <span>回到历史位置</span>
+      </button>
+    </Transition>
   </div>
 </template>
 
@@ -120,6 +131,12 @@ const emit = defineEmits<{
 const messageContainer = ref<HTMLElement>()
 const showScrollToBottom = ref(false)
 
+// 历史位置相关
+const historyMessageId = ref<string | number | null>(null)
+const historyOffset = ref<number>(0) // 消息顶部相对于容器顶部的偏移
+const showBackToHistory = ref(false)
+const isAutoScrolling = ref(false)
+
 // 消息元素引用映射
 const messageRefs = ref<Map<string | number, InstanceType<typeof MessageItem>>>(new Map())
 
@@ -143,8 +160,102 @@ const scrollToBottom = (smooth = true) => {
   })
 }
 
+// 记录当前可视区域的第一条消息ID和偏移量（用于历史位置）
+const recordHistoryPosition = () => {
+  if (!messageContainer.value || props.messages.length === 0) return
+  
+  const container = messageContainer.value
+  const containerRect = container.getBoundingClientRect()
+  
+  // 找到当前可视区域顶部的第一条消息
+  for (let i = 0; i < props.messages.length; i++) {
+    const msg = props.messages[i]
+    if (msg.type === 'system') continue // 跳过系统消息
+    
+    const el = container.querySelector(`[data-msg-id="${msg.id}"]`) as HTMLElement
+    if (el) {
+      const rect = el.getBoundingClientRect()
+      // 如果消息在可视区域内（顶部或中间）
+      if (rect.bottom > containerRect.top && rect.top < containerRect.bottom) {
+        historyMessageId.value = msg.id
+        // 记录消息顶部相对于容器顶部的偏移量
+        historyOffset.value = rect.top - containerRect.top
+        return
+      }
+    }
+  }
+}
+
+// 滚动到底部并显示回到历史位置按钮
+const scrollToBottomWithHistory = (smooth = true) => {
+  // 先记录当前位置
+  recordHistoryPosition()
+  
+  // 标记正在自动滚动，防止滚动事件误清除
+  isAutoScrolling.value = true
+  
+  // 滚动到底部
+  scrollToBottom(smooth)
+  
+  // 显示回到历史位置按钮
+  if (historyMessageId.value) {
+    showBackToHistory.value = true
+  }
+  
+  // 延迟重置自动滚动标记
+  setTimeout(() => {
+    isAutoScrolling.value = false
+  }, 500)
+}
+
+// 回到历史位置
+const handleBackToHistory = () => {
+  if (!historyMessageId.value || !messageContainer.value) return
+  
+  const targetEl = messageContainer.value.querySelector(`[data-msg-id="${historyMessageId.value}"]`) as HTMLElement
+  if (!targetEl) {
+    // 消息不在DOM中了，清除历史位置
+    clearHistoryPosition()
+    return
+  }
+  
+  // 计算滚动位置，还原之前的偏移量
+  const containerRect = messageContainer.value.getBoundingClientRect()
+  const targetRect = targetEl.getBoundingClientRect()
+  const scrollTop = messageContainer.value.scrollTop
+  const targetOffsetTop = targetRect.top - containerRect.top + scrollTop
+  // 让消息回到之前的相对位置
+  const scrollTo = Math.max(0, targetOffsetTop - historyOffset.value)
+  
+  messageContainer.value.scrollTo({
+    top: scrollTo,
+    behavior: 'smooth'
+  })
+  
+  // 高亮目标消息
+  const messageRef = messageRefs.value.get(historyMessageId.value)
+  if (messageRef?.highlight) {
+    messageRef.highlight()
+  }
+  
+  // 清除历史位置
+  clearHistoryPosition()
+}
+
+// 清除历史位置
+const clearHistoryPosition = () => {
+  historyMessageId.value = null
+  historyOffset.value = 0
+  showBackToHistory.value = false
+}
+
 const handleScrollToBottom = () => {
-  scrollToBottom(true)
+  // 如果不在底部，记录历史位置后再滚动
+  if (showScrollToBottom.value) {
+    scrollToBottomWithHistory(true)
+  } else {
+    scrollToBottom(true)
+  }
 }
 
 const handleScroll = () => {
@@ -156,6 +267,20 @@ const handleScroll = () => {
   // 通知父组件滚动位置变化
   const isAtBottom = distanceFromBottom < 100
   emit('scrollChange', isAtBottom)
+  
+  // 检查是否滚动回到历史位置附近，自动隐藏按钮
+  // 只在非自动滚动时检测（用户手动滚动）
+  if (showBackToHistory.value && historyMessageId.value && !isAutoScrolling.value) {
+    const targetEl = messageContainer.value.querySelector(`[data-msg-id="${historyMessageId.value}"]`) as HTMLElement
+    if (targetEl) {
+      const containerRect = messageContainer.value.getBoundingClientRect()
+      const targetRect = targetEl.getBoundingClientRect()
+      // 如果历史消息在可视区域内，清除历史位置
+      if (targetRect.top >= containerRect.top && targetRect.bottom <= containerRect.bottom) {
+        clearHistoryPosition()
+      }
+    }
+  }
 }
 
 const handleLoadMore = () => {
@@ -240,7 +365,7 @@ onUnmounted(() => {
   cleanup()
 })
 
-defineExpose({ scrollToBottom, scrollToMessage, observeNewMessage })
+defineExpose({ scrollToBottom, scrollToBottomWithHistory, scrollToMessage, observeNewMessage, clearHistoryPosition })
 </script>
 
 <style lang="scss" scoped>
@@ -473,6 +598,50 @@ defineExpose({ scrollToBottom, scrollToMessage, observeNewMessage })
   }
 }
 
+// 回到历史位置按钮
+.back-to-history {
+  position: fixed;
+  bottom: 200px;
+  right: 20px;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 10px 14px;
+  background: linear-gradient(135deg, #6366f1 0%, #8b5cf6 100%);
+  color: white;
+  border: none;
+  border-radius: 24px;
+  cursor: pointer;
+  box-shadow: $box-shadow-base, 0 4px 16px rgba(99, 102, 241, 0.3);
+  z-index: 100;
+  transition: all $transition-base;
+  backdrop-filter: blur(8px);
+  border: 2px solid rgba(255, 255, 255, 0.15);
+  font-size: 13px;
+  font-weight: 500;
+
+  svg {
+    width: 18px;
+    height: 18px;
+    transition: transform $transition-fast;
+  }
+
+  &:hover {
+    transform: translateY(-2px) scale(1.02);
+    background: linear-gradient(135deg, #4f46e5 0%, #7c3aed 100%);
+    box-shadow: $box-shadow-lg, 0 8px 24px rgba(99, 102, 241, 0.4);
+
+    svg {
+      transform: translateY(-1px);
+    }
+  }
+
+  &:active {
+    transform: translateY(0) scale(0.98);
+    box-shadow: $box-shadow-sm, 0 2px 8px rgba(99, 102, 241, 0.3);
+  }
+}
+
 @keyframes pulse-ring {
   0% {
     transform: scale(1);
@@ -543,6 +712,27 @@ defineExpose({ scrollToBottom, scrollToMessage, observeNewMessage })
     &:active {
       transform: scale(0.95);
       box-shadow: $box-shadow-sm, 0 2px 8px rgba($primary-color, 0.25);
+    }
+  }
+
+  .back-to-history {
+    bottom: 170px;
+    right: 16px;
+    padding: 8px 12px;
+    font-size: 12px;
+
+    svg {
+      width: 16px;
+      height: 16px;
+    }
+
+    &:hover {
+      transform: none;
+      background: linear-gradient(135deg, #6366f1 0%, #8b5cf6 100%);
+    }
+
+    &:active {
+      transform: scale(0.95);
     }
   }
 }

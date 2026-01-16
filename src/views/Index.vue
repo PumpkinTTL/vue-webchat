@@ -709,7 +709,7 @@ const handleScrollChange = (atBottom: boolean) => {
 const handleScrollToNewMessage = () => {
   newMessageCount.value = 0
   nextTick(() => {
-    messageListRef.value?.scrollToBottom(true)
+    messageListRef.value?.scrollToBottomWithHistory(true)
   })
 }
 
