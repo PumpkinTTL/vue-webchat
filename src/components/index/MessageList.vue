@@ -60,17 +60,18 @@
     <!-- 回到底部按钮 -->
     <Transition enter-active-class="animate__animated animate__zoomIn animate__faster"
       leave-active-class="animate__animated animate__zoomOut animate__faster">
-      <button v-if="showScrollToBottom" class="scroll-to-bottom" @click="handleScrollToBottom">
+      <button v-if="showScrollToBottom" class="scroll-to-bottom" :class="{ 'has-reply': hasReply }" @click="handleScrollToBottom">
         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor">
           <path d="M12 5v14M19 12l-7 7-7-7" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" />
         </svg>
+        <span>回到底部</span>
       </button>
     </Transition>
 
     <!-- 回到历史位置按钮 -->
     <Transition enter-active-class="animate__animated animate__zoomIn animate__faster"
       leave-active-class="animate__animated animate__zoomOut animate__faster">
-      <button v-if="showBackToHistory" class="back-to-history" @click="handleBackToHistory">
+      <button v-if="showBackToHistory" class="back-to-history" :class="{ 'has-reply': hasReply }" @click="handleBackToHistory">
         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor">
           <path d="M12 19V5M5 12l7-7 7 7" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" />
         </svg>
@@ -110,6 +111,7 @@ interface Props {
   emptyText?: string
   emptyHint?: string
   uploadProgress?: Record<string, number>
+  hasReply?: boolean // 是否有引用消息（用于调整按钮位置）
 }
 
 const props = withDefaults(defineProps<Props>(), {
@@ -117,7 +119,8 @@ const props = withDefaults(defineProps<Props>(), {
   hasMore: false,
   loadingMore: false,
   emptyText: '还没有消息',
-  emptyHint: '发送第一条消息开始对话'
+  emptyHint: '发送第一条消息开始对话',
+  hasReply: false
 })
 
 const emit = defineEmits<{
@@ -539,35 +542,34 @@ defineExpose({ scrollToBottom, scrollToBottomWithHistory, scrollToMessage, obser
 // 回到底部按钮 - 遵循UI/UX PRO MAX指导，使用主题变量
 .scroll-to-bottom {
   position: fixed;
-  bottom: 140px;
+  bottom: 90px;
   right: 20px;
-  width: 48px;
-  height: 48px;
   display: flex;
   align-items: center;
-  justify-content: center;
+  gap: 6px;
+  padding: 10px 14px;
   background: linear-gradient(135deg, $primary-color 0%, $primary-light 100%);
   color: white;
   border: none;
-  border-radius: 50%;
+  border-radius: 24px;
   cursor: pointer;
   box-shadow: $box-shadow-base, 0 4px 16px rgba($primary-color, 0.25);
   z-index: 100;
   transition: all $transition-base;
   backdrop-filter: blur(8px);
-
-  // 使用主题变量的边框
   border: 2px solid rgba(255, 255, 255, 0.15);
+  font-size: 13px;
+  font-weight: 500;
 
   svg {
-    width: 22px;
-    height: 22px;
+    width: 18px;
+    height: 18px;
     transition: transform $transition-fast;
   }
 
   // 悬停效果 - 使用主题变量
   &:hover {
-    transform: translateY(-2px) scale(1.05);
+    transform: translateY(-2px) scale(1.02);
     background: linear-gradient(135deg, $primary-hover 0%, $primary-color 100%);
     box-shadow: $box-shadow-lg, 0 8px 24px rgba($primary-color, 0.35);
 
@@ -582,26 +584,16 @@ defineExpose({ scrollToBottom, scrollToBottomWithHistory, scrollToMessage, obser
     box-shadow: $box-shadow-sm, 0 2px 8px rgba($primary-color, 0.3);
   }
 
-  // 脉冲动画提示 - 使用主题变量
-  &::before {
-    content: '';
-    position: absolute;
-    top: -2px;
-    left: -2px;
-    right: -2px;
-    bottom: -2px;
-    border-radius: 50%;
-    background: linear-gradient(135deg, $primary-color, $primary-light);
-    opacity: 0;
-    z-index: -1;
-    animation: pulse-ring 2s ease-out infinite;
+  // 有引用消息时上移
+  &.has-reply {
+    bottom: 130px;
   }
 }
 
 // 回到历史位置按钮
 .back-to-history {
   position: fixed;
-  bottom: 200px;
+  bottom: 140px;
   right: 20px;
   display: flex;
   align-items: center;
@@ -639,6 +631,11 @@ defineExpose({ scrollToBottom, scrollToBottomWithHistory, scrollToMessage, obser
   &:active {
     transform: translateY(0) scale(0.98);
     box-shadow: $box-shadow-sm, 0 2px 8px rgba(99, 102, 241, 0.3);
+  }
+
+  // 有引用消息时上移
+  &.has-reply {
+    bottom: 180px;
   }
 }
 
@@ -688,35 +685,32 @@ defineExpose({ scrollToBottom, scrollToBottomWithHistory, scrollToMessage, obser
   }
 
   .scroll-to-bottom {
-    bottom: 120px; // 在输入区域上方留出足够空间
+    bottom: 80px;
     right: 16px;
-    width: 44px;
-    height: 44px;
-    box-shadow: $box-shadow-base, 0 4px 16px rgba($primary-color, 0.2);
-
-    // 移动端减少动画效果，提升性能
-    &::before {
-      display: none;
-    }
+    padding: 8px 12px;
+    font-size: 12px;
 
     svg {
-      width: 20px;
-      height: 20px;
+      width: 16px;
+      height: 16px;
     }
 
     &:hover {
-      transform: none; // 移动端禁用悬停效果
+      transform: none;
       background: linear-gradient(135deg, $primary-color 0%, $primary-light 100%);
     }
 
     &:active {
       transform: scale(0.95);
-      box-shadow: $box-shadow-sm, 0 2px 8px rgba($primary-color, 0.25);
+    }
+
+    &.has-reply {
+      bottom: 120px;
     }
   }
 
   .back-to-history {
-    bottom: 170px;
+    bottom: 125px;
     right: 16px;
     padding: 8px 12px;
     font-size: 12px;
@@ -733,6 +727,10 @@ defineExpose({ scrollToBottom, scrollToBottomWithHistory, scrollToMessage, obser
 
     &:active {
       transform: scale(0.95);
+    }
+
+    &.has-reply {
+      bottom: 165px;
     }
   }
 }

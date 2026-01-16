@@ -28,7 +28,7 @@
       <!-- 消息区域 -->
       <section class="messages-area">
         <MessageList ref="messageListRef" :messages="messages" :loading="messagesLoading" :has-more="hasMoreMessages"
-          :loading-more="loadingMoreMessages" :upload-progress="uploadProgress" @load-more="handleLoadMore"
+          :loading-more="loadingMoreMessages" :upload-progress="uploadProgress" :has-reply="!!replyToMessage" @load-more="handleLoadMore"
           @reply="handleReplyMessage" @burn="handleBurnMessage" @edit="handleEditMessage" @scroll-change="handleScrollChange" />
 
         <!-- 新消息提示按钮 -->
