@@ -882,21 +882,161 @@ const handleSendVideo = async (file: File) => {
     return
   }
   
+  // 生成临时消息ID
+  const tempId = `temp_${Date.now()}`
+  const userInfo = getUserInfo()
+  
+  // 创建临时视频URL用于预览
+  const tempVideoUrl = URL.createObjectURL(file)
+  
+  // 初始化上传进度
+  uploadProgress.value[tempId] = 0
+  
+  // 添加临时消息到列表（占位）
+  const tempMessage: ChatMessageItem = {
+    id: tempId,
+    type: 'video',
+    text: '',
+    time: new Date(),
+    isOwn: true,
+    sender: {
+      id: userInfo?.id || 0,
+      nickname: userInfo?.nick_name || '我',
+      avatar: userInfo?.avatar || ''
+    },
+    username: userInfo?.nick_name || '我',
+    status: 'sending',
+    videoUrl: tempVideoUrl,
+    videoThumbnail: undefined,
+    videoDuration: 0,
+    isNew: true
+  }
+  
+  chatStore.addMessage(tempMessage)
+  
+  // 滚动到底部
+  nextTick(() => {
+    messageListRef.value?.scrollToBottom(true)
+  })
+  
+  // 模拟上传进度（视频上传较慢）
+  const progressInterval = setInterval(() => {
+    if (uploadProgress.value[tempId] < 40) {
+      // 0-40%: 较慢增长，每次增加2-5%
+      uploadProgress.value[tempId] += Math.random() * 3 + 2
+      if (uploadProgress.value[tempId] > 40) {
+        uploadProgress.value[tempId] = 40
+      }
+    } else if (uploadProgress.value[tempId] < 70) {
+      // 40-70%: 非常慢的增长，每次增加0.3-1%
+      uploadProgress.value[tempId] += Math.random() * 0.7 + 0.3
+      if (uploadProgress.value[tempId] > 70) {
+        uploadProgress.value[tempId] = 70
+      }
+    }
+  }, 300)
+  
   try {
+    // 上传视频
     const result = await sendVideoMessage(currentRoom.value.id, file)
+    
+    // 清除进度模拟
+    clearInterval(progressInterval)
+    uploadProgress.value[tempId] = 100
+    
+    console.log('[视频上传] 后端返回:', result)
+    
     if (result.code === 0 && result.data) {
-      broadcastMessage({
-        message_id: Number(result.data.id),
-        message_type: 'video',
-        content: '',
-        intimacy: result.data.intimacy
-      })
-      message.success('视频发送成功')
+      // 获取视频路径
+      const videoUrl = result.data.videoUrl || result.data.video_url || result.data.content || result.data.text || ''
+      const videoThumbnail = result.data.videoThumbnail || result.data.video_thumbnail || ''
+      const videoDuration = result.data.videoDuration || result.data.video_duration || 0
+      
+      console.log('[视频上传] 视频URL:', videoUrl)
+      console.log('[视频上传] 缩略图URL:', videoThumbnail)
+      console.log('[视频上传] 时长:', videoDuration)
+      
+      // 拼接完整URL
+      const serverUrl = import.meta.env.VITE_SERVER_URL || ''
+      const fullVideoUrl = videoUrl && !videoUrl.startsWith('http://') && !videoUrl.startsWith('https://') 
+        ? serverUrl + videoUrl 
+        : videoUrl
+      
+      const fullThumbnailUrl = videoThumbnail && !videoThumbnail.startsWith('http://') && !videoThumbnail.startsWith('https://') 
+        ? serverUrl + videoThumbnail 
+        : videoThumbnail
+      
+      console.log('[视频上传] 完整视频URL:', fullVideoUrl)
+      console.log('[视频上传] 完整缩略图URL:', fullThumbnailUrl)
+      
+      // 短暂延迟后更新临时消息（让用户看到100%）
+      setTimeout(() => {
+        // 释放临时URL
+        URL.revokeObjectURL(tempVideoUrl)
+        
+        // 清除进度（隐藏进度遮罩）
+        delete uploadProgress.value[tempId]
+        
+        // 直接更新临时消息，不改变ID避免重新渲染
+        const msg = chatStore.messages.find(m => m.id === tempId)
+        if (msg) {
+          msg.videoUrl = fullVideoUrl // 更新为服务器URL
+          msg.videoThumbnail = fullThumbnailUrl || undefined
+          msg.videoDuration = videoDuration || 0
+          msg.status = 'sent' // 更新状态
+          if (result.data.intimacy) {
+            msg.intimacy = {
+              currentExp: result.data.intimacy.current_exp,
+              currentLevel: result.data.intimacy.current_level
+            }
+          }
+          // 保存真实ID到自定义属性，用于后续操作
+          (msg as any).realId = Number(result.data.id)
+        }
+        
+        // 广播消息（携带视频路径）
+        console.log('[视频上传] 广播消息, videoUrl:', videoUrl, 'thumbnail:', videoThumbnail, 'duration:', videoDuration)
+        broadcastMessage({
+          message_id: Number(result.data.id),
+          message_type: 'video',
+          content: videoUrl,
+          video_url: videoUrl,
+          video_thumbnail: videoThumbnail || undefined,
+          video_duration: videoDuration || undefined,
+          intimacy: result.data.intimacy
+        })
+      }, 300)
     } else {
-      message.error(result.msg || '发送视频失败')
+      // 发送失败，更新临时消息状态
+      clearInterval(progressInterval)
+      delete uploadProgress.value[tempId]
+      const msg = chatStore.messages.find(m => m.id === tempId)
+      if (msg) {
+        msg.status = 'failed'
+      }
+      message.error(result.msg || '视频发送失败')
     }
   } catch (error: any) {
-    message.error(error.message || '发送视频失败')
+    // 发送失败，更新临时消息状态
+    clearInterval(progressInterval)
+    delete uploadProgress.value[tempId]
+    const msg = chatStore.messages.find(m => m.id === tempId)
+    if (msg) {
+      msg.status = 'failed'
+    }
+    
+    // 优化错误提示
+    let errorMsg = '视频发送失败'
+    if (error.message) {
+      if (error.message.includes('timeout')) {
+        errorMsg = '视频上传超时，请检查网络连接或尝试压缩视频'
+      } else if (error.message.includes('Network Error')) {
+        errorMsg = '网络连接失败，请检查网络'
+      } else {
+        errorMsg = error.message
+      }
+    }
+    message.error(errorMsg)
   }
 }
 

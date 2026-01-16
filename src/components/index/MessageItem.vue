@@ -171,6 +171,62 @@
                   </div>
                 </div>
               </div>
+              <!-- 视频消息 -->
+              <div v-else-if="message.type === 'video'" class="video-wrapper">
+                <!-- 上传中：显示占位容器 -->
+                <div v-if="message.status === 'sending' && uploadProgress !== undefined" class="video-upload-placeholder">
+                  <div class="video-upload-content">
+                    <div class="video-upload-icon">
+                      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <path d="M23 7l-7 5 7 5V7zM14 5H3a2 2 0 00-2 2v10a2 2 0 002 2h11a2 2 0 002-2V7a2 2 0 00-2-2z"/>
+                      </svg>
+                    </div>
+                    <div class="video-upload-text">视频上传中...</div>
+                    <!-- 圆形进度环 -->
+                    <div class="progress-ring">
+                      <svg viewBox="0 0 100 100">
+                        <!-- 背景圆环 -->
+                        <circle
+                          cx="50"
+                          cy="50"
+                          r="42"
+                          fill="none"
+                          stroke="rgba(255, 255, 255, 0.15)"
+                          stroke-width="6"
+                        />
+                        <!-- 进度圆环 -->
+                        <circle
+                          cx="50"
+                          cy="50"
+                          r="42"
+                          fill="none"
+                          stroke="#3B82F6"
+                          stroke-width="6"
+                          stroke-linecap="round"
+                          :stroke-dasharray="circumference"
+                          :stroke-dashoffset="progressOffset"
+                        />
+                      </svg>
+                      <div class="progress-text">{{ Math.round(uploadProgress) }}%</div>
+                    </div>
+                  </div>
+                </div>
+                <!-- 上传完成：显示视频 -->
+                <template v-else>
+                  <div v-if="videoThumbnailUrl" class="video-thumbnail" @click="handleVideoClick">
+                    <img :src="videoThumbnailUrl" alt="Video thumbnail">
+                    <div class="video-play-btn">
+                      <svg viewBox="0 0 24 24" fill="currentColor">
+                        <path d="M8 5v14l11-7z"/>
+                      </svg>
+                    </div>
+                    <div v-if="message.videoDuration" class="video-duration-badge">
+                      {{ formatDuration(message.videoDuration) }}
+                    </div>
+                  </div>
+                  <video v-else :src="videoUrl" controls preload="metadata" class="video-player"></video>
+                </template>
+              </div>
               <!-- 文件 -->
               <div v-else-if="message.type === 'file'" class="file-message">
                 <div class="file-icon">
@@ -236,6 +292,7 @@
 <script setup lang="ts">
 import { ref, computed } from 'vue'
 import { message as antMessage } from 'ant-design-vue'
+import { formatDuration } from '@/utils/video'
 
 interface ReplyTo {
   message_id: number
@@ -362,7 +419,8 @@ const fileUrl = computed(() => {
 
 const bubbleClass = computed(() => ({
   'msg-image': props.message.type === 'image',
-  'msg-file': props.message.type === 'file'
+  'msg-file': props.message.type === 'file',
+  'msg-video': props.message.type === 'video'
 }))
 
 // 是否可以复制
@@ -454,6 +512,15 @@ const handleBurn = () => {
 const handleScrollToReply = () => {
   if (props.message.replyTo?.message_id) {
     emit('scrollToMessage', props.message.replyTo.message_id)
+  }
+}
+
+// 处理视频点击
+const handleVideoClick = () => {
+  if (videoUrl.value) {
+    // 可以使用Ant Design的Modal或者原生video播放
+    // 这里简单处理，让video标签自己播放
+    console.log('[视频] 点击播放:', videoUrl.value)
   }
 }
 
@@ -616,7 +683,8 @@ defineExpose({
   }
 
   &.msg-image,
-  &.msg-file {
+  &.msg-file,
+  &.msg-video {
     background: transparent !important;
     padding: 0 !important;
     box-shadow: none !important;
@@ -690,6 +758,118 @@ defineExpose({
   font-weight: 600;
   letter-spacing: -0.02em;
   text-shadow: 0 1px 2px rgba(0, 0, 0, 0.2);
+}
+
+// ==================== 视频消息 ====================
+.video-wrapper {
+  max-width: 280px;
+  border-radius: 12px;
+  overflow: hidden;
+  line-height: 0;
+  position: relative;
+}
+
+// 视频上传占位容器
+.video-upload-placeholder {
+  width: 280px;
+  height: 200px;
+  background: linear-gradient(135deg, rgba(99, 102, 241, 0.08) 0%, rgba(59, 130, 246, 0.08) 100%);
+  border-radius: 12px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  position: relative;
+}
+
+.video-upload-content {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 16px;
+}
+
+.video-upload-icon {
+  width: 64px;
+  height: 64px;
+  background: rgba(99, 102, 241, 0.15);
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  
+  svg {
+    width: 32px;
+    height: 32px;
+    color: $info-color;
+  }
+}
+
+.video-upload-text {
+  font-size: 14px;
+  font-weight: 500;
+  color: $text-secondary;
+}
+
+// 视频缩略图
+.video-thumbnail {
+  position: relative;
+  cursor: pointer;
+  max-width: 280px;
+  border-radius: 12px;
+  overflow: hidden;
+  
+  img {
+    width: 100%;
+    height: auto;
+    display: block;
+  }
+  
+  &:hover .video-play-btn {
+    transform: translate(-50%, -50%) scale(1.1);
+  }
+}
+
+.video-play-btn {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  width: 56px;
+  height: 56px;
+  background: rgba(0, 0, 0, 0.6);
+  backdrop-filter: blur(8px);
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: transform 0.2s ease;
+  
+  svg {
+    width: 24px;
+    height: 24px;
+    color: white;
+    margin-left: 3px;
+  }
+}
+
+.video-duration-badge {
+  position: absolute;
+  bottom: 8px;
+  right: 8px;
+  padding: 4px 8px;
+  background: rgba(0, 0, 0, 0.75);
+  backdrop-filter: blur(4px);
+  color: white;
+  font-size: 12px;
+  font-weight: 600;
+  border-radius: 4px;
+}
+
+.video-player {
+  max-width: 280px;
+  max-height: 400px;
+  border-radius: 12px;
+  display: block;
 }
 
 // 文件

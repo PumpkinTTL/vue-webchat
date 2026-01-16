@@ -18,6 +18,31 @@
       </div>
     </Transition>
 
+    <!-- 视频预览 -->
+    <Transition name="preview-slide">
+      <div v-if="videoPreview" class="upload-preview">
+        <div class="preview-card">
+          <div class="video-preview-icon">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+              <path d="M23 7l-7 5 7 5V7zM14 5H3a2 2 0 00-2 2v10a2 2 0 002 2h11a2 2 0 002-2V7a2 2 0 00-2-2z"/>
+            </svg>
+          </div>
+          <div class="file-info">
+            <span class="fname">{{ selectedVideoFile?.name }}</span>
+            <div class="video-meta">
+              <span class="fsize">{{ formatFileSize(selectedVideoFile?.size || 0) }}</span>
+              <span v-if="videoDuration > 0" class="video-duration">{{ formatDuration(videoDuration) }}</span>
+            </div>
+          </div>
+          <button class="remove-btn" @click="clearVideoPreview">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+              <path d="M18 6L6 18M6 6l12 12"/>
+            </svg>
+          </button>
+        </div>
+      </div>
+    </Transition>
+
     <!-- 引用预览条 -->
     <Transition name="reply-slide">
       <div v-if="replyTo" class="reply-preview-bar">
@@ -167,6 +192,8 @@
 
 <script setup lang="ts">
 import { ref, computed, nextTick } from 'vue'
+import { getVideoDuration, formatDuration, validateVideoFile } from '@/utils/video'
+import { message } from 'ant-design-vue'
 
 interface ReplyMessage {
   id: string | number
@@ -212,13 +239,18 @@ const isRecording = ref(false)
 const imagePreview = ref('')
 const selectedImageFile = ref<File | null>(null)
 
+// 视频预览相关
+const videoPreview = ref('')
+const selectedVideoFile = ref<File | null>(null)
+const videoDuration = ref(0)
+
 const inputRef = ref<HTMLInputElement>()
 const imageInput = ref<HTMLInputElement>()
 const videoInput = ref<HTMLInputElement>()
 const fileInput = ref<HTMLInputElement>()
 
 // 是否可以发送
-const canSend = computed(() => inputText.value.trim().length > 0 || selectedImageFile.value !== null)
+const canSend = computed(() => inputText.value.trim().length > 0 || selectedImageFile.value !== null || selectedVideoFile.value !== null)
 
 // 引用预览文本
 const replyPreviewText = computed(() => {
@@ -257,6 +289,13 @@ const handleSend = () => {
   if (selectedImageFile.value) {
     emit('sendImage', selectedImageFile.value)
     clearImagePreview()
+    return
+  }
+  
+  // 如果有视频预览，发送视频
+  if (selectedVideoFile.value) {
+    emit('sendVideo', selectedVideoFile.value)
+    clearVideoPreview()
     return
   }
   
@@ -327,8 +366,21 @@ const handleImageSelect = (e: Event) => {
 
 // 清除图片预览
 const clearImagePreview = () => {
+  if (imagePreview.value) {
+    URL.revokeObjectURL(imagePreview.value)
+  }
   imagePreview.value = ''
   selectedImageFile.value = null
+}
+
+// 清除视频预览
+const clearVideoPreview = () => {
+  if (videoPreview.value) {
+    URL.revokeObjectURL(videoPreview.value)
+  }
+  videoPreview.value = ''
+  selectedVideoFile.value = null
+  videoDuration.value = 0
 }
 
 // 格式化文件大小
@@ -343,10 +395,31 @@ const formatFileSize = (bytes: number): string => {
 const handleVideoSelect = (e: Event) => {
   const target = e.target as HTMLInputElement
   const file = target.files?.[0]
-  if (file) {
-    emit('sendVideo', file)
+  if (!file) return
+  
+  // 验证视频文件
+  const validation = validateVideoFile(file)
+  if (!validation.valid) {
+    message.error(validation.error || '视频文件无效')
     target.value = ''
+    return
   }
+  
+  // 保存文件并生成预览
+  selectedVideoFile.value = file
+  videoPreview.value = URL.createObjectURL(file)
+  
+  // 提取视频时长
+  getVideoDuration(file)
+    .then(duration => {
+      videoDuration.value = duration
+    })
+    .catch(error => {
+      console.error('[视频] 获取时长失败:', error)
+      videoDuration.value = 0
+    })
+  
+  target.value = ''
 }
 
 const handleFileSelect = (e: Event) => {
@@ -427,6 +500,23 @@ defineExpose({
     flex-shrink: 0;
   }
 
+  .video-preview-icon {
+    width: 60px;
+    height: 60px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background: linear-gradient(135deg, $info-color, darken($info-color, 10%));
+    border-radius: $border-radius-sm;
+    flex-shrink: 0;
+
+    svg {
+      width: 28px;
+      height: 28px;
+      color: white;
+    }
+  }
+
   .file-info {
     flex: 1;
     min-width: 0;
@@ -446,6 +536,22 @@ defineExpose({
     .fsize {
       font-size: 11px;
       color: $text-tertiary;
+    }
+
+    .video-meta {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      font-size: 11px;
+
+      .fsize {
+        color: $text-tertiary;
+      }
+
+      .video-duration {
+        color: $info-color;
+        font-weight: 600;
+      }
     }
   }
 

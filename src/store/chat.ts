@@ -186,6 +186,27 @@ export const useChatStore = defineStore('chat', () => {
       message.videoDuration = data.video_duration
     }
 
+    // 视频消息 - 处理URL
+    if (data.message_type === 'video') {
+      // 视频URL
+      if (data.video_url) {
+        if (!data.video_url.startsWith('http://') && !data.video_url.startsWith('https://')) {
+          message.videoUrl = serverUrl + data.video_url
+        } else {
+          message.videoUrl = data.video_url
+        }
+      }
+      // 缩略图URL
+      if (data.video_thumbnail) {
+        if (!data.video_thumbnail.startsWith('http://') && !data.video_thumbnail.startsWith('https://')) {
+          message.videoThumbnail = serverUrl + data.video_thumbnail
+        } else {
+          message.videoThumbnail = data.video_thumbnail
+        }
+      }
+      message.videoDuration = data.video_duration
+    }
+
     // 文件消息 - 处理URL
     if (data.message_type === 'file') {
       message.fileName = data.file_name

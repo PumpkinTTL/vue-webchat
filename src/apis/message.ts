@@ -60,7 +60,13 @@ export interface SendMessageResponse {
     reply_to?: any
     imageUrl?: string   // 图片URL（后端返回的字段名）
     image_url?: string  // 备用字段
-    content?: string    // 内容（可能包含图片路径）
+    videoUrl?: string   // 视频URL
+    video_url?: string  // 备用字段
+    videoThumbnail?: string  // 视频缩略图
+    video_thumbnail?: string // 备用字段
+    videoDuration?: number   // 视频时长
+    video_duration?: number  // 备用字段
+    content?: string    // 内容（可能包含图片/视频路径）
     intimacy?: {
       current_exp: number
       current_level: number
