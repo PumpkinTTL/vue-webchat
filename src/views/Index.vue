@@ -181,6 +181,7 @@ const contactList = ref([
 const messagesLoading = ref(false)
 const hasMoreMessages = ref(false)
 const loadingMoreMessages = ref(false)
+const currentPage = ref(1)
 
 // 引用回复状态
 const replyToMessage = ref<any>(null)
@@ -295,16 +296,49 @@ const loadUserRooms = async () => {
 const loadRoomMessages = async (roomId: number) => {
   messagesLoading.value = true
   chatStore.clearMessages()
+  currentPage.value = 1
 
   try {
-    const result = await getMessageList(roomId, 1, 50)
+    const result = await getMessageList(roomId, 1, 100)
     if (result.code === 0 && result.data) {
+      const serverUrl = import.meta.env.VITE_SERVER_URL || ''
+      
       // 后端已经格式化好了消息，直接映射字段
       const convertedMessages: ChatMessageItem[] = result.data.messages.map(msg => {
         // 映射消息类型：normal/reply -> text
         let msgType = msg.type
         if (msgType === 'normal' || msgType === 'reply') {
           msgType = 'text'
+        }
+
+        // 处理图片URL
+        let imageUrl = msg.imageUrl
+        if (imageUrl && !imageUrl.startsWith('http://') && !imageUrl.startsWith('https://') && !imageUrl.startsWith('blob:')) {
+          imageUrl = serverUrl + imageUrl
+        }
+
+        // 处理视频URL
+        let videoUrl = msg.videoUrl
+        if (videoUrl && !videoUrl.startsWith('http://') && !videoUrl.startsWith('https://') && !videoUrl.startsWith('blob:')) {
+          videoUrl = serverUrl + videoUrl
+        }
+
+        // 处理视频缩略图URL
+        let videoThumbnail = msg.videoThumbnail
+        if (videoThumbnail && !videoThumbnail.startsWith('http://') && !videoThumbnail.startsWith('https://') && !videoThumbnail.startsWith('blob:')) {
+          videoThumbnail = serverUrl + videoThumbnail
+        }
+
+        // 处理文件URL
+        let fileUrl = msg.fileUrl
+        if (fileUrl && !fileUrl.startsWith('http://') && !fileUrl.startsWith('https://') && !fileUrl.startsWith('blob:')) {
+          fileUrl = serverUrl + fileUrl
+        }
+
+        // 处理头像URL
+        let avatar = msg.sender?.avatar || ''
+        if (avatar && !avatar.startsWith('http://') && !avatar.startsWith('https://') && !avatar.startsWith('blob:')) {
+          avatar = serverUrl + avatar
         }
 
         return {
@@ -316,22 +350,22 @@ const loadRoomMessages = async (roomId: number) => {
           sender: msg.sender ? {
             id: msg.sender.id,
             nickname: msg.sender.nickname || '未知用户',
-            avatar: msg.sender.avatar || ''
+            avatar: avatar
           } : undefined,
           username: msg.sender?.nickname,
           status: msg.isOwn ? 'sent' : undefined,
           readCount: msg.read_count || 0,
           // 图片
-          imageUrl: msg.imageUrl,
+          imageUrl: imageUrl,
           // 视频
-          videoUrl: msg.videoUrl,
-          videoThumbnail: msg.videoThumbnail,
+          videoUrl: videoUrl,
+          videoThumbnail: videoThumbnail,
           videoDuration: msg.videoDuration,
           // 文件
           fileName: msg.fileName,
           fileSize: msg.fileSize,
           fileExtension: msg.fileExtension,
-          fileUrl: msg.fileUrl,
+          fileUrl: fileUrl,
           // 引用
           replyTo: msg.reply_to,
           // 编辑
@@ -369,15 +403,46 @@ const handleLoadMore = async () => {
   const oldScrollHeight = container?.scrollHeight || 0
 
   try {
-    const oldestMessage = chatStore.messages[0]
-    const lastTime = oldestMessage?.time?.toISOString()
-
-    const result = await getMessageList(currentRoom.value.id, 1, 20, lastTime)
+    // 使用page分页，不传lastTime
+    currentPage.value++
+    const result = await getMessageList(currentRoom.value.id, currentPage.value, 100)
     if (result.code === 0 && result.data) {
+      const serverUrl = import.meta.env.VITE_SERVER_URL || ''
+      
       const convertedMessages: ChatMessageItem[] = result.data.messages.map(msg => {
         let msgType = msg.type
         if (msgType === 'normal' || msgType === 'reply') {
           msgType = 'text'
+        }
+
+        // 处理图片URL
+        let imageUrl = msg.imageUrl
+        if (imageUrl && !imageUrl.startsWith('http://') && !imageUrl.startsWith('https://') && !imageUrl.startsWith('blob:')) {
+          imageUrl = serverUrl + imageUrl
+        }
+
+        // 处理视频URL
+        let videoUrl = msg.videoUrl
+        if (videoUrl && !videoUrl.startsWith('http://') && !videoUrl.startsWith('https://') && !videoUrl.startsWith('blob:')) {
+          videoUrl = serverUrl + videoUrl
+        }
+
+        // 处理视频缩略图URL
+        let videoThumbnail = msg.videoThumbnail
+        if (videoThumbnail && !videoThumbnail.startsWith('http://') && !videoThumbnail.startsWith('https://') && !videoThumbnail.startsWith('blob:')) {
+          videoThumbnail = serverUrl + videoThumbnail
+        }
+
+        // 处理文件URL
+        let fileUrl = msg.fileUrl
+        if (fileUrl && !fileUrl.startsWith('http://') && !fileUrl.startsWith('https://') && !fileUrl.startsWith('blob:')) {
+          fileUrl = serverUrl + fileUrl
+        }
+
+        // 处理头像URL
+        let avatar = msg.sender?.avatar || ''
+        if (avatar && !avatar.startsWith('http://') && !avatar.startsWith('https://') && !avatar.startsWith('blob:')) {
+          avatar = serverUrl + avatar
         }
 
         return {
@@ -389,11 +454,22 @@ const handleLoadMore = async () => {
           sender: msg.sender ? {
             id: msg.sender.id,
             nickname: msg.sender.nickname || '未知用户',
-            avatar: msg.sender.avatar || ''
+            avatar: avatar
           } : undefined,
           username: msg.sender?.nickname,
           status: msg.isOwn ? 'sent' : undefined,
           readCount: msg.read_count || 0,
+          // 图片
+          imageUrl: imageUrl,
+          // 视频
+          videoUrl: videoUrl,
+          videoThumbnail: videoThumbnail,
+          videoDuration: msg.videoDuration,
+          // 文件
+          fileName: msg.fileName,
+          fileSize: msg.fileSize,
+          fileExtension: msg.fileExtension,
+          fileUrl: fileUrl,
           // 引用
           replyTo: msg.reply_to,
           // 编辑
