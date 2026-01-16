@@ -2,27 +2,14 @@
   <div class="chat-app" :class="{ 'dark-mode': isDarkMode }">
     <!-- 侧边栏 -->
     <aside class="chat-sidebar" :class="{ 'sidebar-open': sidebarOpen }">
-      <Sidebar 
-        :rooms="roomList"
-        :contacts="contactList"
-        :active-room-id="currentRoom?.id"
-        @create-room="handleCreateRoom"
-        @join-room="handleJoinRoom"
-        @select-contact="handleSelectContact"
-        @select-room="handleSelectRoom"
-        @add-contact="handleAddContact"
-        @toggle-theme="toggleTheme"
-        @refresh="handleRefresh"
-        @leave-room="handleLeaveRoomAction"
-      />
+      <Sidebar :rooms="roomList" :contacts="contactList" :active-room-id="currentRoom?.id"
+        @create-room="handleCreateRoom" @join-room="handleJoinRoom" @select-contact="handleSelectContact"
+        @select-room="handleSelectRoom" @add-contact="handleAddContact" @toggle-theme="toggleTheme"
+        @refresh="handleRefresh" @leave-room="handleLeaveRoomAction" />
     </aside>
 
     <!-- 移动端遮罩 -->
-    <div 
-      v-if="sidebarOpen" 
-      class="mobile-overlay"
-      @click="closeSidebar"
-    ></div>
+    <div v-if="sidebarOpen" class="mobile-overlay" @click="closeSidebar"></div>
 
     <!-- 主聊天区域 -->
     <main class="chat-main">
@@ -30,34 +17,20 @@
       <header class="chat-header">
         <button class="menu-btn" @click="toggleSidebar">
           <svg viewBox="0 0 24 24" fill="none" stroke="currentColor">
-            <path d="M3 12h18M3 6h18M3 18h18" stroke-width="2" stroke-linecap="round"/>
+            <path d="M3 12h18M3 6h18M3 18h18" stroke-width="2" stroke-linecap="round" />
           </svg>
         </button>
-        <ChatHeader 
-          :room-name="currentRoom?.name"
-          :total-users="currentRoom?.totalUsers || 0"
-          :online-users="currentRoom?.onlineUsers || 0"
-          :ws-connected="wsConnected"
-          :is-private-room="currentRoom?.isPrivate || false"
-          :typing-users="typingUsers"
-        />
+        <ChatHeader :room-name="currentRoom?.name" :total-users="currentRoom?.totalUsers || 0"
+          :online-users="currentRoom?.onlineUsers || 0" :ws-connected="wsConnected"
+          :is-private-room="currentRoom?.isPrivate || false" :typing-users="typingUsers" />
       </header>
 
       <!-- 消息区域 -->
       <section class="messages-area">
-        <MessageList 
-          ref="messageListRef"
-          :messages="messages"
-          :loading="messagesLoading"
-          :has-more="hasMoreMessages"
-          :loading-more="loadingMoreMessages"
-          :upload-progress="uploadProgress"
-          @load-more="handleLoadMore"
-          @reply="handleReplyMessage"
-          @burn="handleBurnMessage"
-          @scroll-change="handleScrollChange"
-        />
-        
+        <MessageList ref="messageListRef" :messages="messages" :loading="messagesLoading" :has-more="hasMoreMessages"
+          :loading-more="loadingMoreMessages" :upload-progress="uploadProgress" @load-more="handleLoadMore"
+          @reply="handleReplyMessage" @burn="handleBurnMessage" @scroll-change="handleScrollChange" />
+
         <!-- 新消息提示按钮 -->
         <Transition name="new-msg-fade">
           <button v-if="newMessageCount > 0" class="new-message-tip" @click="handleScrollToNewMessage">
@@ -71,40 +44,30 @@
 
       <!-- 输入区域 -->
       <footer class="input-area">
-        <InputBar 
-          ref="inputBarRef"
-          :disabled="false"
-          :reply-to="replyToMessage"
-          @send="handleSendMessage"
-          @send-image="handleSendImage"
-          @send-video="handleSendVideo"
-          @send-file="handleSendFile"
-          @start-recording="handleStartRecording"
-          @stop-recording="handleStopRecording"
-          @typing="handleTyping"
-          @cancel-reply="handleCancelReply"
-        />
+        <InputBar ref="inputBarRef" :disabled="false" :reply-to="replyToMessage" @send="handleSendMessage"
+          @send-image="handleSendImage" @send-video="handleSendVideo" @send-file="handleSendFile"
+          @start-recording="handleStartRecording" @stop-recording="handleStopRecording" @typing="handleTyping"
+          @cancel-reply="handleCancelReply" />
       </footer>
     </main>
 
 
 
     <!-- 创建房间弹窗 -->
-    <a-modal
-      v-model:open="createRoomVisible"
-      title="创建房间"
-      :confirm-loading="createRoomLoading"
-      @cancel="resetCreateRoomForm"
-    >
+    <a-modal v-model:open="createRoomVisible" title="创建房间" :confirm-loading="createRoomLoading"
+      @cancel="resetCreateRoomForm">
       <a-form :model="createRoomForm" layout="vertical" class="compact-form">
         <a-form-item label="房间名称" required>
-          <a-input v-model:value="createRoomForm.name" placeholder="请输入房间名称" :maxlength="20" show-count autocomplete="off" />
+          <a-input v-model:value="createRoomForm.name" placeholder="请输入房间名称" :maxlength="20" show-count
+            autocomplete="off" />
         </a-form-item>
         <a-form-item label="房间简介">
-          <a-textarea v-model:value="createRoomForm.description" placeholder="请输入房间简介（可选）" :maxlength="100" show-count :rows="2" autocomplete="off" />
+          <a-textarea v-model:value="createRoomForm.description" placeholder="请输入房间简介（可选）" :maxlength="100" show-count
+            :rows="2" autocomplete="off" />
         </a-form-item>
         <a-form-item label="房间密码" class="mb-0">
-          <a-input-password v-model:value="createRoomForm.password" placeholder="设置密码后为私密房间（可选）" :maxlength="20" autocomplete="new-password" />
+          <a-input-password v-model:value="createRoomForm.password" placeholder="设置密码后为私密房间（可选）" :maxlength="20"
+            autocomplete="new-password" />
         </a-form-item>
       </a-form>
       <template #footer>
@@ -120,18 +83,14 @@
     </a-modal>
 
     <!-- 加入房间弹窗 -->
-    <a-modal
-      v-model:open="joinRoomVisible"
-      title="加入房间"
-      :confirm-loading="joinRoomLoading"
-      @cancel="resetJoinRoomForm"
-    >
+    <a-modal v-model:open="joinRoomVisible" title="加入房间" :confirm-loading="joinRoomLoading" @cancel="resetJoinRoomForm">
       <a-form :model="joinRoomForm" layout="vertical" class="compact-form">
         <a-form-item label="房间ID" required>
           <a-input v-model:value="joinRoomForm.roomId" placeholder="请输入房间ID" :maxlength="20" autocomplete="off" />
         </a-form-item>
         <a-form-item label="房间密码" class="mb-0">
-          <a-input-password v-model:value="joinRoomForm.password" placeholder="私密房间需要输入密码（可选）" :maxlength="20" autocomplete="off" />
+          <a-input-password v-model:value="joinRoomForm.password" placeholder="私密房间需要输入密码（可选）" :maxlength="20"
+            autocomplete="off" />
         </a-form-item>
       </a-form>
       <template #footer>
@@ -215,7 +174,7 @@ const uploadProgress = ref<Record<string, number>>({})
 onMounted(async () => {
   // 初始化 WebSocket
   initChat()
-  
+
   // 加载房间列表
   await loadUserRooms()
 })
@@ -223,7 +182,7 @@ onMounted(async () => {
 onUnmounted(() => {
   // 清理 WebSocket
   destroyChat()
-  
+
   // 清理输入状态定时器
   if (typingTimer) {
     clearTimeout(typingTimer)
@@ -262,7 +221,7 @@ watch(() => chatStore.messages.length, (newLength, oldLength) => {
     const newMessages = chatStore.messages.slice(oldLength)
     // 过滤掉系统消息
     const nonSystemMessages = newMessages.filter(msg => msg.type !== 'system')
-    
+
     // 如果在底部，自动滚动
     if (isAtBottom.value) {
       nextTick(() => {
@@ -272,7 +231,7 @@ watch(() => chatStore.messages.length, (newLength, oldLength) => {
       // 如果不在底部且有非系统消息，增加新消息计数
       newMessageCount.value += nonSystemMessages.length
     }
-    
+
     // 对于别人的新消息，触发已读检测
     nextTick(() => {
       newMessages.forEach(msg => {
@@ -292,7 +251,7 @@ const loadUserRooms = async () => {
     const result = await getUserRooms()
     if (result.code === 0) {
       roomList.value = result.data || []
-      
+
       // 恢复上次选中的房间
       const savedRoomId = localStorage.getItem('currentRoomId')
       if (savedRoomId && roomList.value.length > 0) {
@@ -314,7 +273,7 @@ const loadUserRooms = async () => {
 const loadRoomMessages = async (roomId: number) => {
   messagesLoading.value = true
   chatStore.clearMessages()
-  
+
   try {
     const result = await getMessageList(roomId, 1, 50)
     if (result.code === 0 && result.data) {
@@ -325,7 +284,7 @@ const loadRoomMessages = async (roomId: number) => {
         if (msgType === 'normal' || msgType === 'reply') {
           msgType = 'text'
         }
-        
+
         return {
           id: msg.id,
           type: msgType as any,
@@ -355,10 +314,10 @@ const loadRoomMessages = async (roomId: number) => {
           replyTo: msg.reply_to
         }
       })
-      
+
       chatStore.setMessages(convertedMessages)
       hasMoreMessages.value = result.data.has_more
-      
+
       // 滚动到底部
       nextTick(() => {
         messageListRef.value?.scrollToBottom(false)
@@ -376,18 +335,18 @@ const handleLoadMore = async () => {
   if (loadingMoreMessages.value || !hasMoreMessages.value || !currentRoom.value?.id) {
     return
   }
-  
+
   loadingMoreMessages.value = true
   isLoadingHistory.value = true // 设置标志位
-  
+
   // 记录加载前的滚动高度
   const container = messageListRef.value?.$el as HTMLElement
   const oldScrollHeight = container?.scrollHeight || 0
-  
+
   try {
     const oldestMessage = chatStore.messages[0]
     const lastTime = oldestMessage?.time?.toISOString()
-    
+
     const result = await getMessageList(currentRoom.value.id, 1, 20, lastTime)
     if (result.code === 0 && result.data) {
       const convertedMessages: ChatMessageItem[] = result.data.messages.map(msg => {
@@ -395,7 +354,7 @@ const handleLoadMore = async () => {
         if (msgType === 'normal' || msgType === 'reply') {
           msgType = 'text'
         }
-        
+
         return {
           id: msg.id,
           type: msgType as any,
@@ -414,10 +373,10 @@ const handleLoadMore = async () => {
           replyTo: msg.reply_to
         }
       })
-      
+
       chatStore.prependMessages(convertedMessages)
       hasMoreMessages.value = result.data.has_more
-      
+
       // 恢复滚动位置（保持在原来的消息位置）
       nextTick(() => {
         if (container) {
@@ -463,18 +422,18 @@ const submitCreateRoom = async () => {
     message.warning('请输入房间名称')
     return
   }
-  
+
   createRoomLoading.value = true
   try {
     const params: CreateRoomParams = {
       name: createRoomForm.name.trim(),
       description: createRoomForm.description.trim(),
     }
-    
+
     if (createRoomForm.password.trim()) {
       params.password = createRoomForm.password.trim()
     }
-    
+
     const result = await createRoom(params)
     if (result.code === 0) {
       message.success('房间创建成功')
@@ -515,17 +474,17 @@ const submitJoinRoom = async () => {
     message.warning('请输入房间ID')
     return
   }
-  
+
   joinRoomLoading.value = true
   try {
     const params: JoinRoomParams = {
       room_id: parseInt(joinRoomForm.roomId.trim())
     }
-    
+
     if (joinRoomForm.password.trim()) {
       params.password = joinRoomForm.password.trim()
     }
-    
+
     const result = await joinRoom(params)
     if (result.code === 0) {
       message.success('加入房间成功')
@@ -555,13 +514,13 @@ const handleSelectRoom = async (room: any) => {
     console.error('房间信息无效:', room)
     return
   }
-  
+
   const roomId = typeof room.id === 'string' ? parseInt(room.id) : room.id
-  
+
   // 先保留旧的人数，避免显示0
   const oldTotalUsers = currentRoom.value?.totalUsers || 0
   const oldOnlineUsers = currentRoom.value?.onlineUsers || 0
-  
+
   currentRoom.value = {
     ...room,
     id: roomId,
@@ -569,13 +528,13 @@ const handleSelectRoom = async (room: any) => {
     onlineUsers: oldOnlineUsers,
     isPrivate: room.private === 1
   }
-  
+
   localStorage.setItem('currentRoomId', String(roomId))
   closeSidebar()
-  
+
   // 加载房间消息
   await loadRoomMessages(roomId)
-  
+
   // 获取房间人数（仅获取总人数，在线人数等WebSocket更新）
   try {
     const result = await getRoomUserCount(roomId)
@@ -591,7 +550,7 @@ const handleSelectRoom = async (room: any) => {
   } catch (error) {
     console.error('获取房间人数失败:', error)
   }
-  
+
   // 加入 WebSocket 房间（会触发room_joined事件，更新准确的在线人数）
   if (wsStore.isAuthed) {
     enterRoom(roomId)
@@ -645,16 +604,16 @@ const handleSendMessage = async (text: string) => {
     message.warning('请先选择房间')
     return
   }
-  
+
   const userInfo = getUserInfo()
   if (!userInfo) {
     message.error('请先登录')
     return
   }
-  
+
   // 保存引用信息（发送后清除）
   const currentReplyTo = replyToMessage.value
-  
+
   // 先添加到本地消息列表（显示发送中状态）
   const tempId = Date.now()
   const animKey = `anim-${tempId}`  // 动画key，不会被修改
@@ -683,32 +642,32 @@ const handleSendMessage = async (text: string) => {
       deleted: false
     } : undefined
   }
-  
+
   chatStore.addMessage(newMessage)
-  
+
   // 清除引用状态
   replyToMessage.value = null
-  
+
   // 滚动到底部
   nextTick(() => {
     messageListRef.value?.scrollToBottom(true)
   })
-  
+
   try {
     // 通过 HTTP API 发送消息（带引用参数）
     const result = await sendTextMessage(
-      currentRoom.value.id, 
-      text, 
+      currentRoom.value.id,
+      text,
       currentReplyTo ? Number(currentReplyTo.id) : undefined
     )
-    
+
     if (result.code === 0 && result.data) {
       // 更新消息ID和状态
       const msg = chatStore.messages.find(m => m.id === tempId)
       if (msg) {
         msg.id = result.data.id
         msg.status = 'sent'
-        
+
         // 如果有好感度信息，更新
         if (result.data.intimacy) {
           msg.intimacy = {
@@ -717,7 +676,7 @@ const handleSendMessage = async (text: string) => {
           }
         }
       }
-      
+
       // 通过 WebSocket 广播消息给其他用户
       broadcastMessage({
         message_id: Number(result.data.id),
@@ -742,17 +701,17 @@ const handleSendImage = async (file: File) => {
     message.warning('请先选择房间')
     return
   }
-  
+
   // 生成临时消息ID
   const tempId = `temp_${Date.now()}`
   const userInfo = getUserInfo()
-  
+
   // 创建临时图片URL用于预览
   const tempImageUrl = URL.createObjectURL(file)
-  
+
   // 初始化上传进度
   uploadProgress.value[tempId] = 0
-  
+
   // 添加临时消息到列表（占位）
   const tempMessage: ChatMessageItem = {
     id: tempId,
@@ -770,14 +729,14 @@ const handleSendImage = async (file: File) => {
     imageUrl: tempImageUrl,
     isNew: true
   }
-  
+
   chatStore.addMessage(tempMessage)
-  
+
   // 滚动到底部
   nextTick(() => {
     messageListRef.value?.scrollToBottom(true)
   })
-  
+
   // 模拟上传进度（因为实际上传可能很快，模拟一个平滑的进度）
   const progressInterval = setInterval(() => {
     if (uploadProgress.value[tempId] < 85) {
@@ -794,38 +753,38 @@ const handleSendImage = async (file: File) => {
       }
     }
   }, 300)
-  
+
   try {
     // 上传图片
     const result = await sendImageMessage(currentRoom.value.id, file)
-    
+
     // 清除进度模拟
     clearInterval(progressInterval)
     uploadProgress.value[tempId] = 100
-    
+
     console.log('[图片上传] 后端返回:', result)
-    
+
     if (result.code === 0 && result.data) {
       // 获取图片路径
       const imageUrl = result.data.imageUrl || result.data.image_url || result.data.content || result.data.text || ''
       console.log('[图片上传] 图片路径:', imageUrl)
-      
+
       // 拼接完整URL
       const serverUrl = import.meta.env.VITE_SERVER_URL || ''
-      const fullImageUrl = imageUrl && !imageUrl.startsWith('http://') && !imageUrl.startsWith('https://') 
-        ? serverUrl + imageUrl 
+      const fullImageUrl = imageUrl && !imageUrl.startsWith('http://') && !imageUrl.startsWith('https://')
+        ? serverUrl + imageUrl
         : imageUrl
-      
+
       console.log('[图片上传] 完整URL:', fullImageUrl)
-      
+
       // 短暂延迟后更新临时消息（让用户看到100%）
       setTimeout(() => {
         // 释放临时URL
         URL.revokeObjectURL(tempImageUrl)
-        
+
         // 清除进度（隐藏进度遮罩）
         delete uploadProgress.value[tempId]
-        
+
         // 直接更新临时消息，不改变ID避免重新渲染
         const msg = chatStore.messages.find(m => m.id === tempId)
         if (msg) {
@@ -842,7 +801,7 @@ const handleSendImage = async (file: File) => {
           // 保存真实ID到自定义属性，用于后续操作
           (msg as any).realId = Number(result.data.id);
         }
-        
+
         // 广播消息（携带图片路径）
         console.log('[图片上传] 广播消息, content:', imageUrl)
         broadcastMessage({
@@ -870,7 +829,7 @@ const handleSendImage = async (file: File) => {
     if (msg) {
       msg.status = 'failed'
     }
-    
+
     // 优化错误提示
     let errorMsg = '图片发送失败'
     if (error.message) {
@@ -891,17 +850,17 @@ const handleSendVideo = async (file: File) => {
     message.warning('请先选择房间')
     return
   }
-  
+
   // 生成临时消息ID
   const tempId = `temp_${Date.now()}`
   const userInfo = getUserInfo()
-  
+
   // 创建临时视频URL用于预览
   const tempVideoUrl = URL.createObjectURL(file)
-  
+
   // 初始化上传进度
   uploadProgress.value[tempId] = 0
-  
+
   // 添加临时消息到列表（占位）
   const tempMessage: ChatMessageItem = {
     id: tempId,
@@ -921,14 +880,14 @@ const handleSendVideo = async (file: File) => {
     videoDuration: 0,
     isNew: true
   }
-  
+
   chatStore.addMessage(tempMessage)
-  
+
   // 滚动到底部
   nextTick(() => {
     messageListRef.value?.scrollToBottom(true)
   })
-  
+
   // 模拟上传进度（视频上传较慢）
   const progressInterval = setInterval(() => {
     if (uploadProgress.value[tempId] < 40) {
@@ -945,48 +904,48 @@ const handleSendVideo = async (file: File) => {
       }
     }
   }, 300)
-  
+
   try {
     // 上传视频
     const result = await sendVideoMessage(currentRoom.value.id, file)
-    
+
     // 清除进度模拟
     clearInterval(progressInterval)
     uploadProgress.value[tempId] = 100
-    
+
     console.log('[视频上传] 后端返回:', result)
-    
+
     if (result.code === 0 && result.data) {
       // 获取视频路径
       const videoUrl = result.data.videoUrl || result.data.video_url || result.data.content || result.data.text || ''
       const videoThumbnail = result.data.videoThumbnail || result.data.video_thumbnail || ''
       const videoDuration = result.data.videoDuration || result.data.video_duration || 0
-      
+
       console.log('[视频上传] 视频URL:', videoUrl)
       console.log('[视频上传] 缩略图URL:', videoThumbnail)
       console.log('[视频上传] 时长:', videoDuration)
-      
+
       // 拼接完整URL
       const serverUrl = import.meta.env.VITE_SERVER_URL || ''
-      const fullVideoUrl = videoUrl && !videoUrl.startsWith('http://') && !videoUrl.startsWith('https://') 
-        ? serverUrl + videoUrl 
+      const fullVideoUrl = videoUrl && !videoUrl.startsWith('http://') && !videoUrl.startsWith('https://')
+        ? serverUrl + videoUrl
         : videoUrl
-      
-      const fullThumbnailUrl = videoThumbnail && !videoThumbnail.startsWith('http://') && !videoThumbnail.startsWith('https://') 
-        ? serverUrl + videoThumbnail 
+
+      const fullThumbnailUrl = videoThumbnail && !videoThumbnail.startsWith('http://') && !videoThumbnail.startsWith('https://')
+        ? serverUrl + videoThumbnail
         : videoThumbnail
-      
+
       console.log('[视频上传] 完整视频URL:', fullVideoUrl)
       console.log('[视频上传] 完整缩略图URL:', fullThumbnailUrl)
-      
+
       // 短暂延迟后更新临时消息（让用户看到100%）
       setTimeout(() => {
         // 释放临时URL
         URL.revokeObjectURL(tempVideoUrl)
-        
+
         // 清除进度（隐藏进度遮罩）
         delete uploadProgress.value[tempId]
-        
+
         // 直接更新临时消息，不改变ID避免重新渲染
         const msg = chatStore.messages.find(m => m.id === tempId)
         if (msg) {
@@ -1003,7 +962,7 @@ const handleSendVideo = async (file: File) => {
           // 保存真实ID到自定义属性，用于后续操作
           (msg as any).realId = Number(result.data.id)
         }
-        
+
         // 广播消息（携带视频路径）
         console.log('[视频上传] 广播消息, videoUrl:', videoUrl, 'thumbnail:', videoThumbnail, 'duration:', videoDuration)
         broadcastMessage({
@@ -1034,7 +993,7 @@ const handleSendVideo = async (file: File) => {
     if (msg) {
       msg.status = 'failed'
     }
-    
+
     // 优化错误提示
     let errorMsg = '视频发送失败'
     if (error.message) {
@@ -1055,7 +1014,7 @@ const handleSendFile = async (file: File) => {
     message.warning('请先选择房间')
     return
   }
-  
+
   try {
     const result = await sendFileMessage(currentRoom.value.id, file)
     if (result.code === 0 && result.data) {
@@ -1082,12 +1041,12 @@ const handleStopRecording = () => { console.log('停止录音') }
 const handleTyping = () => {
   // 发送正在输入状态
   sendTyping(true)
-  
+
   // 清除之前的定时器
   if (typingTimer) {
     clearTimeout(typingTimer)
   }
-  
+
   // 3秒后发送停止输入状态
   typingTimer = setTimeout(() => {
     sendTyping(false)
@@ -1099,11 +1058,11 @@ const handleTyping = () => {
 // 获取引用预览文本
 const getReplyPreviewText = (msg: any): string => {
   if (!msg) return ''
-  
+
   if (msg.type === 'image') return '[图片]'
   if (msg.type === 'video') return '[视频]'
   if (msg.type === 'file') return '[文件]'
-  
+
   const text = msg.text || msg.content || ''
   return text.length > 30 ? text.substring(0, 30) + '...' : text
 }
@@ -1132,7 +1091,7 @@ const handleReplyMessage = (msg: any) => {
       nickname: msg.username || '用户'
     }
   }
-  
+
   // 聚焦输入框
   nextTick(() => {
     inputBarRef.value?.focusInput()
@@ -1388,7 +1347,7 @@ const handleBurnMessage = async (messageId: string | number) => {
 // 深色模式 - 菜单按钮
 .chat-app.dark-mode .menu-btn {
   color: $text-secondary-dark;
-  
+
   &:active {
     background: rgba($primary-color, 0.15);
   }
@@ -1494,7 +1453,7 @@ const handleBurnMessage = async (messageId: string | number) => {
   .ant-form-item {
     margin-bottom: 12px;
   }
-  
+
   &.mb-0,
   .mb-0 {
     margin-bottom: 0;
