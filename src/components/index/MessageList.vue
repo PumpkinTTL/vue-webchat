@@ -65,7 +65,7 @@ import MessageItem from './MessageItem.vue'
 
 interface Message {
   id: string | number
-  type: 'text' | 'image' | 'file' | 'system'
+  type: 'text' | 'image' | 'voice' | 'video' | 'file' | 'system'
   text?: string
   content?: string
   time: Date | string

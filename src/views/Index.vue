@@ -48,9 +48,9 @@
         <MessageList 
           ref="messageListRef"
           :messages="messages"
-          :loading="false"
-          :has-more="false"
-          :loading-more="false"
+          :loading="messagesLoading"
+          :has-more="hasMoreMessages"
+          :loading-more="loadingMoreMessages"
           @load-more="handleLoadMore"
         />
       </section>
@@ -130,37 +130,40 @@
 </template>
 
 <script setup lang="ts">
-import { ref, reactive, nextTick, onMounted } from 'vue'
+import { ref, reactive, computed, nextTick, watch, onMounted, onUnmounted } from 'vue'
 import { message } from 'ant-design-vue'
 import Sidebar from '@/components/index/Sidebar.vue'
 import ChatHeader from '@/components/index/ChatHeader.vue'
 import MessageList from '@/components/index/MessageList.vue'
 import InputBar from '@/components/index/InputBar.vue'
 import { getUserRooms, createRoom, joinRoom, leaveRoom, getRoomUserCount } from '@/apis/room'
+import { getMessageList, sendTextMessage, sendImageMessage, sendVideoMessage, sendFileMessage } from '@/apis/message'
 import type { CreateRoomParams, JoinRoomParams } from '@/apis/room'
+import { useChat } from '@/composables/useChat'
+import { getUserInfo } from '@/utils/storage'
+import type { ChatMessageItem } from '@/store/chat'
+
+// 使用聊天组合式函数
+const { wsStore, chatStore, initChat, destroyChat, enterRoom, broadcastMessage, sendTyping } = useChat()
 
 // 消息列表引用
 const messageListRef = ref<InstanceType<typeof MessageList>>()
 
-// 消息ID计数器
-let messageIdCounter = 100
-
 // 响应式状态
 const isDarkMode = ref(false)
 const sidebarOpen = ref(false)
-const wsConnected = ref(true)
-const typingUsers = ref<any[]>([])
 
-// 从localStorage恢复上次选中的房间ID
-const savedRoomId = localStorage.getItem('currentRoomId')
-const currentRoom = ref<any>(savedRoomId ? null : {
-  id: 1,
-  name: '测试房间',
-  description: '这是一个测试房间',
-  totalUsers: 15,
-  onlineUsers: 8,
-  isPrivate: true
-})
+// WebSocket 连接状态
+const wsConnected = computed(() => wsStore.isConnected)
+
+// 正在输入的用户列表
+const typingUsers = computed(() => wsStore.typingUserList)
+
+// 当前房间
+const currentRoom = ref<any>(null)
+
+// 消息列表 - 使用 chatStore 的消息
+const messages = computed(() => chatStore.messages)
 
 // 房间列表
 const roomList = ref<any[]>([])
@@ -170,6 +173,57 @@ const contactList = ref([
   { id: 1, nickname: '张三', avatar: '', sign: '今天天气不错', online: true },
   { id: 2, nickname: '李四', avatar: '', sign: '忙碌中...', online: false }
 ])
+
+// 消息加载状态
+const messagesLoading = ref(false)
+const hasMoreMessages = ref(false)
+const loadingMoreMessages = ref(false)
+
+// 输入状态防抖
+let typingTimer: ReturnType<typeof setTimeout> | null = null
+
+// ==================== 生命周期 ====================
+
+onMounted(async () => {
+  // 初始化 WebSocket
+  initChat()
+  
+  // 加载房间列表
+  await loadUserRooms()
+})
+
+onUnmounted(() => {
+  // 清理 WebSocket
+  destroyChat()
+  
+  // 清理输入状态定时器
+  if (typingTimer) {
+    clearTimeout(typingTimer)
+  }
+})
+
+// 监听 WebSocket 认证成功后自动加入房间
+watch(() => wsStore.isAuthed, (isAuthed) => {
+  if (isAuthed && currentRoom.value?.id) {
+    enterRoom(currentRoom.value.id)
+  }
+})
+
+// 监听房间在线人数变化
+watch(() => wsStore.onlineCount, (count) => {
+  if (currentRoom.value) {
+    currentRoom.value.onlineUsers = count
+  }
+})
+
+// 监听新消息，滚动到底部
+watch(() => chatStore.messages.length, () => {
+  nextTick(() => {
+    messageListRef.value?.scrollToBottom(true)
+  })
+})
+
+// ==================== 房间列表 ====================
 
 // 加载用户房间列表
 const loadUserRooms = async () => {
@@ -183,23 +237,10 @@ const loadUserRooms = async () => {
       if (savedRoomId && roomList.value.length > 0) {
         const savedRoom = roomList.value.find(r => r.id == savedRoomId)
         if (savedRoom) {
-          // 使用 handleSelectRoom 来加载房间，这样会自动请求人数
           await handleSelectRoom(savedRoom)
         }
       } else if (roomList.value.length > 0 && !currentRoom.value) {
-        // 如果没有保存的房间，且当前没有选中房间，自动选择第一个房间
         await handleSelectRoom(roomList.value[0])
-      } else if (currentRoom.value?.id) {
-        // 如果有当前房间，更新其人数
-        try {
-          const result = await getRoomUserCount(currentRoom.value.id)
-          if (result.code === 0) {
-            currentRoom.value.totalUsers = result.data.total_count
-            currentRoom.value.onlineUsers = result.data.online_count
-          }
-        } catch (error) {
-          console.error('更新房间人数失败:', error)
-        }
       }
     }
   } catch (error) {
@@ -207,38 +248,112 @@ const loadUserRooms = async () => {
   }
 }
 
-// 页面加载时获取房间列表
-onMounted(() => {
-  loadUserRooms()
-})
+// ==================== 消息加载 ====================
 
-const messages = ref<any[]>([
-  { id: 1, type: 'system', text: '欢迎来到聊天室', time: new Date(), isOwn: false },
-  { id: 2, type: 'text', text: '大家好！', time: new Date(), isOwn: false, sender: { nickname: '用户A', avatar: '' }, username: '用户A' },
-  { id: 3, type: 'text', text: '你好，很高兴认识大家', time: new Date(), isOwn: true, sender: { nickname: '我', avatar: '' }, username: '我', status: 'read', readCount: 5 },
-  { id: 4, type: 'text', text: '这条消息已送达', time: new Date(), isOwn: true, sender: { nickname: '我', avatar: '' }, username: '我', status: 'delivered' },
-  { id: 5, type: 'text', text: '这条消息刚发送', time: new Date(), isOwn: true, sender: { nickname: '我', avatar: '' }, username: '我', status: 'sent' },
-  { id: 6, type: 'text', text: '这条消息正在发送中...', time: new Date(), isOwn: true, sender: { nickname: '我', avatar: '' }, username: '我', status: 'sending' },
-  { id: 7, type: 'text', text: '这条消息发送失败了', time: new Date(), isOwn: true, sender: { nickname: '我', avatar: '' }, username: '我', status: 'failed' },
-  { id: 8, type: 'text', text: '这是一条比较长的消息，用来测试气泡的换行效果。Swiss Modernism 2.0 风格强调简洁、清晰和功能性。', time: new Date(), isOwn: false, sender: { nickname: '设计师', avatar: '' }, username: '设计师' },
-  { id: 9, type: 'text', text: '测试消息 9', time: new Date(), isOwn: false, sender: { nickname: '用户B', avatar: '' }, username: '用户B' },
-  { id: 10, type: 'text', text: '测试消息 10', time: new Date(), isOwn: true, sender: { nickname: '我', avatar: '' }, username: '我', status: 'read', readCount: 3 },
-  { id: 11, type: 'text', text: '测试消息 11 - 这是另一条消息', time: new Date(), isOwn: false, sender: { nickname: '用户C', avatar: '' }, username: '用户C' },
-  { id: 12, type: 'text', text: '测试消息 12', time: new Date(), isOwn: true, sender: { nickname: '我', avatar: '' }, username: '我', status: 'sent' },
-  { id: 13, type: 'text', text: '测试消息 13 - 继续测试滚动', time: new Date(), isOwn: false, sender: { nickname: '用户A', avatar: '' }, username: '用户A' },
-  { id: 14, type: 'text', text: '测试消息 14', time: new Date(), isOwn: true, sender: { nickname: '我', avatar: '' }, username: '我', status: 'read', readCount: 2 },
-  { id: 15, type: 'text', text: '测试消息 15 - 滚动测试', time: new Date(), isOwn: false, sender: { nickname: '用户B', avatar: '' }, username: '用户B' },
-  { id: 16, type: 'text', text: '测试消息 16', time: new Date(), isOwn: true, sender: { nickname: '我', avatar: '' }, username: '我', status: 'sent' },
-  { id: 17, type: 'text', text: '测试消息 17 - 更多内容', time: new Date(), isOwn: false, sender: { nickname: '用户C', avatar: '' }, username: '用户C' },
-  { id: 18, type: 'text', text: '测试消息 18', time: new Date(), isOwn: true, sender: { nickname: '我', avatar: '' }, username: '我', status: 'read', readCount: 4 },
-  { id: 19, type: 'text', text: '测试消息 19 - 快到底部了', time: new Date(), isOwn: false, sender: { nickname: '用户A', avatar: '' }, username: '用户A' },
-  { id: 20, type: 'text', text: '测试消息 20 - 最后一条消息', time: new Date(), isOwn: true, sender: { nickname: '我', avatar: '' }, username: '我', status: 'sent' },
-  { id: 21, type: 'text', text: '测试消息 21', time: new Date(), isOwn: false, sender: { nickname: '用户B', avatar: '' }, username: '用户B' },
-  { id: 22, type: 'text', text: '测试消息 22', time: new Date(), isOwn: true, sender: { nickname: '我', avatar: '' }, username: '我', status: 'sent' },
-  { id: 23, type: 'text', text: '测试消息 23', time: new Date(), isOwn: false, sender: { nickname: '用户C', avatar: '' }, username: '用户C' },
-  { id: 24, type: 'text', text: '测试消息 24', time: new Date(), isOwn: true, sender: { nickname: '我', avatar: '' }, username: '我', status: 'sent' },
-  { id: 25, type: 'text', text: '测试消息 25 - 最后', time: new Date(), isOwn: false, sender: { nickname: '用户A', avatar: '' }, username: '用户A' }
-])
+const loadRoomMessages = async (roomId: number) => {
+  messagesLoading.value = true
+  chatStore.clearMessages()
+  
+  try {
+    const result = await getMessageList(roomId, 1, 50)
+    if (result.code === 0 && result.data) {
+      // 后端已经格式化好了消息，直接映射字段
+      const convertedMessages: ChatMessageItem[] = result.data.messages.map(msg => {
+        // 映射消息类型：normal/reply -> text
+        let msgType = msg.type
+        if (msgType === 'normal' || msgType === 'reply') {
+          msgType = 'text'
+        }
+        
+        return {
+          id: msg.id,
+          type: msgType as any,
+          text: msg.text,
+          time: new Date(msg.time),
+          isOwn: msg.isOwn,
+          sender: msg.sender ? {
+            id: msg.sender.id,
+            nickname: msg.sender.nickname || '未知用户',
+            avatar: msg.sender.avatar || ''
+          } : undefined,
+          username: msg.sender?.nickname,
+          status: msg.isOwn ? 'sent' : undefined,
+          // 图片
+          imageUrl: msg.imageUrl,
+          // 视频
+          videoUrl: msg.videoUrl,
+          videoThumbnail: msg.videoThumbnail,
+          videoDuration: msg.videoDuration,
+          // 文件
+          fileName: msg.fileName,
+          fileSize: msg.fileSize,
+          fileExtension: msg.fileExtension,
+          fileUrl: msg.fileUrl,
+          // 引用
+          replyTo: msg.reply_to
+        }
+      })
+      
+      chatStore.setMessages(convertedMessages)
+      hasMoreMessages.value = result.data.has_more
+      
+      // 滚动到底部
+      nextTick(() => {
+        messageListRef.value?.scrollToBottom(false)
+      })
+    }
+  } catch (error) {
+    console.error('加载消息失败:', error)
+    message.error('加载消息失败')
+  } finally {
+    messagesLoading.value = false
+  }
+}
+
+const handleLoadMore = async () => {
+  if (loadingMoreMessages.value || !hasMoreMessages.value || !currentRoom.value?.id) {
+    return
+  }
+  
+  loadingMoreMessages.value = true
+  
+  try {
+    const oldestMessage = chatStore.messages[0]
+    const lastTime = oldestMessage?.time?.toISOString()
+    
+    const result = await getMessageList(currentRoom.value.id, 1, 20, lastTime)
+    if (result.code === 0 && result.data) {
+      const convertedMessages: ChatMessageItem[] = result.data.messages.map(msg => {
+        let msgType = msg.type
+        if (msgType === 'normal' || msgType === 'reply') {
+          msgType = 'text'
+        }
+        
+        return {
+          id: msg.id,
+          type: msgType as any,
+          text: msg.text,
+          time: new Date(msg.time),
+          isOwn: msg.isOwn,
+          sender: msg.sender ? {
+            id: msg.sender.id,
+            nickname: msg.sender.nickname || '未知用户',
+            avatar: msg.sender.avatar || ''
+          } : undefined,
+          username: msg.sender?.nickname,
+          status: msg.isOwn ? 'sent' : undefined
+        }
+      })
+      
+      chatStore.prependMessages(convertedMessages)
+      hasMoreMessages.value = result.data.has_more
+    }
+  } catch (error) {
+    console.error('加载更多消息失败:', error)
+  } finally {
+    loadingMoreMessages.value = false
+  }
+}
 
 // ==================== 创建房间 ====================
 const createRoomVisible = ref(false)
@@ -345,13 +460,14 @@ const submitJoinRoom = async () => {
   }
 }
 
-// 方法
+// ==================== 房间操作 ====================
+
 const toggleSidebar = () => { sidebarOpen.value = !sidebarOpen.value }
 const closeSidebar = () => { sidebarOpen.value = false }
 const toggleTheme = () => { isDarkMode.value = !isDarkMode.value }
 const handleSelectContact = (contact: any) => { console.log('选择联系人:', contact) }
+
 const handleSelectRoom = async (room: any) => {
-  // 确保 room.id 存在且为数字
   if (!room || !room.id) {
     console.error('房间信息无效:', room)
     return
@@ -367,11 +483,13 @@ const handleSelectRoom = async (room: any) => {
     isPrivate: room.private === 1
   }
   
-  // 保存到localStorage
   localStorage.setItem('currentRoomId', String(roomId))
   closeSidebar()
   
-  // 请求房间人数（总人数 + 在线人数）
+  // 加载房间消息
+  await loadRoomMessages(roomId)
+  
+  // 获取房间人数
   try {
     const result = await getRoomUserCount(roomId)
     if (result.code === 0 && currentRoom.value?.id === roomId) {
@@ -381,21 +499,25 @@ const handleSelectRoom = async (room: any) => {
   } catch (error) {
     console.error('获取房间人数失败:', error)
   }
+  
+  // 加入 WebSocket 房间
+  if (wsStore.isAuthed) {
+    enterRoom(roomId)
+  }
 }
+
 const handleAddContact = () => { console.log('添加联系人') }
 const handleRefresh = () => { loadUserRooms() }
 
-// 退出房间
 const handleLeaveRoomAction = async (room: any) => {
   try {
     const result = await leaveRoom(room.id)
     if (result.code === 0) {
       message.success('已退出房间')
-      // 刷新房间列表
       await loadUserRooms()
-      // 如果退出的是当前房间，清空当前房间
       if (currentRoom.value?.id === room.id) {
         currentRoom.value = null
+        chatStore.clearMessages()
       }
     } else {
       message.error(result.msg || '退出房间失败')
@@ -405,44 +527,176 @@ const handleLeaveRoomAction = async (room: any) => {
   }
 }
 
-const handleLoadMore = () => { console.log('加载更多消息') }
+// ==================== 消息发送 ====================
 
-// 发送消息
-const handleSendMessage = (text: string) => {
-  const newMessage = {
-    id: ++messageIdCounter,
-    type: 'text' as const,
+const handleSendMessage = async (text: string) => {
+  if (!currentRoom.value?.id) {
+    message.warning('请先选择房间')
+    return
+  }
+  
+  const userInfo = getUserInfo()
+  if (!userInfo) {
+    message.error('请先登录')
+    return
+  }
+  
+  // 先添加到本地消息列表（显示发送中状态）
+  const tempId = Date.now()
+  const newMessage: ChatMessageItem = {
+    id: tempId,
+    type: 'text',
     text,
     time: new Date(),
     isOwn: true,
-    sender: { nickname: '我', avatar: '' },
-    username: '我',
-    status: 'sending' as const,
-    isNew: true // 标记为新消息，用于触发动画
+    sender: {
+      id: userInfo.id,
+      nickname: userInfo.nick_name,
+      avatar: userInfo.avatar
+    },
+    username: userInfo.nick_name,
+    status: 'sending',
+    isNew: true
   }
   
-  messages.value.push(newMessage)
+  chatStore.addMessage(newMessage)
   
   // 滚动到底部
   nextTick(() => {
     messageListRef.value?.scrollToBottom(true)
   })
   
-  // 模拟发送过程
-  setTimeout(() => {
-    const msg = messages.value.find(m => m.id === newMessage.id)
-    if (msg) {
-      msg.status = 'sent'
-      msg.isNew = false
+  try {
+    // 通过 HTTP API 发送消息
+    const result = await sendTextMessage(currentRoom.value.id, text)
+    
+    if (result.code === 0 && result.data) {
+      // 更新消息ID和状态
+      const msg = chatStore.messages.find(m => m.id === tempId)
+      if (msg) {
+        msg.id = result.data.message_id
+        msg.status = 'sent'
+        msg.isNew = false
+        
+        // 如果有好感度信息，更新
+        if (result.data.intimacy) {
+          msg.intimacy = {
+            currentExp: result.data.intimacy.current_exp,
+            currentLevel: result.data.intimacy.current_level
+          }
+        }
+      }
+      
+      // 通过 WebSocket 广播消息给其他用户
+      broadcastMessage({
+        message_id: result.data.message_id,
+        message_type: 'text',
+        content: text,
+        intimacy: result.data.intimacy
+      })
+    } else {
+      // 发送失败
+      chatStore.updateMessageStatus(tempId, 'failed')
+      message.error(result.msg || '发送失败')
     }
-  }, 800)
+  } catch (error: any) {
+    chatStore.updateMessageStatus(tempId, 'failed')
+    message.error(error.message || '发送失败')
+  }
 }
-const handleSendImage = (file: File) => { console.log('发送图片:', file) }
-const handleSendVideo = (file: File) => { console.log('发送视频:', file) }
-const handleSendFile = (file: File) => { console.log('发送文件:', file) }
+
+const handleSendImage = async (file: File) => {
+  if (!currentRoom.value?.id) {
+    message.warning('请先选择房间')
+    return
+  }
+  
+  try {
+    const result = await sendImageMessage(currentRoom.value.id, file)
+    if (result.code === 0 && result.data) {
+      // 广播消息
+      broadcastMessage({
+        message_id: result.data.message_id,
+        message_type: 'image',
+        content: '',
+        intimacy: result.data.intimacy
+      })
+      message.success('图片发送成功')
+    } else {
+      message.error(result.msg || '发送图片失败')
+    }
+  } catch (error: any) {
+    message.error(error.message || '发送图片失败')
+  }
+}
+
+const handleSendVideo = async (file: File) => {
+  if (!currentRoom.value?.id) {
+    message.warning('请先选择房间')
+    return
+  }
+  
+  try {
+    const result = await sendVideoMessage(currentRoom.value.id, file)
+    if (result.code === 0 && result.data) {
+      broadcastMessage({
+        message_id: result.data.message_id,
+        message_type: 'video',
+        content: '',
+        intimacy: result.data.intimacy
+      })
+      message.success('视频发送成功')
+    } else {
+      message.error(result.msg || '发送视频失败')
+    }
+  } catch (error: any) {
+    message.error(error.message || '发送视频失败')
+  }
+}
+
+const handleSendFile = async (file: File) => {
+  if (!currentRoom.value?.id) {
+    message.warning('请先选择房间')
+    return
+  }
+  
+  try {
+    const result = await sendFileMessage(currentRoom.value.id, file)
+    if (result.code === 0 && result.data) {
+      broadcastMessage({
+        message_id: result.data.message_id,
+        message_type: 'file',
+        content: '',
+        file_name: file.name,
+        file_size: file.size,
+        intimacy: result.data.intimacy
+      })
+      message.success('文件发送成功')
+    } else {
+      message.error(result.msg || '发送文件失败')
+    }
+  } catch (error: any) {
+    message.error(error.message || '发送文件失败')
+  }
+}
+
 const handleStartRecording = () => { console.log('开始录音') }
 const handleStopRecording = () => { console.log('停止录音') }
-const handleTyping = () => {}
+
+const handleTyping = () => {
+  // 发送正在输入状态
+  sendTyping(true)
+  
+  // 清除之前的定时器
+  if (typingTimer) {
+    clearTimeout(typingTimer)
+  }
+  
+  // 3秒后发送停止输入状态
+  typingTimer = setTimeout(() => {
+    sendTyping(false)
+  }, 3000)
+}
 </script>
 
 <style lang="scss" scoped>

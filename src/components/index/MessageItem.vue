@@ -109,7 +109,7 @@ import { computed } from 'vue'
 
 interface Message {
   id: string | number
-  type: 'text' | 'image' | 'file' | 'system'
+  type: 'text' | 'image' | 'voice' | 'video' | 'file' | 'system'
   text?: string
   content?: string
   imageUrl?: string
@@ -136,7 +136,15 @@ const senderName = computed(() => {
 })
 
 const avatarUrl = computed(() => {
-  return props.message.sender?.avatar || null
+  const avatar = props.message.sender?.avatar
+  if (!avatar) return null
+  // 如果已经是完整URL，直接返回
+  if (avatar.startsWith('http://') || avatar.startsWith('https://')) {
+    return avatar
+  }
+  // 拼接服务器地址
+  const serverUrl = import.meta.env.VITE_SERVER_URL || ''
+  return serverUrl + avatar
 })
 
 const avatarChar = computed(() => {
