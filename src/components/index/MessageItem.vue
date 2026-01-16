@@ -178,8 +178,10 @@
         <div class="msg-meta-own">
           <!-- 已读状态文字 -->
           <span class="msg-read-status" :class="{ 'read': message.readCount && message.readCount > 0 }">
-            <span v-if="message.readCount && message.readCount > 0">{{ message.readCount }}人已读</span>
-            <span v-else>未读</span>
+            <Transition name="read-fade" mode="out-in">
+              <span v-if="message.readCount && message.readCount > 0" key="read">{{ message.readCount }}人已读</span>
+              <span v-else key="unread">未读</span>
+            </Transition>
           </span>
           <span class="msg-time">{{ formatTime(message.time) }}</span>
           <!-- 发送状态图标 -->
@@ -686,11 +688,28 @@ defineExpose({
 .msg-read-status {
   font-size: 11px;
   color: $text-tertiary;
+  transition: color 0.3s ease;
   
   &.read {
     color: $primary-color;
     font-weight: 500;
   }
+}
+
+// 已读状态切换动画
+.read-fade-enter-active,
+.read-fade-leave-active {
+  transition: all 0.3s ease;
+}
+
+.read-fade-enter-from {
+  opacity: 0;
+  transform: scale(0.95);
+}
+
+.read-fade-leave-to {
+  opacity: 0;
+  transform: scale(1.05);
 }
 
 .msg-read-count {
