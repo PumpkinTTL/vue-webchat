@@ -296,7 +296,8 @@ const avatarChar = computed(() => {
 const imageUrl = computed(() => {
   const url = props.message.imageUrl || props.message.content
   if (!url) return ''
-  if (url.startsWith('http://') || url.startsWith('https://')) {
+  // blob URL、http、https 都直接返回
+  if (url.startsWith('blob:') || url.startsWith('http://') || url.startsWith('https://')) {
     return url
   }
   const serverUrl = import.meta.env.VITE_SERVER_URL || ''
@@ -307,7 +308,7 @@ const imageUrl = computed(() => {
 const videoUrl = computed(() => {
   const url = props.message.videoUrl
   if (!url) return ''
-  if (url.startsWith('http://') || url.startsWith('https://')) {
+  if (url.startsWith('blob:') || url.startsWith('http://') || url.startsWith('https://')) {
     return url
   }
   const serverUrl = import.meta.env.VITE_SERVER_URL || ''
@@ -318,7 +319,7 @@ const videoUrl = computed(() => {
 const videoThumbnailUrl = computed(() => {
   const url = props.message.videoThumbnail
   if (!url) return ''
-  if (url.startsWith('http://') || url.startsWith('https://')) {
+  if (url.startsWith('blob:') || url.startsWith('http://') || url.startsWith('https://')) {
     return url
   }
   const serverUrl = import.meta.env.VITE_SERVER_URL || ''
@@ -329,7 +330,7 @@ const videoThumbnailUrl = computed(() => {
 const fileUrl = computed(() => {
   const url = props.message.fileUrl
   if (!url) return ''
-  if (url.startsWith('http://') || url.startsWith('https://')) {
+  if (url.startsWith('blob:') || url.startsWith('http://') || url.startsWith('https://')) {
     return url
   }
   const serverUrl = import.meta.env.VITE_SERVER_URL || ''
