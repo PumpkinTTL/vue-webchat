@@ -149,6 +149,11 @@ export const useWebSocketStore = defineStore('websocket', () => {
     } catch (error) {
       console.error('[WebSocket] 连接失败:', error)
       status.value = 'disconnected'
+      
+      // 连接失败也触发重连
+      if (!manualClose.value) {
+        scheduleReconnect()
+      }
     }
   }
 
