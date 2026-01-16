@@ -143,16 +143,32 @@
                 <a-image :src="imageUrl" alt="Image" :preview="{ src: imageUrl }" />
                 <!-- 上传进度遮罩 -->
                 <div v-if="message.status === 'sending' && uploadProgress !== undefined" class="upload-progress-overlay">
-                  <div class="progress-content">
-                    <a-progress 
-                      type="circle" 
-                      :percent="Math.round(uploadProgress)" 
-                      :width="60"
-                      :stroke-color="{
-                        '0%': '#108ee9',
-                        '100%': '#87d068',
-                      }"
-                    />
+                  <div class="progress-ring">
+                    <svg viewBox="0 0 100 100">
+                      <!-- 背景圆环 -->
+                      <circle
+                        cx="50"
+                        cy="50"
+                        r="45"
+                        fill="none"
+                        stroke="rgba(255, 255, 255, 0.2)"
+                        stroke-width="4"
+                      />
+                      <!-- 进度圆环 -->
+                      <circle
+                        cx="50"
+                        cy="50"
+                        r="45"
+                        fill="none"
+                        stroke="white"
+                        stroke-width="4"
+                        stroke-linecap="round"
+                        :stroke-dasharray="circumference"
+                        :stroke-dashoffset="progressOffset"
+                        class="progress-circle"
+                      />
+                    </svg>
+                    <div class="progress-text">{{ Math.round(uploadProgress) }}%</div>
                   </div>
                 </div>
               </div>
@@ -273,6 +289,14 @@ const popoverVisible = ref(false)
 
 // 高亮状态
 const isHighlighted = ref(false)
+
+// 进度圆环计算
+const circumference = 2 * Math.PI * 45 // 半径45
+const progressOffset = computed(() => {
+  if (props.uploadProgress === undefined) return circumference
+  const progress = props.uploadProgress / 100
+  return circumference * (1 - progress)
+})
 
 const senderName = computed(() => {
   return props.message.sender?.nickname || props.message.username || '用户'
@@ -632,7 +656,8 @@ defineExpose({
   left: 0;
   right: 0;
   bottom: 0;
-  background: rgba(0, 0, 0, 0.6);
+  background: rgba(0, 0, 0, 0.75);
+  backdrop-filter: blur(4px);
   display: flex;
   align-items: center;
   justify-content: center;
@@ -640,11 +665,32 @@ defineExpose({
   z-index: 1;
 }
 
-.progress-content {
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  gap: 8px;
+.progress-ring {
+  position: relative;
+  width: 80px;
+  height: 80px;
+  
+  svg {
+    width: 100%;
+    height: 100%;
+    transform: rotate(-90deg);
+  }
+  
+  .progress-circle {
+    transition: stroke-dashoffset 0.3s ease;
+  }
+}
+
+.progress-text {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  color: white;
+  font-size: 16px;
+  font-weight: 600;
+  font-family: 'SF Mono', 'Monaco', 'Consolas', monospace;
+  letter-spacing: -0.5px;
 }
 
 // 文件

@@ -770,13 +770,20 @@ const handleSendImage = async (file: File) => {
   
   // 模拟上传进度（因为实际上传可能很快，模拟一个平滑的进度）
   const progressInterval = setInterval(() => {
-    if (uploadProgress.value[tempId] < 90) {
-      uploadProgress.value[tempId] += Math.random() * 15
-      if (uploadProgress.value[tempId] > 90) {
-        uploadProgress.value[tempId] = 90
+    if (uploadProgress.value[tempId] < 85) {
+      // 0-85%: 较慢增长，每次增加3-8%
+      uploadProgress.value[tempId] += Math.random() * 5 + 3
+      if (uploadProgress.value[tempId] > 85) {
+        uploadProgress.value[tempId] = 85
+      }
+    } else if (uploadProgress.value[tempId] < 95) {
+      // 85-95%: 非常慢的增长，每次增加0.5-2%
+      uploadProgress.value[tempId] += Math.random() * 1.5 + 0.5
+      if (uploadProgress.value[tempId] > 95) {
+        uploadProgress.value[tempId] = 95
       }
     }
-  }, 200)
+  }, 300)
   
   try {
     // 上传图片
