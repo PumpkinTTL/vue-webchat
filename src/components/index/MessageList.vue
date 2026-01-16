@@ -109,6 +109,7 @@ const emit = defineEmits<{
   loadMore: []
   reply: [message: Message]
   burn: [messageId: string | number]
+  scrollChange: [isAtBottom: boolean]
 }>()
 
 const messageContainer = ref<HTMLElement>()
@@ -124,6 +125,14 @@ const setMessageRef = (id: string | number, el: any) => {
   } else {
     messageRefs.value.delete(id)
   }
+}
+
+// 检查是否在底部
+const checkIsAtBottom = () => {
+  if (!messageContainer.value) return true
+  const { scrollTop, scrollHeight, clientHeight } = messageContainer.value
+  const distanceFromBottom = scrollHeight - scrollTop - clientHeight
+  return distanceFromBottom < 100 // 距离底部小于100px认为在底部
 }
 
 const scrollToBottom = (smooth = true) => {
@@ -143,6 +152,10 @@ const handleScroll = () => {
   const { scrollTop, scrollHeight, clientHeight } = messageContainer.value
   const distanceFromBottom = scrollHeight - scrollTop - clientHeight
   showScrollToBottom.value = distanceFromBottom > 200
+  
+  // 通知父组件滚动位置变化
+  const isAtBottom = distanceFromBottom < 100
+  emit('scrollChange', isAtBottom)
 }
 
 const handleLoadMore = () => {

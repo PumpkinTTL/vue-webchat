@@ -54,7 +54,18 @@
           @load-more="handleLoadMore"
           @reply="handleReplyMessage"
           @burn="handleBurnMessage"
+          @scroll-change="handleScrollChange"
         />
+        
+        <!-- 新消息提示按钮 -->
+        <Transition name="new-msg-fade">
+          <button v-if="newMessageCount > 0" class="new-message-tip" @click="handleScrollToNewMessage">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor">
+              <path d="M12 5v14M19 12l-7 7-7-7" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" />
+            </svg>
+            <span>{{ newMessageCount }} 条新消息</span>
+          </button>
+        </Transition>
       </section>
 
       <!-- 输入区域 -->
@@ -232,13 +243,30 @@ watch(() => wsStore.onlineCount, (count) => {
 // 是否正在加载历史消息的标志
 const isLoadingHistory = ref(false)
 
-// 监听新消息，滚动到底部（仅在非加载历史消息时）
+// 是否在底部（用于判断是否自动滚动）
+const isAtBottom = ref(true)
+
+// 新消息数量
+const newMessageCount = ref(0)
+
+// 监听新消息，滚动到底部（仅在非加载历史消息时且在底部时）
 watch(() => chatStore.messages.length, (newLength, oldLength) => {
-  // 只有在消息增加且不是加载历史消息时才滚动到底部
+  // 只有在消息增加且不是加载历史消息时才处理
   if (newLength > oldLength && !isLoadingHistory.value) {
-    nextTick(() => {
-      messageListRef.value?.scrollToBottom(true)
-    })
+    // 获取新增的消息
+    const newMessages = chatStore.messages.slice(oldLength)
+    // 过滤掉系统消息
+    const nonSystemMessages = newMessages.filter(msg => msg.type !== 'system')
+    
+    // 如果在底部，自动滚动
+    if (isAtBottom.value) {
+      nextTick(() => {
+        messageListRef.value?.scrollToBottom(true)
+      })
+    } else if (nonSystemMessages.length > 0) {
+      // 如果不在底部且有非系统消息，增加新消息计数
+      newMessageCount.value += nonSystemMessages.length
+    }
   }
 })
 
@@ -564,6 +592,25 @@ const handleLeaveRoomAction = async (room: any) => {
   } catch (error: any) {
     message.error(error.message || '退出房间失败')
   }
+}
+
+// ==================== 消息操作 ====================
+
+// 处理滚动位置变化
+const handleScrollChange = (atBottom: boolean) => {
+  isAtBottom.value = atBottom
+  // 如果滚动到底部，清除新消息计数
+  if (atBottom) {
+    newMessageCount.value = 0
+  }
+}
+
+// 点击新消息提示，滚动到底部
+const handleScrollToNewMessage = () => {
+  newMessageCount.value = 0
+  nextTick(() => {
+    messageListRef.value?.scrollToBottom(true)
+  })
 }
 
 // ==================== 消息发送 ====================
@@ -1053,6 +1100,79 @@ const handleBurnMessage = async (messageId: string | number) => {
   min-height: 0;
   overflow: hidden;
   position: relative;
+}
+
+// 新消息提示按钮
+.new-message-tip {
+  position: absolute;
+  bottom: 20px;
+  left: 50%;
+  transform: translateX(-50%);
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 10px 18px;
+  background: $bg-color-elevated;
+  color: $primary-color;
+  border: 1px solid $primary-color;
+  border-radius: $border-radius-round;
+  font-size: 14px;
+  font-weight: 500;
+  cursor: pointer;
+  box-shadow: $box-shadow-lg;
+  z-index: 100;
+  transition: all $transition-base;
+  white-space: nowrap;
+
+  svg {
+    width: 18px;
+    height: 18px;
+    flex-shrink: 0;
+  }
+
+  span {
+    font-weight: 600;
+  }
+
+  &:hover {
+    background: $primary-color;
+    color: white;
+    transform: translateX(-50%) translateY(-2px);
+    box-shadow: $box-shadow-lg, 0 6px 20px rgba($primary-color, 0.3);
+  }
+
+  &:active {
+    transform: translateX(-50%) scale(0.98);
+  }
+}
+
+// 新消息提示动画
+.new-msg-fade-enter-active,
+.new-msg-fade-leave-active {
+  transition: all 0.3s ease;
+}
+
+.new-msg-fade-enter-from {
+  opacity: 0;
+  transform: translateX(-50%) translateY(10px);
+}
+
+.new-msg-fade-leave-to {
+  opacity: 0;
+  transform: translateX(-50%) translateY(10px);
+}
+
+// 深色模式 - 新消息提示
+.chat-app.dark-mode .new-message-tip {
+  background: $bg-color-elevated-dark;
+  border-color: $primary-color;
+  box-shadow: $box-shadow-lg-dark;
+
+  &:hover {
+    background: $primary-color;
+    color: white;
+    box-shadow: $box-shadow-lg-dark, 0 6px 20px rgba($primary-color, 0.4);
+  }
 }
 
 // 输入区域 - 固定高度
