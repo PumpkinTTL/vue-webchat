@@ -796,58 +796,45 @@ const handleSendImage = async (file: File) => {
     console.log('[图片上传] 后端返回:', result)
     
     if (result.code === 0 && result.data) {
-      // 短暂延迟后移除临时消息（让用户看到100%）
+      // 获取图片路径
+      const imageUrl = result.data.imageUrl || result.data.image_url || result.data.content || result.data.text || ''
+      console.log('[图片上传] 图片路径:', imageUrl)
+      
+      // 拼接完整URL
+      const serverUrl = import.meta.env.VITE_SERVER_URL || ''
+      const fullImageUrl = imageUrl && !imageUrl.startsWith('http://') && !imageUrl.startsWith('https://') 
+        ? serverUrl + imageUrl 
+        : imageUrl
+      
+      console.log('[图片上传] 完整URL:', fullImageUrl)
+      
+      // 短暂延迟后更新临时消息（让用户看到100%）
       setTimeout(() => {
-        // 移除临时消息
-        chatStore.removeMessage(tempId as any)
-        
         // 释放临时URL
         URL.revokeObjectURL(tempImageUrl)
         
         // 清除进度
         delete uploadProgress.value[tempId]
         
-        // 获取图片路径 - 尝试多个可能的字段
-        const imageUrl = result.data.imageUrl || result.data.image_url || result.data.content || result.data.text || ''
-        console.log('[图片上传] 图片路径:', imageUrl)
-        
-        // 拼接完整URL
-        const serverUrl = import.meta.env.VITE_SERVER_URL || ''
-        const fullImageUrl = imageUrl && !imageUrl.startsWith('http://') && !imageUrl.startsWith('https://') 
-          ? serverUrl + imageUrl 
-          : imageUrl
-        
-        console.log('[图片上传] 完整URL:', fullImageUrl)
-        
-        // 添加真实消息
-        const realMessage: ChatMessageItem = {
-          id: result.data.id,
-          type: 'image',
-          text: '',
-          time: new Date(),
-          isOwn: true,
-          sender: {
-            id: userInfo?.id || 0,
-            nickname: userInfo?.nick_name || '我',
-            avatar: userInfo?.avatar || ''
-          },
-          username: userInfo?.nick_name || '我',
-          status: 'sent',
-          imageUrl: fullImageUrl,
-          intimacy: result.data.intimacy,
-          isNew: true
+        // 直接更新临时消息，不删除重新添加
+        const msg = chatStore.messages.find(m => m.id === tempId)
+        if (msg) {
+          msg.id = result.data.id // 更新为真实ID
+          msg.imageUrl = fullImageUrl // 更新为服务器URL
+          msg.status = 'sent' // 更新状态
+          msg.intimacy = result.data.intimacy
+          msg.isNew = false // 取消新消息标记，避免重复动画
         }
-        
-        chatStore.addMessage(realMessage)
-        
-        // 滚动到底部
-        nextTick(() => {
-          messageListRef.value?.scrollToBottom(true)
-        })
         
         // 广播消息（携带图片路径）
         console.log('[图片上传] 广播消息, content:', imageUrl)
         broadcastMessage({
+          message_id: result.data.id,
+          message_type: 'image',
+          content: imageUrl,
+          intimacy: result.data.intimacy
+        })
+      }, 300)
           message_id: result.data.id,
           message_type: 'image',
           content: imageUrl, // 携带图片路径
