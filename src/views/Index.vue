@@ -136,7 +136,7 @@ import Sidebar from '@/components/index/Sidebar.vue'
 import ChatHeader from '@/components/index/ChatHeader.vue'
 import MessageList from '@/components/index/MessageList.vue'
 import InputBar from '@/components/index/InputBar.vue'
-import { getUserRooms, createRoom, joinRoom, leaveRoom } from '@/apis/room'
+import { getUserRooms, createRoom, joinRoom, leaveRoom, getRoomUserCount } from '@/apis/room'
 import type { CreateRoomParams, JoinRoomParams } from '@/apis/room'
 
 // 消息列表引用
@@ -183,12 +183,22 @@ const loadUserRooms = async () => {
       if (savedRoomId && roomList.value.length > 0) {
         const savedRoom = roomList.value.find(r => r.id == savedRoomId)
         if (savedRoom) {
-          currentRoom.value = {
-            ...savedRoom,
-            totalUsers: 15,
-            onlineUsers: 8,
-            isPrivate: savedRoom.private === 1
+          // 使用 handleSelectRoom 来加载房间，这样会自动请求人数
+          await handleSelectRoom(savedRoom)
+        }
+      } else if (roomList.value.length > 0 && !currentRoom.value) {
+        // 如果没有保存的房间，且当前没有选中房间，自动选择第一个房间
+        await handleSelectRoom(roomList.value[0])
+      } else if (currentRoom.value?.id) {
+        // 如果有当前房间，更新其人数
+        try {
+          const result = await getRoomUserCount(currentRoom.value.id)
+          if (result.code === 0) {
+            currentRoom.value.totalUsers = result.data.total_count
+            currentRoom.value.onlineUsers = result.data.online_count
           }
+        } catch (error) {
+          console.error('更新房间人数失败:', error)
         }
       }
     }
@@ -340,16 +350,37 @@ const toggleSidebar = () => { sidebarOpen.value = !sidebarOpen.value }
 const closeSidebar = () => { sidebarOpen.value = false }
 const toggleTheme = () => { isDarkMode.value = !isDarkMode.value }
 const handleSelectContact = (contact: any) => { console.log('选择联系人:', contact) }
-const handleSelectRoom = (room: any) => { 
+const handleSelectRoom = async (room: any) => {
+  // 确保 room.id 存在且为数字
+  if (!room || !room.id) {
+    console.error('房间信息无效:', room)
+    return
+  }
+  
+  const roomId = typeof room.id === 'string' ? parseInt(room.id) : room.id
+  
   currentRoom.value = {
     ...room,
-    totalUsers: 15,
-    onlineUsers: 8,
+    id: roomId,
+    totalUsers: 0,
+    onlineUsers: 0,
     isPrivate: room.private === 1
   }
+  
   // 保存到localStorage
-  localStorage.setItem('currentRoomId', room.id)
+  localStorage.setItem('currentRoomId', String(roomId))
   closeSidebar()
+  
+  // 请求房间人数（总人数 + 在线人数）
+  try {
+    const result = await getRoomUserCount(roomId)
+    if (result.code === 0 && currentRoom.value?.id === roomId) {
+      currentRoom.value.totalUsers = result.data.total_count
+      currentRoom.value.onlineUsers = result.data.online_count
+    }
+  } catch (error) {
+    console.error('获取房间人数失败:', error)
+  }
 }
 const handleAddContact = () => { console.log('添加联系人') }
 const handleRefresh = () => { loadUserRooms() }

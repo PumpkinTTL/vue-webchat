@@ -99,8 +99,61 @@ export function getRoomInfo(roomId: number) {
  * 获取房间在线人数
  */
 export function getRoomUserCount(roomId: number) {
-  return request<{ total_count: number; online_count: number }>({
+  return request<{ code: number; msg: string; data: { room_id: number; total_count: number; online_count: number } }>({
     url: `/roomUser/count/${roomId}`,
     method: 'get'
+  })
+}
+
+/**
+ * 获取房间成员列表
+ */
+export function getRoomUserList(roomId: number) {
+  return request<{ code: number; msg: string; data: { room_id: number; users: any[] } }>({
+    url: `/roomUser/list/${roomId}`,
+    method: 'get'
+  })
+}
+
+/**
+ * 检查用户是否在房间内
+ */
+export function checkUserInRoom(roomId: number) {
+  return request<{ code: number; msg: string; data: { room_id: number; user_id: number; is_in_room: boolean } }>({
+    url: '/roomUser/check',
+    method: 'get',
+    params: { room_id: roomId }
+  })
+}
+
+/**
+ * 更新房间信息
+ */
+export function updateRoom(roomId: number, data: Partial<CreateRoomParams>) {
+  return request<{ code: number; msg: string; data?: any }>({
+    url: `/room/${roomId}`,
+    method: 'put',
+    data
+  })
+}
+
+/**
+ * 删除房间
+ */
+export function deleteRoom(roomId: number) {
+  return request<{ code: number; msg: string }>({
+    url: `/room/${roomId}`,
+    method: 'delete'
+  })
+}
+
+/**
+ * 锁定/解锁房间
+ */
+export function toggleRoomLock(roomId: number, lock: 0 | 1) {
+  return request<{ code: number; msg: string }>({
+    url: '/room/toggleLock',
+    method: 'post',
+    data: { room_id: roomId, lock }
   })
 }
