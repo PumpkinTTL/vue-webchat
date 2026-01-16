@@ -368,12 +368,12 @@ const typingText = computed(() => {
     font-size: 10px;
   }
 
-  .typing-text {
-    display: none;
-  }
-
   .typing-indicator {
     padding: $spacing-xs $spacing-sm;
+  }
+  
+  .typing-text {
+    font-size: 12px;
   }
 }
 </style>

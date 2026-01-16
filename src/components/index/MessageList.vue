@@ -405,7 +405,7 @@ defineExpose({ scrollToBottom, scrollToMessage, observeNewMessage })
 // 回到底部按钮 - 遵循UI/UX PRO MAX指导，使用主题变量
 .scroll-to-bottom {
   position: fixed;
-  bottom: 120px;
+  bottom: 140px;
   right: 20px;
   width: 48px;
   height: 48px;
@@ -510,7 +510,7 @@ defineExpose({ scrollToBottom, scrollToMessage, observeNewMessage })
   }
 
   .scroll-to-bottom {
-    bottom: 100px; // 在输入区域上方留出足够空间
+    bottom: 120px; // 在输入区域上方留出足够空间
     right: 16px;
     width: 44px;
     height: 44px;
