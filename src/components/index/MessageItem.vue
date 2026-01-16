@@ -92,6 +92,10 @@
               <!-- 文本 -->
               <div v-else class="text-wrapper">
                 <div class="text-content">{{ message.text || message.content }}</div>
+                <!-- 编辑标记 -->
+                <div v-if="message.edited" class="edited-badge">
+                  编辑于 {{ formatTime(message.editedAt) }}
+                </div>
                 <!-- 引用显示 -->
                 <div 
                   v-if="message.replyTo" 
@@ -139,6 +143,13 @@
                     <path d="M5 15H4a2 2 0 01-2-2V4a2 2 0 012-2h9a2 2 0 012 2v1"/>
                   </svg>
                   <span>复制</span>
+                </button>
+                <button v-if="canEdit" class="action-item" @click="handleEdit">
+                  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                    <path d="M11 4H4a2 2 0 00-2 2v14a2 2 0 002 2h14a2 2 0 002-2v-7"/>
+                    <path d="M18.5 2.5a2.121 2.121 0 013 3L12 15l-4 1 1-4 9.5-9.5z"/>
+                  </svg>
+                  <span>编辑</span>
                 </button>
                 <button v-if="message.isOwn" class="action-item action-danger" @click="handleBurn">
                   <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
@@ -258,6 +269,10 @@
               <!-- 文本 -->
               <div v-else class="text-wrapper">
                 <div class="text-content">{{ message.text || message.content }}</div>
+                <!-- 编辑标记 -->
+                <div v-if="message.edited" class="edited-badge">
+                  编辑于 {{ formatTime(message.editedAt) }}
+                </div>
                 <!-- 引用显示 -->
                 <div 
                   v-if="message.replyTo" 
@@ -342,6 +357,8 @@ interface Message {
   readCount?: number
   isNew?: boolean
   replyTo?: ReplyTo
+  edited?: boolean
+  editedAt?: string
 }
 
 const props = defineProps<{
@@ -443,6 +460,11 @@ const canCopy = computed(() => {
   return props.message.type === 'text' || !!props.message.text || !!props.message.content
 })
 
+// 是否可以编辑
+const canEdit = computed(() => {
+  return props.message.isOwn && props.message.type === 'text'
+})
+
 // 引用昵称
 const replyNickname = computed(() => {
   return props.message.replyTo?.nickname || '用户'
@@ -521,6 +543,12 @@ const handleCopy = async () => {
 const handleBurn = () => {
   popoverVisible.value = false
   emit('burn', props.message.id)
+}
+
+// 编辑消息
+const handleEdit = () => {
+  popoverVisible.value = false
+  emit('edit', props.message.id, props.message.text || props.message.content || '')
 }
 
 // 跳转到引用消息
@@ -708,6 +736,18 @@ defineExpose({
 
 .text-content {
   white-space: pre-wrap;
+}
+
+.edited-badge {
+  font-size: 11px;
+  color: rgba(0, 0, 0, 0.45);
+  margin-top: 4px;
+  font-style: italic;
+}
+
+// 深色模式
+.dark-mode .edited-badge {
+  color: rgba(255, 255, 255, 0.45);
 }
 
 // 图片

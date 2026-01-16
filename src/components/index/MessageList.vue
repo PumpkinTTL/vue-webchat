@@ -52,6 +52,7 @@
         :upload-progress="uploadProgress?.[message.id]"
         @reply="handleReply"
         @burn="handleBurn"
+        @edit="handleEdit"
         @scroll-to-message="handleScrollToMessage"
       />
     </div>
@@ -112,6 +113,7 @@ const emit = defineEmits<{
   loadMore: []
   reply: [message: Message]
   burn: [messageId: string | number]
+  edit: [messageId: string | number, content: string]
   scrollChange: [isAtBottom: boolean]
 }>()
 
@@ -168,6 +170,11 @@ const handleReply = (message: Message) => {
 // 焚毁消息
 const handleBurn = (messageId: string | number) => {
   emit('burn', messageId)
+}
+
+// 编辑消息
+const handleEdit = (messageId: string | number, content: string) => {
+  emit('edit', messageId, content)
 }
 
 // 滚动到指定消息

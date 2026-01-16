@@ -29,7 +29,7 @@
       <section class="messages-area">
         <MessageList ref="messageListRef" :messages="messages" :loading="messagesLoading" :has-more="hasMoreMessages"
           :loading-more="loadingMoreMessages" :upload-progress="uploadProgress" @load-more="handleLoadMore"
-          @reply="handleReplyMessage" @burn="handleBurnMessage" @scroll-change="handleScrollChange" />
+          @reply="handleReplyMessage" @burn="handleBurnMessage" @edit="handleEditMessage" @scroll-change="handleScrollChange" />
 
         <!-- 新消息提示按钮 -->
         <Transition name="new-msg-fade">
@@ -104,6 +104,27 @@
         </a-button>
       </template>
     </a-modal>
+
+    <!-- 编辑消息弹窗 -->
+    <a-modal v-model:open="editMessageVisible" title="编辑消息" :confirm-loading="editMessageLoading"
+      @ok="submitEditMessage" @cancel="resetEditMessageForm">
+      <a-form :model="editMessageForm" layout="vertical" class="compact-form">
+        <a-form-item label="消息内容" required>
+          <a-textarea v-model:value="editMessageForm.content" placeholder="请输入消息内容" :maxlength="10000" show-count
+            :rows="4" autocomplete="off" />
+        </a-form-item>
+      </a-form>
+      <template #footer>
+        <a-button @click="resetEditMessageForm">
+          <font-awesome-icon :icon="['fas', 'times']" style="margin-right: 6px" />
+          取消
+        </a-button>
+        <a-button type="primary" :loading="editMessageLoading" @click="submitEditMessage">
+          <font-awesome-icon :icon="['fas', 'check']" style="margin-right: 6px" />
+          确定
+        </a-button>
+      </template>
+    </a-modal>
   </div>
 </template>
 
@@ -115,7 +136,7 @@ import ChatHeader from '@/components/index/ChatHeader.vue'
 import MessageList from '@/components/index/MessageList.vue'
 import InputBar from '@/components/index/InputBar.vue'
 import { getUserRooms, createRoom, joinRoom, leaveRoom, getRoomUserCount } from '@/apis/room'
-import { getMessageList, sendTextMessage, sendImageMessage, sendVideoMessage, sendFileMessage } from '@/apis/message'
+import { getMessageList, sendTextMessage, sendImageMessage, sendVideoMessage, sendFileMessage, editMessage } from '@/apis/message'
 import type { CreateRoomParams, JoinRoomParams } from '@/apis/room'
 import { useChat } from '@/composables/useChat'
 import { getUserInfo } from '@/utils/storage'
@@ -131,7 +152,8 @@ const messageListRef = ref<InstanceType<typeof MessageList>>()
 const inputBarRef = ref<InstanceType<typeof InputBar>>()
 
 // 响应式状态
-const isDarkMode = ref(false)
+// 暗色模式 - 从本地存储读取初始值
+const isDarkMode = ref(localStorage.getItem('darkMode') === 'true')
 const sidebarOpen = ref(false)
 
 // WebSocket 连接状态
@@ -459,6 +481,14 @@ const joinRoomForm = reactive({
   password: ''
 })
 
+// 编辑消息弹窗
+const editMessageVisible = ref(false)
+const editMessageLoading = ref(false)
+const editMessageForm = reactive({
+  messageId: 0,
+  content: ''
+})
+
 const handleJoinRoom = () => {
   joinRoomVisible.value = true
 }
@@ -506,7 +536,11 @@ const submitJoinRoom = async () => {
 
 const toggleSidebar = () => { sidebarOpen.value = !sidebarOpen.value }
 const closeSidebar = () => { sidebarOpen.value = false }
-const toggleTheme = () => { isDarkMode.value = !isDarkMode.value }
+const toggleTheme = () => {
+  isDarkMode.value = !isDarkMode.value
+  // 保存到本地存储
+  localStorage.setItem('darkMode', String(isDarkMode.value))
+}
 const handleSelectContact = (contact: any) => { console.log('选择联系人:', contact) }
 
 const handleSelectRoom = async (room: any) => {
@@ -1137,6 +1171,50 @@ const handleBurnMessage = async (messageId: string | number) => {
       }
     }
   })
+}
+
+// 编辑消息
+const handleEditMessage = (messageId: string | number, content: string) => {
+  editMessageForm.messageId = Number(messageId)
+  editMessageForm.content = content
+  editMessageVisible.value = true
+}
+
+const resetEditMessageForm = () => {
+  editMessageVisible.value = false
+  editMessageForm.messageId = 0
+  editMessageForm.content = ''
+}
+
+const submitEditMessage = async () => {
+  if (!editMessageForm.content.trim()) {
+    message.warning('请输入消息内容')
+    return
+  }
+
+  editMessageLoading.value = true
+  try {
+    const result = await editMessage(editMessageForm.messageId, editMessageForm.content.trim())
+    if (result.code === 0 && result.data) {
+      const editedAt = (result.data as any).edited_at || new Date().toISOString()
+      
+      // 更新本地消息
+      chatStore.editMessage(editMessageForm.messageId, editMessageForm.content.trim(), editedAt)
+      
+      // 广播给其他用户
+      const { broadcastEditMessage } = useChat()
+      broadcastEditMessage(editMessageForm.messageId, editMessageForm.content.trim(), editedAt)
+      
+      message.success('消息已编辑')
+      resetEditMessageForm()
+    } else {
+      message.error(result.msg || '编辑失败')
+    }
+  } catch (error: any) {
+    message.error(error.message || '编辑失败')
+  } finally {
+    editMessageLoading.value = false
+  }
 }
 </script>
 
