@@ -178,10 +178,8 @@
         <div class="msg-meta-own">
           <!-- 已读状态文字 -->
           <span class="msg-read-status" :class="{ 'read': message.readCount && message.readCount > 0 }">
-            <Transition name="read-fade" mode="out-in">
-              <span v-if="message.readCount && message.readCount > 0" key="read">{{ message.readCount }}人已读</span>
-              <span v-else key="unread">未读</span>
-            </Transition>
+            <span v-if="message.readCount && message.readCount > 0">{{ message.readCount }}人已读</span>
+            <span v-else>未读</span>
           </span>
           <span class="msg-time">{{ formatTime(message.time) }}</span>
           <!-- 发送状态图标 -->
@@ -688,45 +686,10 @@ defineExpose({
 .msg-read-status {
   font-size: 11px;
   color: $text-tertiary;
-  transition: color 0.3s ease;
   
   &.read {
     color: $primary-color;
     font-weight: 500;
-  }
-}
-
-// 已读状态切换动画 - 左出右入的Q弹效果
-.read-fade-enter-active {
-  animation: readStatusEnter 0.5s cubic-bezier(0.68, -0.55, 0.265, 1.55);
-}
-
-.read-fade-leave-active {
-  animation: readStatusLeave 0.3s ease-out;
-}
-
-@keyframes readStatusLeave {
-  0% {
-    opacity: 1;
-    transform: translateX(0) scaleX(1);
-  }
-  100% {
-    opacity: 0;
-    transform: translateX(-20px) scaleX(0.8);
-  }
-}
-
-@keyframes readStatusEnter {
-  0% {
-    opacity: 0;
-    transform: translateX(20px) scaleX(0.8);
-  }
-  60% {
-    transform: translateX(-3px) scaleX(1.05);
-  }
-  100% {
-    opacity: 1;
-    transform: translateX(0) scaleX(1);
   }
 }
 
