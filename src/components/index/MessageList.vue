@@ -57,25 +57,28 @@
       />
     </div>
 
-    <!-- 回到底部按钮 - 当显示回到历史位置时隐藏 -->
-    <Transition enter-active-class="animate__animated animate__zoomIn animate__faster"
-      leave-active-class="animate__animated animate__zoomOut animate__faster">
+    <!-- 回到底部按钮 -->
+    <Transition name="fade-scale">
       <button v-if="showScrollToBottom && !showBackToHistory" class="scroll-to-bottom" :class="{ 'has-reply': hasReply }" @click="handleScrollToBottom">
         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor">
-          <path d="M12 5v14M19 12l-7 7-7-7" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" />
+          <circle cx="12" cy="12" r="10" stroke-width="2"/>
+          <path d="M8 12l4 4 4-4M12 8v8" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
         </svg>
-        <span>回到底部</span>
       </button>
     </Transition>
 
     <!-- 回到历史位置按钮 -->
-    <Transition enter-active-class="animate__animated animate__zoomIn animate__faster"
-      leave-active-class="animate__animated animate__zoomOut animate__faster">
+    <Transition name="fade-scale">
       <button v-if="showBackToHistory" class="back-to-history" :class="{ 'has-reply': hasReply }" @click="handleBackToHistory">
         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor">
-          <path d="M12 19V5M5 12l7-7 7 7" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" />
+          <circle cx="12" cy="12" r="10" stroke-width="2"/>
+          <path d="M16 12l-4-4-4 4M12 16V8" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
         </svg>
-        <span>回到历史位置</span>
+        <button class="close-icon" @click.stop="clearHistoryPosition">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor">
+            <path d="M6 18L18 6M6 6l12 12" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" />
+          </svg>
+        </button>
       </button>
     </Transition>
   </div>
@@ -539,121 +542,180 @@ defineExpose({ scrollToBottom, scrollToBottomWithHistory, scrollToMessage, obser
   }
 }
 
-// 回到底部按钮 - 遵循UI/UX PRO MAX指导，使用主题变量
+// 回到底部按钮 - 半透明简洁设计
 .scroll-to-bottom {
   position: fixed;
   bottom: 90px;
   right: 20px;
+  width: 44px;
+  height: 44px;
+  padding: 0;
   display: flex;
   align-items: center;
-  gap: 6px;
-  padding: 10px 14px;
-  background: linear-gradient(135deg, $primary-color 0%, $primary-light 100%);
-  color: white;
-  border: none;
-  border-radius: 24px;
+  justify-content: center;
+  background: rgba(255, 255, 255, 0.9);
+  color: #2563EB;
+  border: 1px solid rgba(37, 99, 235, 0.1);
+  border-radius: 50%;
   cursor: pointer;
-  box-shadow: $box-shadow-base, 0 4px 16px rgba($primary-color, 0.25);
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.08);
   z-index: 100;
-  transition: all $transition-base;
-  backdrop-filter: blur(8px);
-  border: 2px solid rgba(255, 255, 255, 0.15);
-  font-size: 13px;
-  font-weight: 500;
+  transition: all 0.2s ease;
+  backdrop-filter: blur(10px);
 
   svg {
-    width: 18px;
-    height: 18px;
-    transition: transform $transition-fast;
+    width: 22px;
+    height: 22px;
+    transition: transform 0.2s ease;
   }
 
-  // 悬停效果 - 使用主题变量
   &:hover {
-    transform: translateY(-2px) scale(1.02);
-    background: linear-gradient(135deg, $primary-hover 0%, $primary-color 100%);
-    box-shadow: $box-shadow-lg, 0 8px 24px rgba($primary-color, 0.35);
+    transform: scale(1.05);
 
     svg {
-      transform: translateY(1px);
+      transform: translateY(2px);
     }
   }
 
-  // 按下效果
   &:active {
-    transform: translateY(0) scale(0.98);
-    box-shadow: $box-shadow-sm, 0 2px 8px rgba($primary-color, 0.3);
+    transform: scale(0.95);
   }
 
-  // 有引用消息时上移
   &.has-reply {
     bottom: 130px;
   }
 }
 
-// 回到历史位置按钮
+.chat-app.dark-mode .scroll-to-bottom {
+  background: rgba(30, 41, 59, 0.9);
+  color: #60A5FA;
+  border-color: rgba(96, 165, 250, 0.2);
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.4);
+}
+
+// 回到历史位置按钮 - 无背景紫色图标
 .back-to-history {
   position: fixed;
   bottom: 90px;
   right: 20px;
+  width: 44px;
+  height: 44px;
+  padding: 0;
   display: flex;
   align-items: center;
-  gap: 6px;
-  padding: 10px 14px;
-  background: linear-gradient(135deg, #6366f1 0%, #8b5cf6 100%);
-  color: white;
-  border: none;
-  border-radius: 24px;
+  justify-content: center;
+  background: rgba(255, 255, 255, 0.9);
+  color: #8B5CF6;
+  border: 1px solid rgba(139, 92, 246, 0.2);
+  border-radius: 50%;
   cursor: pointer;
-  box-shadow: $box-shadow-base, 0 4px 16px rgba(99, 102, 241, 0.3);
+  box-shadow: 0 4px 12px rgba(139, 92, 246, 0.15);
   z-index: 100;
-  transition: all $transition-base;
-  backdrop-filter: blur(8px);
-  border: 2px solid rgba(255, 255, 255, 0.15);
-  font-size: 13px;
-  font-weight: 500;
+  transition: all 0.2s ease;
+  backdrop-filter: blur(10px);
 
   svg {
-    width: 18px;
-    height: 18px;
-    transition: transform $transition-fast;
+    width: 22px;
+    height: 22px;
+    transition: transform 0.2s ease;
   }
 
   &:hover {
-    transform: translateY(-2px) scale(1.02);
-    background: linear-gradient(135deg, #4f46e5 0%, #7c3aed 100%);
-    box-shadow: $box-shadow-lg, 0 8px 24px rgba(99, 102, 241, 0.4);
+    transform: scale(1.05);
 
     svg {
-      transform: translateY(-1px);
+      transform: translateY(-2px);
+    }
+
+    .close-icon {
+      opacity: 1;
+      transform: scale(1);
     }
   }
 
   &:active {
-    transform: translateY(0) scale(0.98);
-    box-shadow: $box-shadow-sm, 0 2px 8px rgba(99, 102, 241, 0.3);
+    transform: scale(0.95);
   }
 
-  // 有引用消息时上移
   &.has-reply {
     bottom: 130px;
   }
+
+  // 关闭图标 - 红色背景白色X
+  .close-icon {
+    position: absolute;
+    top: -2px;
+    right: -2px;
+    width: 18px;
+    height: 18px;
+    padding: 0;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background: #EF4444;
+    color: white;
+    border: 2px solid white;
+    border-radius: 50%;
+    opacity: 0;
+    transform: scale(0.8);
+    transition: all 0.2s ease;
+
+    svg {
+      width: 10px;
+      height: 10px;
+      stroke-width: 2.5;
+    }
+
+    &:hover {
+      background: #DC2626;
+      transform: scale(1.1) rotate(90deg);
+    }
+
+    &:active {
+      transform: scale(0.9);
+    }
+  }
 }
 
-@keyframes pulse-ring {
-  0% {
+.chat-app.dark-mode .back-to-history {
+  background: rgba(30, 41, 59, 0.9);
+  color: #A78BFA;
+  border-color: rgba(167, 139, 250, 0.2);
+  box-shadow: 0 4px 12px rgba(167, 139, 250, 0.15);
+
+  .close-icon {
+    background: #EF4444;
+    color: white;
+    border-color: rgba(30, 41, 59, 0.9);
+
+    &:hover {
+      background: #DC2626;
+    }
+  }
+}
+
+// 移动端 - X按钮始终显示
+@media (max-width: 768px) {
+  .back-to-history .close-icon {
+    opacity: 1;
     transform: scale(1);
-    opacity: 0.2;
   }
+}
 
-  50% {
-    transform: scale(1.1);
-    opacity: 0.08;
-  }
+// 过渡动画
+.fade-scale-enter-active,
+.fade-scale-leave-active {
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+}
 
-  100% {
-    transform: scale(1.2);
-    opacity: 0;
-  }
+.fade-scale-enter-from {
+  opacity: 0;
+  transform: scale(0.8);
+}
+
+.fade-scale-leave-to {
+  opacity: 0;
+  transform: scale(0.9);
 }
 
 // 动画
@@ -687,21 +749,12 @@ defineExpose({ scrollToBottom, scrollToBottomWithHistory, scrollToMessage, obser
   .scroll-to-bottom {
     bottom: 80px;
     right: 16px;
-    padding: 8px 12px;
-    font-size: 12px;
+    width: 40px;
+    height: 40px;
 
     svg {
-      width: 16px;
-      height: 16px;
-    }
-
-    &:hover {
-      transform: none;
-      background: linear-gradient(135deg, $primary-color 0%, $primary-light 100%);
-    }
-
-    &:active {
-      transform: scale(0.95);
+      width: 20px;
+      height: 20px;
     }
 
     &.has-reply {
@@ -712,25 +765,26 @@ defineExpose({ scrollToBottom, scrollToBottomWithHistory, scrollToMessage, obser
   .back-to-history {
     bottom: 80px;
     right: 16px;
-    padding: 8px 12px;
-    font-size: 12px;
+    width: 40px;
+    height: 40px;
 
     svg {
-      width: 16px;
-      height: 16px;
-    }
-
-    &:hover {
-      transform: none;
-      background: linear-gradient(135deg, #6366f1 0%, #8b5cf6 100%);
-    }
-
-    &:active {
-      transform: scale(0.95);
+      width: 20px;
+      height: 20px;
     }
 
     &.has-reply {
       bottom: 120px;
+    }
+
+    .close-icon {
+      width: 16px;
+      height: 16px;
+
+      svg {
+        width: 9px;
+        height: 9px;
+      }
     }
   }
 }
