@@ -27,6 +27,16 @@
           @toggle-intimacy-panel="showIntimacyPanel = !showIntimacyPanel" />
       </header>
 
+      <!-- 亲密度面板 -->
+      <IntimacyPanel
+        :visible="showIntimacyPanel"
+        :intimacy-info="intimacyStore.currentIntimacy"
+        :levels="intimacyStore.levels"
+        :interaction="intimacyStore.interaction"
+        @close="handleCloseIntimacyPanel"
+        @collect-reward="handleCollectIntimacyReward"
+      />
+
       <!-- 消息区域 -->
       <section class="messages-area">
         <MessageList ref="messageListRef" :messages="messages" :loading="messagesLoading" :has-more="hasMoreMessages"
@@ -131,17 +141,7 @@
       </template>
     </a-modal>
   </div>
-  
-  <!-- 亲密度面板 -->
-  <IntimacyPanel 
-    :visible="showIntimacyPanel"
-    :intimacy-info="intimacyStore.currentIntimacy"
-    :levels="intimacyStore.levels"
-    :interaction="intimacyStore.interaction"
-    @close="handleCloseIntimacyPanel"
-    @collect-reward="handleCollectIntimacyReward"
-  />
-  
+
   <!-- 亲密度升级弹窗 -->
   <IntimacyLevelUpModal 
     :visible="intimacyStore.showLevelUpModal"
