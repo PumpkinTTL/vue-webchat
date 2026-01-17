@@ -133,14 +133,15 @@ import { useRouter } from 'vue-router'
 import { login } from '@/apis/auth'
 import { getRealIpFromThirdParty } from '@/utils/ip'
 import {
-  saveUserInfo,
   saveLoginCredentials,
   getLoginCredentials,
   clearLoginCredentials
 } from '@/utils/storage'
 import { Message } from '@/utils/message'
+import { useUserStore } from '@/store/user'
 
 const router = useRouter()
+const userStore = useUserStore()
 
 interface FormState {
   username: string
@@ -202,10 +203,8 @@ const handleLogin = async () => {
         token: result.token
       }
 
-      saveUserInfo(userInfo)
-
-      const saved = localStorage.getItem('userInfo')
-      console.log('✅ 验证保存结果:', saved)
+      // 保存到 Pinia store（会自动保存到本地存储）
+      userStore.setUserInfo(userInfo)
 
       console.log('🍪 检查Cookie:', document.cookie)
       const tokenCookie = document.cookie.split('; ').find(row => row.startsWith('token='))

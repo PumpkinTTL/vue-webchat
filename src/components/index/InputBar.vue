@@ -150,35 +150,96 @@
         :duration="200"
       >
         <div v-if="showAttachMenu" class="attach-menu">
-          <button class="attach-item" @click="selectImage">
-            <div class="attach-icon attach-icon-image">
-              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor">
-                <rect x="3" y="3" width="18" height="18" rx="2" ry="2" stroke-width="2"/>
-                <circle cx="8.5" cy="8.5" r="1.5" stroke-width="2"/>
-                <path d="M21 15l-5-5L5 21" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
-              </svg>
-            </div>
-            <span>图片</span>
-          </button>
+          <!-- 文件上传区域 -->
+          <div class="menu-section">
+            <div class="section-title">文件</div>
+            <div class="menu-grid">
+              <button class="menu-item" @click="selectImage">
+                <div class="menu-icon menu-icon-image">
+                  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor">
+                    <rect x="3" y="3" width="18" height="18" rx="2" ry="2" stroke-width="2"/>
+                    <circle cx="8.5" cy="8.5" r="1.5" stroke-width="2"/>
+                    <path d="M21 15l-5-5L5 21" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+                  </svg>
+                </div>
+                <span class="menu-label">图片</span>
+              </button>
 
-          <button class="attach-item" @click="selectVideo">
-            <div class="attach-icon attach-icon-video">
-              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor">
-                <path d="M23 7l-7 5 7 5V7zM14 5H3a2 2 0 00-2 2v10a2 2 0 002 2h11a2 2 0 002-2V7a2 2 0 00-2-2z" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
-              </svg>
-            </div>
-            <span>视频</span>
-          </button>
+              <button class="menu-item" @click="selectVideo">
+                <div class="menu-icon menu-icon-video">
+                  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor">
+                    <path d="M23 7l-7 5 7 5V7zM14 5H3a2 2 0 00-2 2v10a2 2 0 002 2h11a2 2 0 002-2V7a2 2 0 00-2-2z" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+                  </svg>
+                </div>
+                <span class="menu-label">视频</span>
+              </button>
 
-          <button class="attach-item" @click="selectFile">
-            <div class="attach-icon attach-icon-file">
-              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor">
-                <path d="M13 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V9z" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
-                <path d="M13 2v7h7" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
-              </svg>
+              <button class="menu-item" @click="selectFile">
+                <div class="menu-icon menu-icon-file">
+                  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor">
+                    <path d="M13 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V9z" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+                    <path d="M13 2v7h7" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+                  </svg>
+                </div>
+                <span class="menu-label">文件</span>
+              </button>
             </div>
-            <span>文件</span>
-          </button>
+          </div>
+
+          <!-- 管理员功能区域 -->
+          <div v-if="isAdmin && currentRoom" class="menu-section admin-section">
+            <div class="section-title">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                <path d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z"/>
+              </svg>
+              管理功能
+            </div>
+            <div class="menu-grid">
+              <button class="menu-item admin-item" @click="handleToggleLock">
+                <div class="menu-icon menu-icon-lock" :class="{ 'is-locked': currentRoom.lock === 1 }">
+                  <svg v-if="currentRoom.lock === 1" viewBox="0 0 24 24" fill="none" stroke="currentColor">
+                    <rect x="3" y="11" width="18" height="11" rx="2" ry="2" stroke-width="2"/>
+                    <path d="M7 11V7a5 5 0 0110 0v4" stroke-width="2"/>
+                  </svg>
+                  <svg v-else viewBox="0 0 24 24" fill="none" stroke="currentColor">
+                    <rect x="3" y="11" width="18" height="11" rx="2" ry="2" stroke-width="2"/>
+                    <path d="M7 11V7a5 5 0 019.9-1" stroke-width="2"/>
+                  </svg>
+                </div>
+                <span class="menu-label">{{ currentRoom.lock === 1 ? '解锁' : '锁定' }}</span>
+              </button>
+
+              <button class="menu-item admin-item" @click="handleClearSoft">
+                <div class="menu-icon menu-icon-clear">
+                  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor">
+                    <path d="M3 6h18M19 6v14a2 2 0 01-2 2H7a2 2 0 01-2-2V6m3 0V4a2 2 0 012-2h4a2 2 0 012 2v2" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+                  </svg>
+                </div>
+                <span class="menu-label">软删除</span>
+              </button>
+
+              <button class="menu-item admin-item danger-item" @click="handleClearHard">
+                <div class="menu-icon menu-icon-danger">
+                  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor">
+                    <path d="M3 6h18M19 6v14a2 2 0 01-2 2H7a2 2 0 01-2-2V6m3 0V4a2 2 0 012-2h4a2 2 0 012 2v2M10 11v6M14 11v6" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+                  </svg>
+                </div>
+                <span class="menu-label">物理删除</span>
+              </button>
+
+              <button class="menu-item admin-item" @click="handleRestore" :disabled="deletedCount === 0">
+                <div class="menu-icon menu-icon-restore">
+                  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor">
+                    <path d="M3 12a9 9 0 019-9 9.75 9.75 0 016.74 2.74L21 8" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+                    <path d="M21 3v5h-5" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+                    <path d="M21 12a9 9 0 01-9 9 9.75 9.75 0 01-6.74-2.74L3 16" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+                    <path d="M3 21v-5h5" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+                  </svg>
+                </div>
+                <span class="menu-label">恢复 ({{ deletedCount }})</span>
+              </button>
+            </div>
+          </div>
         </div>
       </Transition>
 
@@ -211,12 +272,18 @@ interface Props {
   disabled?: boolean
   placeholder?: string
   replyTo?: ReplyMessage | null
+  isAdmin?: boolean
+  currentRoom?: any
+  deletedCount?: number
 }
 
 const props = withDefaults(defineProps<Props>(), {
   disabled: false,
   placeholder: '说点什么...',
-  replyTo: null
+  replyTo: null,
+  isAdmin: false,
+  currentRoom: null,
+  deletedCount: 0
 })
 
 const emit = defineEmits<{
@@ -228,6 +295,9 @@ const emit = defineEmits<{
   stopRecording: []
   typing: []
   cancelReply: []
+  toggleLock: []
+  clearRoom: [hardDelete: boolean]
+  restoreRoom: []
 }>()
 
 const inputText = ref('')
@@ -453,6 +523,27 @@ const cancelRecording = () => {
 // 取消引用
 const cancelReply = () => {
   emit('cancelReply')
+}
+
+// 管理功能处理
+const handleToggleLock = () => {
+  closeAttachMenu()
+  emit('toggleLock')
+}
+
+const handleClearSoft = () => {
+  closeAttachMenu()
+  emit('clearRoom', false)
+}
+
+const handleClearHard = () => {
+  closeAttachMenu()
+  emit('clearRoom', true)
+}
+
+const handleRestore = () => {
+  closeAttachMenu()
+  emit('restoreRoom')
 }
 
 // 聚焦输入框
@@ -927,13 +1018,13 @@ defineExpose({
   bottom: 100%;
   left: 0;
   margin-bottom: 16px;
-  display: flex;
-  gap: $spacing-md;
-  padding: $spacing-md $spacing-lg;
+  min-width: 320px;
+  max-width: 400px;
+  padding: 16px;
   background: $bg-color-elevated;
   border: 1px solid $border-base;
-  border-radius: $border-radius-lg;
-  box-shadow: $box-shadow-lg;
+  border-radius: 16px;
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.12);
   z-index: $z-index-dropdown;
   --animate-duration: 0.2s;
 }
@@ -941,61 +1032,143 @@ defineExpose({
 .dark-mode .attach-menu {
   background: $bg-color-elevated-dark;
   border-color: $border-base-dark;
-  box-shadow: $box-shadow-lg-dark;
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.4);
 }
 
-.attach-item {
+// 菜单分区
+.menu-section {
+  &:not(:last-child) {
+    margin-bottom: 16px;
+    padding-bottom: 16px;
+    border-bottom: 1px solid $border-base;
+  }
+}
+
+.dark-mode .menu-section {
+  &:not(:last-child) {
+    border-bottom-color: $border-base-dark;
+  }
+}
+
+// 分区标题
+.section-title {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 12px;
+  font-weight: 600;
+  color: $text-tertiary;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  margin-bottom: 12px;
+
+  svg {
+    width: 14px;
+    height: 14px;
+  }
+}
+
+.dark-mode .section-title {
+  color: $text-tertiary-dark;
+}
+
+// 管理员分区特殊样式
+.admin-section .section-title {
+  color: $warning-color;
+}
+
+// 菜单网格
+.menu-grid {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 12px;
+}
+
+// 菜单项
+.menu-item {
   display: flex;
   flex-direction: column;
   align-items: center;
-  gap: $spacing-xs;
-  padding: $spacing-sm;
+  gap: 8px;
+  padding: 12px 8px;
   background: transparent;
-  border: none;
-  border-radius: $border-radius-base;
+  border: 1px solid transparent;
+  border-radius: 12px;
   cursor: pointer;
+  transition: all 0.2s ease;
 
-  span {
-    font-size: $font-size-xs;
-    font-weight: $font-weight-medium;
-    color: $text-secondary;
-  }
+  &:hover:not(:disabled) {
+    background: rgba($primary-color, 0.08);
+    border-color: rgba($primary-color, 0.2);
 
-  &:hover {
-    background: rgba($primary-color, 0.05);
-
-    span {
+    .menu-label {
       color: $text-primary;
     }
 
-    .attach-icon {
+    .menu-icon {
       transform: translateY(-2px);
     }
   }
-}
 
-.dark-mode .attach-item {
-  span {
-    color: $text-secondary-dark;
+  &:active:not(:disabled) {
+    transform: scale(0.95);
   }
 
-  &:hover {
-    background: rgba($primary-color, 0.08);
+  &:disabled {
+    opacity: 0.4;
+    cursor: not-allowed;
+  }
+}
 
-    span {
+.dark-mode .menu-item {
+  &:hover:not(:disabled) {
+    background: rgba($primary-color, 0.12);
+    border-color: rgba($primary-color, 0.3);
+
+    .menu-label {
       color: $text-primary-dark;
     }
   }
 }
 
-.attach-icon {
+// 管理员菜单项
+.admin-item {
+  &:hover:not(:disabled) {
+    background: rgba($warning-color, 0.08);
+    border-color: rgba($warning-color, 0.2);
+  }
+
+  &.danger-item:hover:not(:disabled) {
+    background: rgba($danger-color, 0.08);
+    border-color: rgba($danger-color, 0.2);
+
+    .menu-icon {
+      background: linear-gradient(135deg, $danger-color, darken($danger-color, 10%));
+    }
+  }
+}
+
+.dark-mode .admin-item {
+  &:hover:not(:disabled) {
+    background: rgba($warning-color, 0.12);
+    border-color: rgba($warning-color, 0.3);
+  }
+
+  &.danger-item:hover:not(:disabled) {
+    background: rgba($danger-color, 0.12);
+    border-color: rgba($danger-color, 0.3);
+  }
+}
+
+// 菜单图标
+.menu-icon {
   width: 48px;
   height: 48px;
-  border-radius: $border-radius-base;
+  border-radius: 12px;
   display: flex;
   align-items: center;
   justify-content: center;
-  transition: transform 0.2s ease;
+  transition: all 0.2s ease;
 
   svg {
     width: 24px;
@@ -1003,18 +1176,52 @@ defineExpose({
     color: white;
   }
 
-  // 使用主题变量的渐变背景
-  &.attach-icon-image {
-    background: linear-gradient(135deg, $success-color, darken($success-color, 10%));
+  // 文件类型图标
+  &.menu-icon-image {
+    background: linear-gradient(135deg, #10b981, #059669);
   }
 
-  &.attach-icon-video {
-    background: linear-gradient(135deg, $info-color, darken($info-color, 10%));
+  &.menu-icon-video {
+    background: linear-gradient(135deg, #3b82f6, #2563eb);
   }
 
-  &.attach-icon-file {
-    background: linear-gradient(135deg, $warning-color, darken($warning-color, 10%));
+  &.menu-icon-file {
+    background: linear-gradient(135deg, #f59e0b, #d97706);
   }
+
+  // 管理功能图标
+  &.menu-icon-lock {
+    background: linear-gradient(135deg, #8b5cf6, #7c3aed);
+
+    &.is-locked {
+      background: linear-gradient(135deg, #ef4444, #dc2626);
+    }
+  }
+
+  &.menu-icon-clear {
+    background: linear-gradient(135deg, #6366f1, #4f46e5);
+  }
+
+  &.menu-icon-danger {
+    background: linear-gradient(135deg, #ef4444, #dc2626);
+  }
+
+  &.menu-icon-restore {
+    background: linear-gradient(135deg, #14b8a6, #0d9488);
+  }
+}
+
+// 菜单标签
+.menu-label {
+  font-size: 12px;
+  font-weight: 500;
+  color: $text-secondary;
+  white-space: nowrap;
+  transition: color 0.2s ease;
+}
+
+.dark-mode .menu-label {
+  color: $text-secondary-dark;
 }
 
 // ==================== 移动端适配 ====================
@@ -1067,29 +1274,51 @@ defineExpose({
   .attach-menu {
     left: 0;
     right: 0;
-    transform: none;
-    gap: $spacing-sm;
-    padding: $spacing-sm;
-    justify-content: space-around;
+    min-width: auto;
+    max-width: none;
+    padding: 12px;
   }
 
-  .attach-item {
-    padding: $spacing-xs;
-    gap: 4px;
-
-    span {
-      font-size: 10px;
+  .menu-section {
+    &:not(:last-child) {
+      margin-bottom: 12px;
+      padding-bottom: 12px;
     }
   }
 
-  .attach-icon {
+  .section-title {
+    font-size: 11px;
+    margin-bottom: 10px;
+
+    svg {
+      width: 12px;
+      height: 12px;
+    }
+  }
+
+  .menu-grid {
+    grid-template-columns: repeat(4, 1fr);
+    gap: 8px;
+  }
+
+  .menu-item {
+    padding: 10px 6px;
+    gap: 6px;
+  }
+
+  .menu-icon {
     width: 40px;
     height: 40px;
+    border-radius: 10px;
 
     svg {
       width: 20px;
       height: 20px;
     }
+  }
+
+  .menu-label {
+    font-size: 11px;
   }
 }
 </style>

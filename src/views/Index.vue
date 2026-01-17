@@ -22,7 +22,7 @@
         </button>
         <ChatHeader :room-name="currentRoom?.name" :total-users="currentRoom?.totalUsers || 0"
           :online-users="currentRoom?.onlineUsers || 0" :ws-connected="wsConnected"
-          :is-private-room="currentRoom?.isPrivate || false" :typing-users="typingUsers" />
+          :is-private-room="currentRoom?.isPrivate || false" :typing-users="typingUsers" :is-locked="currentRoom?.lock === 1" />
       </header>
 
       <!-- 消息区域 -->
@@ -44,10 +44,13 @@
 
       <!-- 输入区域 -->
       <footer class="input-area">
-        <InputBar ref="inputBarRef" :disabled="false" :reply-to="replyToMessage" @send="handleSendMessage"
+        <InputBar ref="inputBarRef" :disabled="false" :reply-to="replyToMessage" 
+          :is-admin="userStore.isAdmin" :current-room="currentRoom" :deleted-count="deletedCount"
+          @send="handleSendMessage"
           @send-image="handleSendImage" @send-video="handleSendVideo" @send-file="handleSendFile"
           @start-recording="handleStartRecording" @stop-recording="handleStopRecording" @typing="handleTyping"
-          @cancel-reply="handleCancelReply" />
+          @cancel-reply="handleCancelReply" 
+          @toggle-lock="handleToggleLock" @clear-room="handleClearRoom" @restore-room="handleRestoreRoom" />
       </footer>
     </main>
 
@@ -135,12 +138,15 @@ import Sidebar from '@/components/index/Sidebar.vue'
 import ChatHeader from '@/components/index/ChatHeader.vue'
 import MessageList from '@/components/index/MessageList.vue'
 import InputBar from '@/components/index/InputBar.vue'
-import { getUserRooms, createRoom, joinRoom, leaveRoom, getRoomUserCount } from '@/apis/room'
+import { getUserRooms, createRoom, joinRoom, leaveRoom, getRoomUserCount, toggleRoomLock, clearRoomMessages, restoreRoomMessages, getDeletedMessagesCount } from '@/apis/room'
 import { getMessageList, sendTextMessage, sendImageMessage, sendVideoMessage, sendFileMessage, editMessage } from '@/apis/message'
 import type { CreateRoomParams, JoinRoomParams } from '@/apis/room'
 import { useChat } from '@/composables/useChat'
-import { getUserInfo } from '@/utils/storage'
+import { useUserStore } from '@/store/user'
 import type { ChatMessageItem } from '@/store/chat'
+
+// 使用用户 store
+const userStore = useUserStore()
 
 // 使用聊天组合式函数
 const { wsStore, chatStore, initChat, destroyChat, enterRoom, broadcastMessage, sendTyping } = useChat()
@@ -192,9 +198,15 @@ let typingTimer: ReturnType<typeof setTimeout> | null = null
 // 上传进度管理
 const uploadProgress = ref<Record<string, number>>({})
 
+// 房间管理状态
+const deletedCount = ref(0) // 软删除消息数量
+
 // ==================== 生命周期 ====================
 
 onMounted(async () => {
+  // 初始化用户信息
+  userStore.initUserInfo()
+  
   // 初始化 WebSocket
   initChat()
 
@@ -673,6 +685,11 @@ const handleSelectRoom = async (room: any) => {
   if (wsStore.isAuthed) {
     enterRoom(roomId)
   }
+  
+  // 更新软删除消息数量（仅管理员需要）
+  if (userStore.isAdmin) {
+    await updateDeletedCount()
+  }
 }
 
 const handleAddContact = () => { console.log('添加联系人') }
@@ -693,6 +710,119 @@ const handleLeaveRoomAction = async (room: any) => {
     }
   } catch (error: any) {
     message.error(error.message || '退出房间失败')
+  }
+}
+
+// ==================== 房间管理操作 ====================
+
+// 锁定/解锁房间
+const handleToggleLock = async () => {
+  if (!currentRoom.value) return
+  
+  const newLockStatus = currentRoom.value.lock === 1 ? 0 : 1
+  const actionText = newLockStatus === 1 ? '锁定' : '解锁'
+  
+  try {
+    const result = await toggleRoomLock(currentRoom.value.id, newLockStatus)
+    if (result.code === 0) {
+      message.success(`房间已${actionText}`)
+      currentRoom.value.lock = newLockStatus
+      
+      // WebSocket 会自动广播锁定状态变化
+    } else {
+      message.error(result.msg || `${actionText}失败`)
+    }
+  } catch (error: any) {
+    message.error(error.message || `${actionText}失败`)
+  }
+}
+
+// 清理房间消息
+const handleClearRoom = async (hardDelete: boolean) => {
+  if (!currentRoom.value) return
+  
+  const actionText = hardDelete ? '物理删除' : '软删除'
+  
+  Modal.confirm({
+    title: `确认${actionText}所有消息？`,
+    content: hardDelete 
+      ? '物理删除将永久删除所有消息和文件，无法恢复！' 
+      : '软删除的消息可以通过"恢复消息"功能恢复。',
+    okText: '确认',
+    okType: hardDelete ? 'danger' : 'primary',
+    cancelText: '取消',
+    onOk: async () => {
+      try {
+        const result = await clearRoomMessages(currentRoom.value!.id, hardDelete)
+        if (result.code === 0) {
+          message.success(`${actionText}成功，共删除 ${result.data.deleted_messages} 条消息`)
+          
+          // 清空本地消息列表
+          chatStore.clearMessages()
+          
+          // 重新加载消息
+          await loadRoomMessages(currentRoom.value!.id)
+          
+          // 更新软删除消息数量
+          await updateDeletedCount()
+          
+          // WebSocket 会自动广播清理事件
+        } else {
+          message.error(result.msg || `${actionText}失败`)
+        }
+      } catch (error: any) {
+        message.error(error.message || `${actionText}失败`)
+      }
+    }
+  })
+}
+
+// 恢复房间消息
+const handleRestoreRoom = async () => {
+  if (!currentRoom.value) return
+  
+  if (deletedCount.value === 0) {
+    message.info('没有可恢复的消息')
+    return
+  }
+  
+  Modal.confirm({
+    title: '确认恢复消息？',
+    content: `将恢复 ${deletedCount.value} 条软删除的消息。`,
+    okText: '确认',
+    cancelText: '取消',
+    onOk: async () => {
+      try {
+        const result = await restoreRoomMessages(currentRoom.value!.id)
+        if (result.code === 0) {
+          message.success(`恢复成功，共恢复 ${result.data.restored_messages} 条消息`)
+          
+          // 重新加载消息
+          await loadRoomMessages(currentRoom.value!.id)
+          
+          // 更新软删除消息数量
+          await updateDeletedCount()
+        } else {
+          message.error(result.msg || '恢复失败')
+        }
+      } catch (error: any) {
+        message.error(error.message || '恢复失败')
+      }
+    }
+  })
+}
+
+// 更新软删除消息数量
+const updateDeletedCount = async () => {
+  if (!currentRoom.value) return
+  
+  try {
+    const result = await getDeletedMessagesCount(currentRoom.value.id)
+    if (result.code === 0) {
+      deletedCount.value = result.data.count
+    }
+  } catch (error) {
+    console.error('获取软删除消息数量失败:', error)
   }
 }
 
@@ -723,8 +853,7 @@ const handleSendMessage = async (text: string) => {
     return
   }
 
-  const userInfo = getUserInfo()
-  if (!userInfo) {
+  if (!userStore.userInfo) {
     message.error('请先登录')
     return
   }
@@ -742,11 +871,11 @@ const handleSendMessage = async (text: string) => {
     time: new Date(),
     isOwn: true,
     sender: {
-      id: userInfo.id,
-      nickname: userInfo.nick_name,
-      avatar: userInfo.avatar
+      id: userStore.userInfo.id,
+      nickname: userStore.userInfo.nick_name,
+      avatar: userStore.userInfo.avatar
     },
-    username: userInfo.nick_name,
+    username: userStore.userInfo.nick_name,
     status: 'sending',
     isNew: true,
     animationKey: animKey,  // 用于动画的唯一标识
@@ -829,7 +958,6 @@ const handleSendImage = async (file: File) => {
 
   // 生成临时消息ID
   const tempId = `temp_${Date.now()}`
-  const userInfo = getUserInfo()
 
   // 创建临时图片URL用于预览
   const tempImageUrl = URL.createObjectURL(file)
@@ -845,11 +973,11 @@ const handleSendImage = async (file: File) => {
     time: new Date(),
     isOwn: true,
     sender: {
-      id: userInfo?.id || 0,
-      nickname: userInfo?.nick_name || '我',
-      avatar: userInfo?.avatar || ''
+      id: userStore.userInfo?.id || 0,
+      nickname: userStore.userInfo?.nick_name || '我',
+      avatar: userStore.userInfo?.avatar || ''
     },
-    username: userInfo?.nick_name || '我',
+    username: userStore.userInfo?.nick_name || '我',
     status: 'sending',
     imageUrl: tempImageUrl,
     isNew: true
@@ -978,7 +1106,6 @@ const handleSendVideo = async (file: File) => {
 
   // 生成临时消息ID
   const tempId = `temp_${Date.now()}`
-  const userInfo = getUserInfo()
 
   // 创建临时视频URL用于预览
   const tempVideoUrl = URL.createObjectURL(file)
@@ -994,11 +1121,11 @@ const handleSendVideo = async (file: File) => {
     time: new Date(),
     isOwn: true,
     sender: {
-      id: userInfo?.id || 0,
-      nickname: userInfo?.nick_name || '我',
-      avatar: userInfo?.avatar || ''
+      id: userStore.userInfo?.id || 0,
+      nickname: userStore.userInfo?.nick_name || '我',
+      avatar: userStore.userInfo?.avatar || ''
     },
-    username: userInfo?.nick_name || '我',
+    username: userStore.userInfo?.nick_name || '我',
     status: 'sending',
     videoUrl: tempVideoUrl,
     videoThumbnail: undefined,

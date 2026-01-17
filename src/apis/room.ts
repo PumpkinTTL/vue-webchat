@@ -151,9 +151,42 @@ export function deleteRoom(roomId: number) {
  * 锁定/解锁房间
  */
 export function toggleRoomLock(roomId: number, lock: 0 | 1) {
-  return request<{ code: number; msg: string }>({
+  return request<{ code: number; msg: string; data: { lock: number } }>({
     url: '/room/toggleLock',
     method: 'post',
     data: { room_id: roomId, lock }
+  })
+}
+
+/**
+ * 清理房间消息
+ */
+export function clearRoomMessages(roomId: number, hardDelete: boolean = false) {
+  return request<{ code: number; msg: string; data: { deleted_messages: number; deleted_files: number; hard_delete: boolean } }>({
+    url: '/message/clearRoom',
+    method: 'post',
+    data: { room_id: roomId, hard_delete: hardDelete }
+  })
+}
+
+/**
+ * 恢复房间消息
+ */
+export function restoreRoomMessages(roomId: number) {
+  return request<{ code: number; msg: string; data: { restored_messages: number } }>({
+    url: '/message/restoreRoom',
+    method: 'post',
+    data: { room_id: roomId }
+  })
+}
+
+/**
+ * 获取房间软删除消息数量
+ */
+export function getDeletedMessagesCount(roomId: number) {
+  return request<{ code: number; data: { count: number } }>({
+    url: '/message/deletedCount',
+    method: 'get',
+    params: { room_id: roomId }
   })
 }

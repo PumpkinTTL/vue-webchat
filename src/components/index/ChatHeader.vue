@@ -68,6 +68,7 @@ interface Props {
   wsConnected?: boolean
   isPrivateRoom?: boolean
   typingUsers?: Array<{ id: string | number; nickname: string }>
+  isLocked?: boolean
 }
 
 const props = withDefaults(defineProps<Props>(), {
@@ -75,7 +76,8 @@ const props = withDefaults(defineProps<Props>(), {
   onlineUsers: 0,
   wsConnected: false,
   isPrivateRoom: false,
-  typingUsers: () => []
+  typingUsers: () => [],
+  isLocked: false
 })
 
 // 计算正在输入的文本
