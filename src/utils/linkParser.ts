@@ -52,3 +52,31 @@ export function hasUrl(text: string): boolean {
   URL_REGEX.lastIndex = 0 // 重置正则状态
   return URL_REGEX.test(text)
 }
+
+/**
+ * 分离文本和URL - 返回纯文本和URL数组
+ */
+export function separateTextAndUrls(text: string): { text: string; urls: string[] } {
+  if (!text) return { text: '', urls: [] }
+  
+  const urls: string[] = []
+  const urlMatches = Array.from(text.matchAll(URL_REGEX))
+  
+  // 提取所有URL（去重）
+  urlMatches.forEach(match => {
+    if (!urls.includes(match[0])) {
+      urls.push(match[0])
+    }
+  })
+  
+  // 移除URL后的纯文本
+  let pureText = text
+  urls.forEach(url => {
+    pureText = pureText.replace(url, '').trim()
+  })
+  
+  return {
+    text: pureText,
+    urls: urls
+  }
+}

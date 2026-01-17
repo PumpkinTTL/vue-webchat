@@ -1,14 +1,10 @@
 <template>
-  <div 
-    class="msg-row"
-    :class="{ 
-      'msg-own': message.isOwn,
-      'msg-system-row': message.type === 'system',
-      'msg-new': message.isNew,
-      'highlight-message': isHighlighted
-    }"
-    :data-msg-id="message.id"
-  >
+  <div class="msg-row" :class="{
+    'msg-own': message.isOwn,
+    'msg-system-row': message.type === 'system',
+    'msg-new': message.isNew,
+    'highlight-message': isHighlighted
+  }" :data-msg-id="message.id">
     <!-- 系统消息 -->
     <div v-if="message.type === 'system'" class="msg-system">
       <span class="system-badge">{{ message.text }}</span>
@@ -18,52 +14,40 @@
     <template v-else>
       <!-- 头像 -->
       <div class="msg-avatar">
-        <img 
-          v-if="avatarUrl" 
-          :src="avatarUrl" 
-          :alt="senderName"
-        >
+        <img v-if="avatarUrl" :src="avatarUrl" :alt="senderName">
         <span v-else class="avatar-char">{{ avatarChar }}</span>
       </div>
 
       <!-- 他人消息 -->
       <div v-if="!message.isOwn" class="msg-content-left">
         <div class="msg-bubble-wrapper">
-          <a-popover 
-            v-model:open="popoverVisible"
-            trigger="contextmenu,click"
-            placement="top"
-            :arrow="false"
-            overlay-class-name="msg-action-popover"
-          >
+          <a-popover v-model:open="popoverVisible" trigger="contextmenu,click" placement="top" :arrow="false"
+            overlay-class-name="msg-action-popover">
             <template #content>
               <div class="msg-actions">
                 <button class="action-item" @click="handleReply">
                   <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                    <path d="M9 17H4a2 2 0 01-2-2V5a2 2 0 012-2h16a2 2 0 012 2v10a2 2 0 01-2 2h-5l-5 5v-5z"/>
+                    <path d="M9 17H4a2 2 0 01-2-2V5a2 2 0 012-2h16a2 2 0 012 2v10a2 2 0 01-2 2h-5l-5 5v-5z" />
                   </svg>
                   <span>回复</span>
                 </button>
                 <button v-if="canCopy" class="action-item" @click="handleCopy">
                   <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                    <rect x="9" y="9" width="13" height="13" rx="2" ry="2"/>
-                    <path d="M5 15H4a2 2 0 01-2-2V4a2 2 0 012-2h9a2 2 0 012 2v1"/>
+                    <rect x="9" y="9" width="13" height="13" rx="2" ry="2" />
+                    <path d="M5 15H4a2 2 0 01-2-2V4a2 2 0 012-2h9a2 2 0 012 2v1" />
                   </svg>
                   <span>复制</span>
                 </button>
                 <button v-if="hasLink" class="action-item" @click="handleCopyLink">
                   <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                    <path d="M10 13a5 5 0 007.54.54l3-3a5 5 0 00-7.07-7.07l-1.72 1.71"/>
-                    <path d="M14 11a5 5 0 00-7.54-.54l-3 3a5 5 0 007.07 7.07l1.71-1.71"/>
+                    <path d="M10 13a5 5 0 007.54.54l3-3a5 5 0 00-7.07-7.07l-1.72 1.71" />
+                    <path d="M14 11a5 5 0 00-7.54-.54l-3 3a5 5 0 007.07 7.07l1.71-1.71" />
                   </svg>
                   <span>复制链接</span>
                 </button>
               </div>
             </template>
-            <div 
-              class="msg-bubble" 
-              :class="bubbleClass"
-            >
+            <div class="msg-bubble" :class="bubbleClass">
               <!-- 图片 -->
               <div v-if="message.type === 'image'" class="image-wrapper">
                 <a-image :src="imageUrl" alt="Image" :preview="{ src: imageUrl }" />
@@ -74,7 +58,7 @@
                   <img :src="videoThumbnailUrl" alt="Video thumbnail">
                   <div class="video-play-btn">
                     <svg viewBox="0 0 24 24" fill="currentColor">
-                      <path d="M8 5v14l11-7z"/>
+                      <path d="M8 5v14l11-7z" />
                     </svg>
                   </div>
                   <div v-if="message.videoDuration" class="video-duration-badge">
@@ -87,8 +71,8 @@
               <div v-else-if="message.type === 'file'" class="file-message">
                 <div class="file-icon">
                   <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                    <path d="M13 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V9z"/>
-                    <path d="M13 2v7h7"/>
+                    <path d="M13 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V9z" />
+                    <path d="M13 2v7h7" />
                   </svg>
                 </div>
                 <div class="file-info">
@@ -98,13 +82,34 @@
               </div>
               <!-- 文本 -->
               <div v-else class="text-wrapper">
-                <div class="text-content" v-html="linkifiedText"></div>
+                <!-- 纯文本内容 -->
+                <div v-if="displayUrls.length > 0 && linkData.text" class="text-content">{{ linkData.text }}</div>
+                <div v-else-if="displayUrls.length === 0" class="text-content">{{ messageText }}</div>
+                
+                <!-- 链接容器 - 独立显示 -->
+                <div v-if="displayUrls.length > 0" class="link-containers">
+                  <a 
+                    v-for="(url, index) in displayUrls" 
+                    :key="index"
+                    :href="url" 
+                    target="_blank" 
+                    rel="noopener noreferrer" 
+                    class="link-card"
+                    @click.stop
+                  >
+                    <svg class="link-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                      <path d="M10 13a5 5 0 007.54.54l3-3a5 5 0 00-7.07-7.07l-1.72 1.71" />
+                      <path d="M14 11a5 5 0 00-7.54-.54l-3 3a5 5 0 007.07 7.07l1.71-1.71" />
+                    </svg>
+                    <span class="link-text">{{ url }}</span>
+                    <svg class="link-arrow" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                      <path d="M7 17L17 7M17 7H7M17 7v10" />
+                    </svg>
+                  </a>
+                </div>
+                
                 <!-- 引用显示 -->
-                <div 
-                  v-if="message.replyTo" 
-                  class="reply-quote reply-quote-other"
-                  @click.stop="handleScrollToReply"
-                >
+                <div v-if="message.replyTo" class="reply-quote reply-quote-other" @click.stop="handleScrollToReply">
                   <div class="reply-quote-line"></div>
                   <div class="reply-quote-content">
                     <span class="reply-quote-nickname">{{ replyNickname }}:</span>
@@ -122,10 +127,10 @@
           <!-- 编辑标记 -->
           <span v-if="message.edited" class="msg-edited">
             <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-              <path d="M11 4H4a2 2 0 00-2 2v14a2 2 0 002 2h14a2 2 0 002-2v-7"/>
-              <path d="M18.5 2.5a2.121 2.121 0 013 3L12 15l-4 1 1-4 9.5-9.5z"/>
+              <path d="M11 4H4a2 2 0 00-2 2v14a2 2 0 002 2h14a2 2 0 002-2v-7" />
+              <path d="M18.5 2.5a2.121 2.121 0 013 3L12 15l-4 1 1-4 9.5-9.5z" />
             </svg>
-            修改于 {{ formatTime(message.editedAt) }}
+            修改于 {{ formatTime(message.editedAt || message.time) }}
           </span>
         </div>
       </div>
@@ -133,83 +138,60 @@
       <!-- 自己的消息 -->
       <div v-else class="msg-content-right">
         <div class="msg-bubble-wrapper">
-          <a-popover 
-            v-model:open="popoverVisible"
-            trigger="contextmenu,click"
-            placement="top"
-            :arrow="false"
-            overlay-class-name="msg-action-popover"
-          >
+          <a-popover v-model:open="popoverVisible" trigger="contextmenu,click" placement="top" :arrow="false"
+            overlay-class-name="msg-action-popover">
             <template #content>
               <div class="msg-actions">
                 <button class="action-item" @click="handleReply">
                   <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                    <path d="M9 17H4a2 2 0 01-2-2V5a2 2 0 012-2h16a2 2 0 012 2v10a2 2 0 01-2 2h-5l-5 5v-5z"/>
+                    <path d="M9 17H4a2 2 0 01-2-2V5a2 2 0 012-2h16a2 2 0 012 2v10a2 2 0 01-2 2h-5l-5 5v-5z" />
                   </svg>
                   <span>回复</span>
                 </button>
                 <button v-if="canCopy" class="action-item" @click="handleCopy">
                   <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                    <rect x="9" y="9" width="13" height="13" rx="2" ry="2"/>
-                    <path d="M5 15H4a2 2 0 01-2-2V4a2 2 0 012-2h9a2 2 0 012 2v1"/>
+                    <rect x="9" y="9" width="13" height="13" rx="2" ry="2" />
+                    <path d="M5 15H4a2 2 0 01-2-2V4a2 2 0 012-2h9a2 2 0 012 2v1" />
                   </svg>
                   <span>复制</span>
                 </button>
                 <button v-if="hasLink" class="action-item" @click="handleCopyLink">
                   <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                    <path d="M10 13a5 5 0 007.54.54l3-3a5 5 0 00-7.07-7.07l-1.72 1.71"/>
-                    <path d="M14 11a5 5 0 00-7.54-.54l-3 3a5 5 0 007.07 7.07l1.71-1.71"/>
+                    <path d="M10 13a5 5 0 007.54.54l3-3a5 5 0 00-7.07-7.07l-1.72 1.71" />
+                    <path d="M14 11a5 5 0 00-7.54-.54l-3 3a5 5 0 007.07 7.07l1.71-1.71" />
                   </svg>
                   <span>复制链接</span>
                 </button>
                 <button v-if="canEdit" class="action-item" @click="handleEdit">
                   <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                    <path d="M11 4H4a2 2 0 00-2 2v14a2 2 0 002 2h14a2 2 0 002-2v-7"/>
-                    <path d="M18.5 2.5a2.121 2.121 0 013 3L12 15l-4 1 1-4 9.5-9.5z"/>
+                    <path d="M11 4H4a2 2 0 00-2 2v14a2 2 0 002 2h14a2 2 0 002-2v-7" />
+                    <path d="M18.5 2.5a2.121 2.121 0 013 3L12 15l-4 1 1-4 9.5-9.5z" />
                   </svg>
                   <span>编辑</span>
                 </button>
                 <button v-if="message.isOwn" class="action-item action-danger" @click="handleBurn">
                   <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                    <path d="M12 2c.5 2.5 2 4.5 2 7a4 4 0 11-8 0c0-2.5 1.5-4.5 2-7 1 1.5 2.5 2 4 0z"/>
-                    <path d="M12 22v-4"/>
+                    <path d="M12 2c.5 2.5 2 4.5 2 7a4 4 0 11-8 0c0-2.5 1.5-4.5 2-7 1 1.5 2.5 2 4 0z" />
+                    <path d="M12 22v-4" />
                   </svg>
                   <span>焚毁</span>
                 </button>
               </div>
             </template>
-            <div 
-              class="msg-bubble msg-bubble-own" 
-              :class="bubbleClass"
-            >
+            <div class="msg-bubble msg-bubble-own" :class="bubbleClass">
               <!-- 图片 -->
               <div v-if="message.type === 'image'" class="image-wrapper">
                 <a-image :src="imageUrl" alt="Image" :preview="{ src: imageUrl }" />
                 <!-- 上传进度遮罩 -->
-                <div v-if="message.status === 'sending' && uploadProgress !== undefined" class="upload-progress-overlay">
+                <div v-if="message.status === 'sending' && uploadProgress !== undefined"
+                  class="upload-progress-overlay">
                   <div class="progress-ring">
                     <svg viewBox="0 0 100 100">
                       <!-- 背景圆环 -->
-                      <circle
-                        cx="50"
-                        cy="50"
-                        r="42"
-                        fill="none"
-                        stroke="rgba(255, 255, 255, 0.15)"
-                        stroke-width="6"
-                      />
+                      <circle cx="50" cy="50" r="42" fill="none" stroke="rgba(255, 255, 255, 0.15)" stroke-width="6" />
                       <!-- 进度圆环 - 使用主题色 -->
-                      <circle
-                        cx="50"
-                        cy="50"
-                        r="42"
-                        fill="none"
-                        stroke="#3B82F6"
-                        stroke-width="6"
-                        stroke-linecap="round"
-                        :stroke-dasharray="circumference"
-                        :stroke-dashoffset="progressOffset"
-                      />
+                      <circle cx="50" cy="50" r="42" fill="none" stroke="#3B82F6" stroke-width="6"
+                        stroke-linecap="round" :stroke-dasharray="circumference" :stroke-dashoffset="progressOffset" />
                     </svg>
                     <div class="progress-text">{{ Math.round(uploadProgress) }}%</div>
                   </div>
@@ -218,11 +200,12 @@
               <!-- 视频消息 -->
               <div v-else-if="message.type === 'video'" class="video-wrapper">
                 <!-- 上传中：显示占位容器 -->
-                <div v-if="message.status === 'sending' && uploadProgress !== undefined" class="video-upload-placeholder">
+                <div v-if="message.status === 'sending' && uploadProgress !== undefined"
+                  class="video-upload-placeholder">
                   <div class="video-upload-content">
                     <div class="video-upload-icon">
                       <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                        <path d="M23 7l-7 5 7 5V7zM14 5H3a2 2 0 00-2 2v10a2 2 0 002 2h11a2 2 0 002-2V7a2 2 0 00-2-2z"/>
+                        <path d="M23 7l-7 5 7 5V7zM14 5H3a2 2 0 00-2 2v10a2 2 0 002 2h11a2 2 0 002-2V7a2 2 0 00-2-2z" />
                       </svg>
                     </div>
                     <div class="video-upload-text">视频上传中...</div>
@@ -230,26 +213,12 @@
                     <div class="progress-ring">
                       <svg viewBox="0 0 100 100">
                         <!-- 背景圆环 -->
-                        <circle
-                          cx="50"
-                          cy="50"
-                          r="42"
-                          fill="none"
-                          stroke="rgba(255, 255, 255, 0.15)"
-                          stroke-width="6"
-                        />
+                        <circle cx="50" cy="50" r="42" fill="none" stroke="rgba(255, 255, 255, 0.15)"
+                          stroke-width="6" />
                         <!-- 进度圆环 -->
-                        <circle
-                          cx="50"
-                          cy="50"
-                          r="42"
-                          fill="none"
-                          stroke="#3B82F6"
-                          stroke-width="6"
-                          stroke-linecap="round"
-                          :stroke-dasharray="circumference"
-                          :stroke-dashoffset="progressOffset"
-                        />
+                        <circle cx="50" cy="50" r="42" fill="none" stroke="#3B82F6" stroke-width="6"
+                          stroke-linecap="round" :stroke-dasharray="circumference"
+                          :stroke-dashoffset="progressOffset" />
                       </svg>
                       <div class="progress-text">{{ Math.round(uploadProgress) }}%</div>
                     </div>
@@ -261,7 +230,7 @@
                     <img :src="videoThumbnailUrl" alt="Video thumbnail">
                     <div class="video-play-btn">
                       <svg viewBox="0 0 24 24" fill="currentColor">
-                        <path d="M8 5v14l11-7z"/>
+                        <path d="M8 5v14l11-7z" />
                       </svg>
                     </div>
                     <div v-if="message.videoDuration" class="video-duration-badge">
@@ -275,8 +244,8 @@
               <div v-else-if="message.type === 'file'" class="file-message">
                 <div class="file-icon">
                   <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                    <path d="M13 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V9z"/>
-                    <path d="M13 2v7h7"/>
+                    <path d="M13 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V9z" />
+                    <path d="M13 2v7h7" />
                   </svg>
                 </div>
                 <div class="file-info">
@@ -286,13 +255,33 @@
               </div>
               <!-- 文本 -->
               <div v-else class="text-wrapper">
-                <div class="text-content" v-html="linkifiedText"></div>
+                <!-- 纯文本内容 -->
+                <div v-if="displayUrls.length > 0 && linkData.text" class="text-content">{{ linkData.text }}</div>
+                <div v-else-if="displayUrls.length === 0" class="text-content">{{ messageText }}</div>
+                
+                <!-- 链接容器 - 独立显示 -->
+                <div v-if="displayUrls.length > 0" class="link-containers">
+                  <a 
+                    v-for="(url, index) in displayUrls" 
+                    :key="index"
+                    :href="url" 
+                    target="_blank" 
+                    rel="noopener noreferrer" 
+                    class="link-card link-card-own"
+                  >
+                    <svg class="link-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                      <path d="M10 13a5 5 0 007.54.54l3-3a5 5 0 00-7.07-7.07l-1.72 1.71" />
+                      <path d="M14 11a5 5 0 00-7.54-.54l-3 3a5 5 0 007.07 7.07l1.71-1.71" />
+                    </svg>
+                    <span class="link-text">{{ url }}</span>
+                    <svg class="link-arrow" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                      <path d="M7 17L17 7M17 7H7M17 7v10" />
+                    </svg>
+                  </a>
+                </div>
+                
                 <!-- 引用显示 -->
-                <div 
-                  v-if="message.replyTo" 
-                  class="reply-quote reply-quote-own"
-                  @click.stop="handleScrollToReply"
-                >
+                <div v-if="message.replyTo" class="reply-quote reply-quote-own" @click.stop="handleScrollToReply">
                   <div class="reply-quote-line"></div>
                   <div class="reply-quote-content">
                     <span class="reply-quote-nickname">{{ replyNickname }}:</span>
@@ -308,10 +297,10 @@
           <!-- 编辑标记 -->
           <span v-if="message.edited" class="msg-edited">
             <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-              <path d="M11 4H4a2 2 0 00-2 2v14a2 2 0 002 2h14a2 2 0 002-2v-7"/>
-              <path d="M18.5 2.5a2.121 2.121 0 013 3L12 15l-4 1 1-4 9.5-9.5z"/>
+              <path d="M11 4H4a2 2 0 00-2 2v14a2 2 0 002 2h14a2 2 0 002-2v-7" />
+              <path d="M18.5 2.5a2.121 2.121 0 013 3L12 15l-4 1 1-4 9.5-9.5z" />
             </svg>
-            修改于 {{ formatTime(message.editedAt) }}
+            修改于 {{ formatTime(message.editedAt || message.time) }}
           </span>
           <!-- 已读状态文字 -->
           <span class="msg-read-status" :class="{ 'read': message.readCount && message.readCount > 0 }">
@@ -322,17 +311,20 @@
           <!-- 发送状态图标 -->
           <span v-if="message.status" class="msg-status">
             <!-- 发送中 -->
-            <svg v-if="message.status === 'sending'" class="status-sending" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-              <circle cx="12" cy="12" r="10"/>
+            <svg v-if="message.status === 'sending'" class="status-sending" viewBox="0 0 24 24" fill="none"
+              stroke="currentColor" stroke-width="2">
+              <circle cx="12" cy="12" r="10" />
             </svg>
             <!-- 发送成功 -->
-            <svg v-else-if="message.status === 'sent' || message.status === 'delivered' || message.status === 'read'" class="status-success" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
-              <path d="M20 6L9 17l-5-5"/>
+            <svg v-else-if="message.status === 'sent' || message.status === 'delivered' || message.status === 'read'"
+              class="status-success" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"
+              stroke-linecap="round" stroke-linejoin="round">
+              <path d="M20 6L9 17l-5-5" />
             </svg>
             <!-- 发送失败 -->
             <svg v-else-if="message.status === 'failed'" class="status-failed" viewBox="0 0 24 24" fill="currentColor">
-              <circle cx="12" cy="12" r="10"/>
-              <path d="M12 7v6M12 15h.01" stroke="white" stroke-width="2" stroke-linecap="round"/>
+              <circle cx="12" cy="12" r="10" />
+              <path d="M12 7v6M12 15h.01" stroke="white" stroke-width="2" stroke-linecap="round" />
             </svg>
           </span>
         </div>
@@ -345,7 +337,7 @@
 import { ref, computed } from 'vue'
 import { message as antMessage } from 'ant-design-vue'
 import { formatDuration } from '@/utils/video'
-import { hasUrl, extractFirstUrl, linkify } from '@/utils/linkParser'
+import { hasUrl, separateTextAndUrls } from '@/utils/linkParser'
 
 interface ReplyTo {
   message_id: number
@@ -393,6 +385,7 @@ const emit = defineEmits<{
   reply: [message: Message]
   burn: [messageId: string | number]
   scrollToMessage: [messageId: number]
+  edit: [messageId: string | number, content: string]
 }>()
 
 // Popover 显示状态
@@ -461,17 +454,6 @@ const videoThumbnailUrl = computed(() => {
   return serverUrl + url
 })
 
-// 处理文件URL
-const fileUrl = computed(() => {
-  const url = props.message.fileUrl
-  if (!url) return ''
-  if (url.startsWith('blob:') || url.startsWith('http://') || url.startsWith('https://')) {
-    return url
-  }
-  const serverUrl = import.meta.env.VITE_SERVER_URL || ''
-  return serverUrl + url
-})
-
 const bubbleClass = computed(() => ({
   'msg-image': props.message.type === 'image',
   'msg-file': props.message.type === 'file',
@@ -491,8 +473,8 @@ const canEdit = computed(() => {
 // 链接相关
 const messageText = computed(() => props.message.text || props.message.content || '')
 const hasLink = computed(() => hasUrl(messageText.value))
-const firstUrl = computed(() => extractFirstUrl(messageText.value))
-const linkifiedText = computed(() => linkify(messageText.value))
+const linkData = computed(() => separateTextAndUrls(messageText.value))
+const displayUrls = computed(() => linkData.value.urls)
 
 // 引用昵称
 const replyNickname = computed(() => {
@@ -503,11 +485,11 @@ const replyNickname = computed(() => {
 const replyQuoteText = computed(() => {
   const replyTo = props.message.replyTo
   if (!replyTo) return ''
-  
+
   if (replyTo.deleted) {
     return '原消息已撤回'
   }
-  
+
   // 消息类型映射
   const typeMap: Record<number | string, string> = {
     2: '[图片]',
@@ -517,11 +499,11 @@ const replyQuoteText = computed(() => {
     'video': '[视频]',
     'file': '[文件]'
   }
-  
+
   if (replyTo.message_type && typeMap[replyTo.message_type]) {
     return typeMap[replyTo.message_type]
   }
-  
+
   const text = replyTo.content || ''
   return text.length > 50 ? text.substring(0, 50) + '...' : text
 })
@@ -571,7 +553,7 @@ const handleCopy = async () => {
 // 复制链接
 const handleCopyLink = async () => {
   popoverVisible.value = false
-  const url = firstUrl.value
+  const url = displayUrls.value[0]
   if (!url) return
   
   try {
@@ -662,6 +644,11 @@ defineExpose({
     animation: msgSendIn 0.55s cubic-bezier(0.22, 1, 0.36, 1) forwards;
     transform-origin: right center;
   }
+  
+  // 高亮消息时重置 transform-origin
+  &.highlight-message {
+    transform-origin: center center !important;
+  }
 }
 
 // 接收消息动画 - 从左往右
@@ -670,6 +657,7 @@ defineExpose({
     opacity: 0;
     transform: scale(0.4);
   }
+
   100% {
     opacity: 1;
     transform: scale(1);
@@ -682,6 +670,7 @@ defineExpose({
     opacity: 0;
     transform: scale(0.4);
   }
+
   100% {
     opacity: 1;
     transform: scale(1);
@@ -788,47 +777,85 @@ defineExpose({
 
 .text-content {
   white-space: pre-wrap;
-
-  // 链接样式 - Modern Minimal Design
-  :deep(.message-link) {
-    color: $primary-color;
-    text-decoration: none;
-    font-weight: $font-weight-semibold;
-    padding: 2px 6px;
-    margin: 0 2px;
-    border-radius: 4px;
-    background: rgba($primary-color, 0.08);
-    transition: all $transition-fast;
-    word-break: break-all;
-    display: inline-block;
-    line-height: 1.4;
-
-    &:hover {
-      background: rgba($primary-color, 0.15);
-      transform: translateY(-1px);
-      box-shadow: 0 2px 4px rgba($primary-color, 0.15);
-    }
-
-    &:active {
-      transform: translateY(0);
-    }
-  }
 }
 
-// 自己消息中的链接（白色主题）
-.msg-bubble-own {
-  .text-content {
-    :deep(.message-link) {
-      color: white;
-      background: rgba(255, 255, 255, 0.2);
-      font-weight: $font-weight-semibold;
+// ==================== 链接容器 ====================
+.link-containers {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  margin-top: 10px;
+}
 
-      &:hover {
-        background: rgba(255, 255, 255, 0.3);
-        box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
-      }
-    }
-  }
+.link-card {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 12px 16px;
+  background: rgba(37, 99, 235, 0.08);
+  border: 2px solid rgba(37, 99, 235, 0.2);
+  border-radius: 10px;
+  color: #2563EB;
+  text-decoration: none;
+  font-size: 13px;
+  font-weight: 500;
+  transition: all 0.2s ease;
+  cursor: pointer;
+}
+
+.link-card:hover {
+  background: rgba(37, 99, 235, 0.15);
+  border-color: rgba(37, 99, 235, 0.4);
+  transform: translateY(-2px);
+  box-shadow: 0 4px 12px rgba(37, 99, 235, 0.2);
+}
+
+.link-icon {
+  width: 18px;
+  height: 18px;
+  flex-shrink: 0;
+}
+
+.link-text {
+  flex: 1;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.link-arrow {
+  width: 16px;
+  height: 16px;
+  flex-shrink: 0;
+  opacity: 0.7;
+}
+
+.link-card:hover .link-arrow {
+  opacity: 1;
+  transform: translate(2px, -2px);
+}
+
+// 自己的消息
+.link-card-own {
+  background: rgba(255, 255, 255, 0.2);
+  border-color: rgba(255, 255, 255, 0.4);
+  color: white;
+}
+
+.link-card-own:hover {
+  background: rgba(255, 255, 255, 0.3);
+  border-color: rgba(255, 255, 255, 0.6);
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.2);
+}
+
+.link-card-own .link-icon,
+.link-card-own .link-arrow {
+  color: white;
+}
+
+.link-card-own .link-text {
+  color: rgba(255, 255, 255, 0.95);
+  font-weight: 600;
 }
 
 .msg-edited {
@@ -837,7 +864,7 @@ defineExpose({
   gap: 3px;
   font-size: 11px;
   color: rgba(0, 0, 0, 0.45);
-  
+
   svg {
     width: 12px;
     height: 12px;
@@ -849,32 +876,45 @@ defineExpose({
   color: rgba(255, 255, 255, 0.45);
 }
 
-// 深色模式链接样式
-.dark-mode {
-  .text-content {
-    :deep(.message-link) {
-      color: $primary-lighter;
-      background: rgba($primary-lighter, 0.12);
-
-      &:hover {
-        background: rgba($primary-lighter, 0.2);
-        box-shadow: 0 2px 4px rgba($primary-lighter, 0.2);
-      }
-    }
+// 深色模式 - 链接卡片
+.chat-app.dark-mode {
+  .link-card {
+    background: rgba(96, 165, 250, 0.12);
+    border-color: rgba(96, 165, 250, 0.3);
+    color: #60A5FA;
   }
-
-  .msg-bubble-own {
-    .text-content {
-      :deep(.message-link) {
-        color: white;
-        background: rgba(255, 255, 255, 0.15);
-
-        &:hover {
-          background: rgba(255, 255, 255, 0.25);
-          box-shadow: 0 2px 4px rgba(0, 0, 0, 0.15);
-        }
-      }
-    }
+  
+  .link-card:hover {
+    background: rgba(96, 165, 250, 0.2);
+    border-color: rgba(96, 165, 250, 0.5);
+    box-shadow: 0 4px 12px rgba(96, 165, 250, 0.3);
+  }
+  
+  .link-icon,
+  .link-arrow {
+    color: #60A5FA;
+  }
+  
+  .link-card-own {
+    background: rgba(255, 255, 255, 0.18);
+    border-color: rgba(255, 255, 255, 0.45);
+  }
+  
+  .link-card-own:hover {
+    background: rgba(255, 255, 255, 0.28);
+    border-color: rgba(255, 255, 255, 0.65);
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
+  }
+  
+  .link-card-own .link-icon,
+  .link-card-own .link-arrow {
+    color: rgba(255, 255, 255, 0.95);
+  }
+  
+  .link-card-own .link-text {
+    color: rgba(255, 255, 255, 0.98);
+    font-weight: 600;
+    text-shadow: 0 1px 2px rgba(0, 0, 0, 0.1);
   }
 }
 
@@ -889,7 +929,7 @@ defineExpose({
   :deep(.ant-image) {
     display: block;
     width: 100%;
-    
+
     img {
       width: 100%;
       height: auto;
@@ -918,14 +958,14 @@ defineExpose({
   position: relative;
   width: 72px;
   height: 72px;
-  
+
   svg {
     width: 100%;
     height: 100%;
     transform: rotate(-90deg);
     filter: drop-shadow(0 2px 8px rgba(37, 99, 235, 0.3));
   }
-  
+
   circle {
     transition: stroke-dashoffset 0.3s cubic-bezier(0.4, 0, 0.2, 1);
   }
@@ -1004,13 +1044,13 @@ defineExpose({
   max-width: 280px;
   border-radius: 12px;
   overflow: hidden;
-  
+
   img {
     width: 100%;
     height: auto;
     display: block;
   }
-  
+
   &:hover .video-play-btn {
     transform: translate(-50%, -50%) scale(1.1);
   }
@@ -1030,7 +1070,7 @@ defineExpose({
   align-items: center;
   justify-content: center;
   transition: transform 0.2s ease;
-  
+
   svg {
     width: 24px;
     height: 24px;
@@ -1137,7 +1177,7 @@ defineExpose({
 .msg-read-status {
   font-size: 11px;
   color: $text-tertiary;
-  
+
   &.read {
     color: $primary-color;
     font-weight: 500;
@@ -1174,7 +1214,9 @@ defineExpose({
 }
 
 @keyframes spin {
-  to { transform: rotate(360deg); }
+  to {
+    transform: rotate(360deg);
+  }
 }
 
 // ==================== 消息操作菜单 ====================
@@ -1294,7 +1336,8 @@ defineExpose({
 // ==================== 高亮动画 ====================
 .highlight-message {
   position: relative;
-  
+  animation: shake 0.6s ease-out !important;
+
   &::before {
     content: '';
     position: absolute;
@@ -1307,44 +1350,58 @@ defineExpose({
     z-index: -1;
     animation: highlightFade 0.6s ease-out;
   }
-  
-  animation: shake 0.6s ease-out;
+}
+
+// 深色模式下的高亮背景
+:global(.dark-mode) .highlight-message::before {
+  background: rgba($primary-lighter, 0.2);
 }
 
 @keyframes highlightFade {
   0% {
     opacity: 0;
   }
+
   10% {
     opacity: 1;
   }
+
   100% {
     opacity: 0;
   }
 }
 
 @keyframes shake {
-  0%, 100% {
+
+  0%,
+  100% {
     transform: translateX(0);
   }
+
   10% {
     transform: translateX(-4px);
   }
+
   20% {
     transform: translateX(4px);
   }
+
   30% {
     transform: translateX(-4px);
   }
+
   40% {
     transform: translateX(4px);
   }
+
   50% {
     transform: translateX(-2px);
   }
+
   60% {
     transform: translateX(2px);
   }
+
   70% {
     transform: translateX(0);
   }
@@ -1372,10 +1429,10 @@ defineExpose({
   .msg-meta-own {
     color: $text-tertiary-dark;
   }
-  
+
   .msg-read-status {
     color: $text-tertiary-dark;
-    
+
     &.read {
       color: $primary-color;
     }
@@ -1446,6 +1503,7 @@ defineExpose({
 
 // 移动端
 @media (max-width: 768px) {
+
   .msg-content-left,
   .msg-content-right {
     max-width: 80%;
