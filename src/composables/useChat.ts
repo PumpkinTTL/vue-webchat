@@ -49,8 +49,14 @@ export function useChat() {
     })
 
     wsStore.setOnRoomCleared((data) => {
-      chatStore.clearMessages()
-      chatStore.addSystemMessage(`${data.cleared_by_nickname} 清空了聊天记录`)
+      if (data.is_restore) {
+        // 恢复消息
+        chatStore.addSystemMessage(`${data.cleared_by_nickname} 恢复了消息`)
+      } else {
+        // 清理消息
+        chatStore.clearMessages()
+        chatStore.addSystemMessage(`${data.cleared_by_nickname} 清空了聊天记录`)
+      }
     })
 
     wsStore.setOnRoomLockChanged((data) => {
@@ -189,6 +195,13 @@ export function useChat() {
   }
 
   /**
+   * 恢复房间消息
+   */
+  function restoreRoomMessages() {
+    return wsStore.broadcastRoomRestored()
+  }
+
+  /**
    * 重新开始亲密互动
    */
   function restartIntimacy() {
@@ -235,6 +248,7 @@ export function useChat() {
     broadcastEditMessage,
     clearRoomMessages,
     toggleRoomLock,
+    restoreRoomMessages,
     restartIntimacy
   }
 }

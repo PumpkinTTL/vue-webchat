@@ -284,8 +284,8 @@ export const useWebSocketStore = defineStore('websocket', () => {
   /**
    * 广播房间清理
    */
-  function broadcastRoomCleared(hardDelete: boolean = false) {
-    return send({ type: 'room_cleared', hard_delete: hardDelete })
+  function broadcastRoomCleared(hardDelete: boolean = false, isRestore: boolean = false) {
+    return send({ type: 'room_cleared', hard_delete: hardDelete, is_restore: isRestore })
   }
 
   /**
@@ -293,6 +293,13 @@ export const useWebSocketStore = defineStore('websocket', () => {
    */
   function broadcastRoomLockChanged(lock: number) {
     return send({ type: 'room_lock_changed', lock })
+  }
+
+  /**
+   * 广播房间消息恢复（复用 room_cleared 事件）
+   */
+  function broadcastRoomRestored() {
+    return send({ type: 'room_cleared', hard_delete: false, is_restore: true })
   }
 
   /**
@@ -590,6 +597,7 @@ export const useWebSocketStore = defineStore('websocket', () => {
     broadcastMessageEdited,
     broadcastRoomCleared,
     broadcastRoomLockChanged,
+    broadcastRoomRestored,
     restartIntimacy,
     
     // 事件注册

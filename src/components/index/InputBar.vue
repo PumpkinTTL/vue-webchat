@@ -107,7 +107,7 @@
           v-model="inputText"
           type="text"
           class="text-input"
-          :placeholder="placeholder"
+          :placeholder="inputPlaceholder"
           :disabled="disabled"
           @keyup.enter="handleSend"
           @input="handleInput"
@@ -321,6 +321,14 @@ const fileInput = ref<HTMLInputElement>()
 
 // 是否可以发送
 const canSend = computed(() => inputText.value.trim().length > 0 || selectedImageFile.value !== null || selectedVideoFile.value !== null)
+
+// 输入框占位符
+const inputPlaceholder = computed(() => {
+  if (props.disabled && props.currentRoom?.lock === 1 && !props.isAdmin) {
+    return '房间已锁定，无法发送消息'
+  }
+  return props.placeholder
+})
 
 // 引用预览文本
 const replyPreviewText = computed(() => {

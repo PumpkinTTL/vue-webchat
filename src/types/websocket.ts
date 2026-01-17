@@ -80,6 +80,7 @@ export interface MessageEditedMessage {
 export interface RoomClearedMessage {
   type: 'room_cleared'
   hard_delete?: boolean
+  is_restore?: boolean // 是否是恢复操作
 }
 
 export interface RoomLockChangedMessage {
@@ -221,6 +222,7 @@ export interface RoomClearedResponse {
   cleared_by: number
   cleared_by_nickname: string
   hard_delete: boolean
+  is_restore?: boolean // 是否是恢复操作
 }
 
 export interface RoomLockChangedResponse {

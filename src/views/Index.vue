@@ -44,7 +44,7 @@
 
       <!-- 输入区域 -->
       <footer class="input-area">
-        <InputBar ref="inputBarRef" :disabled="false" :reply-to="replyToMessage" 
+        <InputBar ref="inputBarRef" :disabled="isInputDisabled" :reply-to="replyToMessage" 
           :is-admin="userStore.isAdmin" :current-room="currentRoom" :deleted-count="deletedCount"
           @send="handleSendMessage"
           @send-image="handleSendImage" @send-video="handleSendVideo" @send-file="handleSendFile"
@@ -138,7 +138,7 @@ import Sidebar from '@/components/index/Sidebar.vue'
 import ChatHeader from '@/components/index/ChatHeader.vue'
 import MessageList from '@/components/index/MessageList.vue'
 import InputBar from '@/components/index/InputBar.vue'
-import { getUserRooms, createRoom, joinRoom, leaveRoom, getRoomUserCount, toggleRoomLock, clearRoomMessages, restoreRoomMessages, getDeletedMessagesCount } from '@/apis/room'
+import { getUserRooms, createRoom, joinRoom, leaveRoom, getRoomUserCount, toggleRoomLock as toggleRoomLockApi, clearRoomMessages, restoreRoomMessages, getDeletedMessagesCount } from '@/apis/room'
 import { getMessageList, sendTextMessage, sendImageMessage, sendVideoMessage, sendFileMessage, editMessage } from '@/apis/message'
 import type { CreateRoomParams, JoinRoomParams } from '@/apis/room'
 import { useChat } from '@/composables/useChat'
@@ -149,7 +149,7 @@ import type { ChatMessageItem } from '@/store/chat'
 const userStore = useUserStore()
 
 // 使用聊天组合式函数
-const { wsStore, chatStore, initChat, destroyChat, enterRoom, broadcastMessage, sendTyping } = useChat()
+const { wsStore, chatStore, initChat, destroyChat, enterRoom, broadcastMessage, sendTyping, toggleRoomLock, clearRoomMessages: broadcastClearRoom, restoreRoomMessages: broadcastRestoreRoom } = useChat()
 
 // 消息列表引用
 const messageListRef = ref<InstanceType<typeof MessageList>>()
@@ -201,6 +201,14 @@ const uploadProgress = ref<Record<string, number>>({})
 // 房间管理状态
 const deletedCount = ref(0) // 软删除消息数量
 
+// 是否禁用输入（房间锁定且非管理员）
+const isInputDisabled = computed(() => {
+  if (!currentRoom.value) return false
+  if (userStore.isAdmin) return false // 管理员不受限制
+  // 直接使用 chatStore 的锁定状态，它会被 WebSocket 实时更新
+  return chatStore.currentRoom?.isLocked ?? false
+})
+
 // ==================== 生命周期 ====================
 
 onMounted(async () => {
@@ -209,6 +217,29 @@ onMounted(async () => {
   
   // 初始化 WebSocket
   initChat()
+  
+  // 覆盖 onRoomCleared 处理，添加重新加载消息的逻辑
+  wsStore.setOnRoomCleared((data) => {
+    if (data.is_restore) {
+      // 恢复消息：显示提示并重新加载
+      message.loading(`${data.cleared_by_nickname} 恢复数据正在刷新...`, 0)
+      chatStore.addSystemMessage(`${data.cleared_by_nickname} 恢复了消息`)
+      // 重新加载当前房间的消息
+      if (currentRoom.value?.id) {
+        loadRoomMessages(currentRoom.value.id).then(() => {
+          message.destroy()
+          message.success('数据刷新完成')
+        }).catch(() => {
+          message.destroy()
+          message.error('数据刷新失败')
+        })
+      }
+    } else {
+      // 清理消息：清空列表
+      chatStore.clearMessages()
+      chatStore.addSystemMessage(`${data.cleared_by_nickname} 清空了聊天记录`)
+    }
+  })
 
   // 加载房间列表
   await loadUserRooms()
@@ -228,6 +259,13 @@ onUnmounted(() => {
 watch(() => wsStore.isAuthed, (isAuthed) => {
   if (isAuthed && currentRoom.value?.id) {
     enterRoom(currentRoom.value.id)
+  }
+})
+
+// 监听房间锁定状态变化
+watch(() => chatStore.currentRoom?.isLocked, (isLocked) => {
+  if (currentRoom.value && isLocked !== undefined) {
+    currentRoom.value.lock = isLocked ? 1 : 0
   }
 })
 
@@ -686,6 +724,16 @@ const handleSelectRoom = async (room: any) => {
     enterRoom(roomId)
   }
   
+  // 设置 chatStore 的当前房间并同步锁定状态
+  chatStore.setCurrentRoom({
+    id: roomId,
+    name: room.name,
+    isLocked: room.lock === 1,
+    onlineUsers: currentRoom.value.onlineUsers,
+    totalUsers: currentRoom.value.totalUsers,
+    isPrivate: room.private === 1
+  })
+  
   // 更新软删除消息数量（仅管理员需要）
   if (userStore.isAdmin) {
     await updateDeletedCount()
@@ -723,12 +771,13 @@ const handleToggleLock = async () => {
   const actionText = newLockStatus === 1 ? '锁定' : '解锁'
   
   try {
-    const result = await toggleRoomLock(currentRoom.value.id, newLockStatus)
+    const result = await toggleRoomLockApi(currentRoom.value.id, newLockStatus)
     if (result.code === 0) {
       message.success(`房间已${actionText}`)
       currentRoom.value.lock = newLockStatus
       
-      // WebSocket 会自动广播锁定状态变化
+      // 通过 WebSocket 广播锁定状态变化
+      toggleRoomLock(newLockStatus === 1)
     } else {
       message.error(result.msg || `${actionText}失败`)
     }
@@ -766,7 +815,8 @@ const handleClearRoom = async (hardDelete: boolean) => {
           // 更新软删除消息数量
           await updateDeletedCount()
           
-          // WebSocket 会自动广播清理事件
+          // 通过 WebSocket 广播清理事件
+          broadcastClearRoom(hardDelete)
         } else {
           message.error(result.msg || `${actionText}失败`)
         }
@@ -802,6 +852,9 @@ const handleRestoreRoom = async () => {
           
           // 更新软删除消息数量
           await updateDeletedCount()
+          
+          // 通过 WebSocket 广播恢复事件
+          broadcastRestoreRoom()
         } else {
           message.error(result.msg || '恢复失败')
         }
