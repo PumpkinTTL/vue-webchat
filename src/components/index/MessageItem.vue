@@ -51,6 +51,13 @@
                   </svg>
                   <span>复制</span>
                 </button>
+                <button v-if="hasLink" class="action-item" @click="handleCopyLink">
+                  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                    <path d="M10 13a5 5 0 007.54.54l3-3a5 5 0 00-7.07-7.07l-1.72 1.71"/>
+                    <path d="M14 11a5 5 0 00-7.54-.54l-3 3a5 5 0 007.07 7.07l1.71-1.71"/>
+                  </svg>
+                  <span>复制链接</span>
+                </button>
               </div>
             </template>
             <div 
@@ -91,7 +98,7 @@
               </div>
               <!-- 文本 -->
               <div v-else class="text-wrapper">
-                <div class="text-content">{{ message.text || message.content }}</div>
+                <div class="text-content" v-html="linkifiedText"></div>
                 <!-- 引用显示 -->
                 <div 
                   v-if="message.replyTo" 
@@ -147,6 +154,13 @@
                     <path d="M5 15H4a2 2 0 01-2-2V4a2 2 0 012-2h9a2 2 0 012 2v1"/>
                   </svg>
                   <span>复制</span>
+                </button>
+                <button v-if="hasLink" class="action-item" @click="handleCopyLink">
+                  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                    <path d="M10 13a5 5 0 007.54.54l3-3a5 5 0 00-7.07-7.07l-1.72 1.71"/>
+                    <path d="M14 11a5 5 0 00-7.54-.54l-3 3a5 5 0 007.07 7.07l1.71-1.71"/>
+                  </svg>
+                  <span>复制链接</span>
                 </button>
                 <button v-if="canEdit" class="action-item" @click="handleEdit">
                   <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
@@ -272,7 +286,7 @@
               </div>
               <!-- 文本 -->
               <div v-else class="text-wrapper">
-                <div class="text-content">{{ message.text || message.content }}</div>
+                <div class="text-content" v-html="linkifiedText"></div>
                 <!-- 引用显示 -->
                 <div 
                   v-if="message.replyTo" 
@@ -331,6 +345,7 @@
 import { ref, computed } from 'vue'
 import { message as antMessage } from 'ant-design-vue'
 import { formatDuration } from '@/utils/video'
+import { hasUrl, extractFirstUrl, linkify } from '@/utils/linkParser'
 
 interface ReplyTo {
   message_id: number
@@ -473,6 +488,12 @@ const canEdit = computed(() => {
   return props.message.isOwn && props.message.type === 'text'
 })
 
+// 链接相关
+const messageText = computed(() => props.message.text || props.message.content || '')
+const hasLink = computed(() => hasUrl(messageText.value))
+const firstUrl = computed(() => extractFirstUrl(messageText.value))
+const linkifiedText = computed(() => linkify(messageText.value))
+
 // 引用昵称
 const replyNickname = computed(() => {
   return props.message.replyTo?.nickname || '用户'
@@ -544,6 +565,29 @@ const handleCopy = async () => {
     document.execCommand('copy')
     document.body.removeChild(textarea)
     antMessage.success('已复制')
+  }
+}
+
+// 复制链接
+const handleCopyLink = async () => {
+  popoverVisible.value = false
+  const url = firstUrl.value
+  if (!url) return
+  
+  try {
+    await navigator.clipboard.writeText(url)
+    antMessage.success('链接已复制')
+  } catch {
+    // 降级方案
+    const textarea = document.createElement('textarea')
+    textarea.value = url
+    textarea.style.position = 'fixed'
+    textarea.style.opacity = '0'
+    document.body.appendChild(textarea)
+    textarea.select()
+    document.execCommand('copy')
+    document.body.removeChild(textarea)
+    antMessage.success('链接已复制')
   }
 }
 
@@ -744,6 +788,40 @@ defineExpose({
 
 .text-content {
   white-space: pre-wrap;
+
+  // 链接样式
+  :deep(.message-link) {
+    color: $primary-light;
+    text-decoration: none;
+    font-weight: $font-weight-medium;
+    border-bottom: 1px solid rgba($primary-light, 0.3);
+    transition: all $transition-fast;
+    word-break: break-all;
+    padding: 1px 2px;
+    border-radius: 2px;
+
+    &:hover {
+      color: $primary-color;
+      border-bottom-color: $primary-color;
+      background: rgba($primary-color, 0.08);
+    }
+  }
+}
+
+// 自己消息中的链接（白色主题）
+.msg-bubble-own {
+  .text-content {
+    :deep(.message-link) {
+      color: white;
+      border-bottom-color: rgba(255, 255, 255, 0.5);
+      font-weight: $font-weight-semibold;
+
+      &:hover {
+        border-bottom-color: white;
+        background: rgba(255, 255, 255, 0.2);
+      }
+    }
+  }
 }
 
 .msg-edited {
@@ -762,6 +840,36 @@ defineExpose({
 // 深色模式
 .dark-mode .msg-edited {
   color: rgba(255, 255, 255, 0.45);
+}
+
+// 深色模式链接样式
+.dark-mode {
+  .text-content {
+    :deep(.message-link) {
+      color: $primary-lighter;
+      border-bottom-color: rgba($primary-lighter, 0.4);
+
+      &:hover {
+        color: $primary-light;
+        border-bottom-color: $primary-light;
+        background: rgba($primary-light, 0.12);
+      }
+    }
+  }
+
+  .msg-bubble-own {
+    .text-content {
+      :deep(.message-link) {
+        color: white;
+        border-bottom-color: rgba(255, 255, 255, 0.6);
+
+        &:hover {
+          border-bottom-color: white;
+          background: rgba(255, 255, 255, 0.25);
+        }
+      }
+    }
+  }
 }
 
 // 图片
