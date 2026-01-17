@@ -327,16 +327,22 @@ const handleScrollToMessage = (messageId: number) => {
   const centerOffset = (containerRect.height - targetRect.height) / 2
   const scrollTo = Math.max(0, targetOffsetTop - centerOffset)
   
+  // 计算滚动距离和时间
+  const scrollDistance = Math.abs(scrollTo - scrollTop)
+  const scrollDuration = Math.min(500, scrollDistance * 0.5) // 最多500ms
+  
   messageContainer.value.scrollTo({
     top: scrollTo,
     behavior: 'smooth'
   })
   
-  // 高亮目标消息
-  const messageRef = messageRefs.value.get(messageId)
-  if (messageRef?.highlight) {
-    messageRef.highlight()
-  }
+  // 等待滚动完成后再触发高亮动画
+  setTimeout(() => {
+    const messageRef = messageRefs.value.get(messageId)
+    if (messageRef?.highlight) {
+      messageRef.highlight()
+    }
+  }, scrollDuration + 100) // 滚动时间 + 100ms 缓冲
 }
 
 // 滚动到指定消息（供外部调用）
