@@ -1252,30 +1252,44 @@ defineExpose({
 }
 
 .reply-quote-other {
-  background: rgba(0, 0, 0, 0.04);
+  background: linear-gradient(135deg, rgba(37, 99, 235, 0.08) 0%, rgba(37, 99, 235, 0.04) 100%);
+  border: 1px solid rgba(37, 99, 235, 0.15);
+  backdrop-filter: blur(8px);
+  box-shadow: 0 2px 8px rgba(37, 99, 235, 0.08);
 
   &:hover {
-    background: rgba(0, 0, 0, 0.08);
+    background: linear-gradient(135deg, rgba(37, 99, 235, 0.12) 0%, rgba(37, 99, 235, 0.08) 100%);
+    border-color: rgba(37, 99, 235, 0.25);
+    box-shadow: 0 4px 12px rgba(37, 99, 235, 0.12);
   }
 }
 
 .reply-quote-own {
-  background: rgba(255, 255, 255, 0.18);
+  background: linear-gradient(135deg, rgba(255, 255, 255, 0.25) 0%, rgba(255, 255, 255, 0.15) 100%);
+  border: 1px solid rgba(255, 255, 255, 0.3);
+  backdrop-filter: blur(8px);
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
 
   &:hover {
-    background: rgba(255, 255, 255, 0.28);
+    background: linear-gradient(135deg, rgba(255, 255, 255, 0.35) 0%, rgba(255, 255, 255, 0.25) 100%);
+    border-color: rgba(255, 255, 255, 0.45);
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
   }
 
   .reply-quote-line {
-    background: rgba(255, 255, 255, 0.75);
+    background: linear-gradient(180deg, rgba(255, 255, 255, 1) 0%, rgba(255, 255, 255, 0.9) 100%);
+    box-shadow: 0 0 8px rgba(255, 255, 255, 0.5);
   }
 
   .reply-quote-nickname {
     color: rgba(255, 255, 255, 1);
+    font-weight: 700;
+    text-shadow: 0 1px 2px rgba(0, 0, 0, 0.1);
   }
 
   .reply-quote-text {
-    color: rgba(255, 255, 255, 0.88);
+    color: rgba(255, 255, 255, 0.95);
+    text-shadow: 0 1px 2px rgba(0, 0, 0, 0.08);
   }
 }
 
@@ -1283,7 +1297,8 @@ defineExpose({
   width: 3px;
   min-height: 24px;
   border-radius: 2px;
-  background: $primary-color;
+  background: linear-gradient(180deg, #2563EB 0%, #3B82F6 100%);
+  box-shadow: 0 0 8px rgba(37, 99, 235, 0.4);
   flex-shrink: 0;
 }
 
@@ -1298,9 +1313,10 @@ defineExpose({
 
 .reply-quote-nickname {
   font-size: 12px;
-  font-weight: 600;
+  font-weight: 700;
   color: $primary-color;
   flex-shrink: 0;
+  text-shadow: 0 1px 2px rgba(37, 99, 235, 0.1);
 }
 
 .reply-quote-text {
@@ -1459,24 +1475,62 @@ defineExpose({
 
 // 深色模式 - 引用（独立写在外面，确保生效）
 .dark-mode .reply-quote-other {
-  background: #394659;
+  background: linear-gradient(135deg, rgba(59, 130, 246, 0.12) 0%, rgba(59, 130, 246, 0.08) 100%);
+  border: 1px solid rgba(59, 130, 246, 0.2);
+  backdrop-filter: blur(10px);
+  box-shadow: 0 2px 12px rgba(59, 130, 246, 0.15);
 
   &:hover {
-    background: #445163;
+    background: linear-gradient(135deg, rgba(59, 130, 246, 0.18) 0%, rgba(59, 130, 246, 0.12) 100%);
+    border-color: rgba(59, 130, 246, 0.3);
+    box-shadow: 0 4px 16px rgba(59, 130, 246, 0.2);
   }
 }
 
 .dark-mode .reply-quote-other .reply-quote-nickname {
-  color: #3B82F6;
+  color: #60A5FA;
   font-weight: 700;
+  text-shadow: 0 1px 3px rgba(96, 165, 250, 0.3);
 }
 
 .dark-mode .reply-quote-other .reply-quote-text {
   color: #CBD5E1;
+  text-shadow: 0 1px 2px rgba(0, 0, 0, 0.2);
 }
 
 .dark-mode .reply-quote-line {
-  background: #3B82F6;
+  background: linear-gradient(180deg, #60A5FA 0%, #3B82F6 100%);
+  box-shadow: 0 0 10px rgba(96, 165, 250, 0.5);
+}
+
+// 深色模式 - 自己消息的引用
+.dark-mode .reply-quote-own {
+  background: linear-gradient(135deg, rgba(255, 255, 255, 0.18) 0%, rgba(255, 255, 255, 0.12) 100%);
+  border: 1px solid rgba(255, 255, 255, 0.25);
+  backdrop-filter: blur(10px);
+  box-shadow: 0 2px 12px rgba(0, 0, 0, 0.3);
+
+  &:hover {
+    background: linear-gradient(135deg, rgba(255, 255, 255, 0.28) 0%, rgba(255, 255, 255, 0.22) 100%);
+    border-color: rgba(255, 255, 255, 0.4);
+    box-shadow: 0 4px 16px rgba(0, 0, 0, 0.4);
+  }
+}
+
+.dark-mode .reply-quote-own .reply-quote-line {
+  background: linear-gradient(180deg, rgba(255, 255, 255, 0.95) 0%, rgba(255, 255, 255, 0.85) 100%);
+  box-shadow: 0 0 10px rgba(255, 255, 255, 0.4);
+}
+
+.dark-mode .reply-quote-own .reply-quote-nickname {
+  color: rgba(255, 255, 255, 1);
+  font-weight: 700;
+  text-shadow: 0 1px 3px rgba(0, 0, 0, 0.3);
+}
+
+.dark-mode .reply-quote-own .reply-quote-text {
+  color: rgba(255, 255, 255, 0.95);
+  text-shadow: 0 1px 2px rgba(0, 0, 0, 0.2);
 }
 
 // 移动端
