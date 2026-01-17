@@ -40,12 +40,19 @@
               <span>{{ wsConnected ? 'Socket' : 'HTTP' }}</span>
             </div>
             
-            <!-- 私密房间标识 -->
-            <div v-if="isPrivateRoom" class="badge badge-private">
+            <!-- 私密房间标识 - 可点击打开亲密度面板 -->
+            <div 
+              v-if="isPrivateRoom" 
+              class="badge badge-private" 
+              :class="{ 'has-intimacy': intimacyInfo }"
+              @click="intimacyInfo && $emit('toggle-intimacy-panel')"
+              :title="intimacyInfo ? `Lv.${intimacyInfo.current_level} ${intimacyInfo.level_name}` : '私密房间'"
+            >
               <svg viewBox="0 0 24 24" fill="currentColor">
                 <path d="M20.84 4.61a5.5 5.5 0 00-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 00-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 000-7.78z"/>
               </svg>
-              <span>私密</span>
+              <span v-if="intimacyInfo">Lv.{{ intimacyInfo.current_level }}</span>
+              <span v-else>私密</span>
             </div>
           </div>
         </Transition>
@@ -53,13 +60,14 @@
     </div>
 
     <div class="header-right">
-      <!-- 预留右侧操作按钮 -->
+      <!-- 右侧预留区域，可以添加其他功能按钮 -->
     </div>
   </div>
 </template>
 
 <script setup lang="ts">
 import { computed } from 'vue'
+import type { IntimacyInfo } from '@/types/intimacy'
 
 interface Props {
   roomName?: string
@@ -69,6 +77,7 @@ interface Props {
   isPrivateRoom?: boolean
   typingUsers?: Array<{ id: string | number; nickname: string }>
   isLocked?: boolean
+  intimacyInfo?: IntimacyInfo | null
 }
 
 const props = withDefaults(defineProps<Props>(), {
@@ -77,8 +86,13 @@ const props = withDefaults(defineProps<Props>(), {
   wsConnected: false,
   isPrivateRoom: false,
   typingUsers: () => [],
-  isLocked: false
+  isLocked: false,
+  intimacyInfo: null
 })
+
+defineEmits<{
+  'toggle-intimacy-panel': []
+}>()
 
 // 计算正在输入的文本
 const typingText = computed(() => {
@@ -270,9 +284,25 @@ const typingText = computed(() => {
   background: linear-gradient(135deg, rgba($pink-color, 0.1), rgba($pink-color, 0.15));
   color: $pink-color;
   border: 1px solid rgba($pink-color, 0.2);
+  transition: all 0.2s;
 
   svg {
     animation: heartbeat 1.5s ease-in-out infinite;
+  }
+  
+  &.has-intimacy {
+    cursor: pointer;
+    
+    &:hover {
+      background: linear-gradient(135deg, rgba($pink-color, 0.15), rgba($pink-color, 0.2));
+      border-color: rgba($pink-color, 0.3);
+      transform: translateY(-1px);
+      box-shadow: 0 2px 8px rgba($pink-color, 0.2);
+    }
+    
+    &:active {
+      transform: translateY(0);
+    }
   }
 }
 

@@ -22,7 +22,9 @@
         </button>
         <ChatHeader :room-name="currentRoom?.name" :total-users="currentRoom?.totalUsers || 0"
           :online-users="currentRoom?.onlineUsers || 0" :ws-connected="wsConnected"
-          :is-private-room="currentRoom?.isPrivate || false" :typing-users="typingUsers" :is-locked="currentRoom?.lock === 1" />
+          :is-private-room="currentRoom?.isPrivate || false" :typing-users="typingUsers" :is-locked="currentRoom?.lock === 1"
+          :intimacy-info="intimacyStore.currentIntimacy"
+          @toggle-intimacy-panel="showIntimacyPanel = !showIntimacyPanel" />
       </header>
 
       <!-- 消息区域 -->
@@ -129,6 +131,26 @@
       </template>
     </a-modal>
   </div>
+  
+  <!-- 亲密度面板 -->
+  <IntimacyPanel 
+    :visible="showIntimacyPanel"
+    :intimacy-info="intimacyStore.currentIntimacy"
+    :levels="intimacyStore.levels"
+    :interaction="intimacyStore.interaction"
+    @close="handleCloseIntimacyPanel"
+    @collect-reward="handleCollectIntimacyReward"
+  />
+  
+  <!-- 亲密度升级弹窗 -->
+  <IntimacyLevelUpModal 
+    :visible="intimacyStore.showLevelUpModal"
+    :level-up-data="intimacyStore.levelUpData"
+    @close="intimacyStore.closeLevelUp"
+  />
+  
+  <!-- 经验获得提示 -->
+  <IntimacyExpTip :tips="intimacyStore.expTips" />
 </template>
 
 <script setup lang="ts">
@@ -138,15 +160,22 @@ import Sidebar from '@/components/index/Sidebar.vue'
 import ChatHeader from '@/components/index/ChatHeader.vue'
 import MessageList from '@/components/index/MessageList.vue'
 import InputBar from '@/components/index/InputBar.vue'
+import IntimacyPanel from '@/components/intimacy/IntimacyPanel.vue'
+import IntimacyLevelUpModal from '@/components/intimacy/IntimacyLevelUpModal.vue'
+import IntimacyExpTip from '@/components/intimacy/IntimacyExpTip.vue'
 import { getUserRooms, createRoom, joinRoom, leaveRoom, getRoomUserCount, toggleRoomLock as toggleRoomLockApi, clearRoomMessages, restoreRoomMessages, getDeletedMessagesCount } from '@/apis/room'
 import { getMessageList, sendTextMessage, sendImageMessage, sendVideoMessage, sendFileMessage, editMessage } from '@/apis/message'
 import type { CreateRoomParams, JoinRoomParams } from '@/apis/room'
 import { useChat } from '@/composables/useChat'
 import { useUserStore } from '@/store/user'
+import { useIntimacyStore } from '@/store/intimacy'
 import type { ChatMessageItem } from '@/store/chat'
 
 // 使用用户 store
 const userStore = useUserStore()
+
+// 使用亲密度 store
+const intimacyStore = useIntimacyStore()
 
 // 使用聊天组合式函数
 const { wsStore, chatStore, initChat, destroyChat, enterRoom, broadcastMessage, sendTyping, toggleRoomLock, clearRoomMessages: broadcastClearRoom, restoreRoomMessages: broadcastRestoreRoom } = useChat()
@@ -161,6 +190,9 @@ const inputBarRef = ref<InstanceType<typeof InputBar>>()
 // 暗色模式 - 从本地存储读取初始值
 const isDarkMode = ref(localStorage.getItem('darkMode') === 'true')
 const sidebarOpen = ref(false)
+
+// 亲密度面板状态
+const showIntimacyPanel = ref(false)
 
 // WebSocket 连接状态
 const wsConnected = computed(() => wsStore.isConnected)
@@ -218,6 +250,9 @@ onMounted(async () => {
   // 初始化 WebSocket
   initChat()
   
+  // 加载亲密度等级配置
+  await intimacyStore.loadLevels()
+  
   // 覆盖 onRoomCleared 处理，添加重新加载消息的逻辑
   wsStore.setOnRoomCleared((data) => {
     if (data.is_restore) {
@@ -239,6 +274,22 @@ onMounted(async () => {
       chatStore.clearMessages()
       chatStore.addSystemMessage(`${data.cleared_by_nickname} 清空了聊天记录`)
     }
+  })
+  
+  // 监听亲密度互动事件
+  wsStore.setOnIntimacyStart(() => {
+    console.log('[亲密度] 互动开始')
+    intimacyStore.startInteraction()
+  })
+  
+  wsStore.setOnIntimacyComplete(() => {
+    console.log('[亲密度] 互动完成')
+    intimacyStore.completeInteraction()
+  })
+  
+  wsStore.setOnIntimacyReset(() => {
+    console.log('[亲密度] 互动重置')
+    intimacyStore.resetInteraction()
   })
 
   // 加载房间列表
@@ -738,6 +789,13 @@ const handleSelectRoom = async (room: any) => {
   if (userStore.isAdmin) {
     await updateDeletedCount()
   }
+  
+  // 加载亲密度信息（仅私密房间）
+  if (room.private === 1) {
+    await intimacyStore.loadIntimacyInfo(roomId)
+  } else {
+    intimacyStore.clearIntimacy()
+  }
 }
 
 const handleAddContact = () => { console.log('添加联系人') }
@@ -974,6 +1032,9 @@ const handleSendMessage = async (text: string) => {
             currentExp: result.data.intimacy.current_exp,
             currentLevel: result.data.intimacy.current_level
           }
+          
+          // 更新亲密度 store
+          intimacyStore.updateIntimacyFromMessage(result.data.intimacy)
         }
       }
 
@@ -1479,6 +1540,27 @@ const submitEditMessage = async () => {
   } finally {
     editMessageLoading.value = false
   }
+}
+
+// ==================== 亲密度互动 ====================
+
+const handleCollectIntimacyReward = async () => {
+  if (!currentRoom.value?.id) {
+    message.warning('请先选择房间')
+    return
+  }
+  
+  const result = await intimacyStore.collectReward(currentRoom.value.id)
+  if (result.success) {
+    message.success(result.message)
+  } else {
+    message.error(result.message)
+  }
+}
+
+// 处理亲密度面板关闭
+const handleCloseIntimacyPanel = () => {
+  showIntimacyPanel.value = false
 }
 </script>
 
