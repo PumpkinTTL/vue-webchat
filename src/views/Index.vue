@@ -622,6 +622,8 @@ const toggleTheme = () => {
   isDarkMode.value = !isDarkMode.value
   // 保存到本地存储
   localStorage.setItem('darkMode', String(isDarkMode.value))
+  // 触发自定义事件，通知 App.vue 更新主题
+  window.dispatchEvent(new Event('darkModeChange'))
 }
 const handleSelectContact = (contact: any) => { console.log('选择联系人:', contact) }
 
