@@ -402,6 +402,18 @@ const progressOffset = computed(() => {
   return circumference * (1 - progress)
 })
 
+// 服务器 URL（缓存）
+const serverUrl = import.meta.env.VITE_SERVER_URL || ''
+
+// 处理 URL 的通用函数
+const processUrl = (url: string | undefined): string => {
+  if (!url) return ''
+  if (url.startsWith('blob:') || url.startsWith('http://') || url.startsWith('https://')) {
+    return url
+  }
+  return serverUrl + url
+}
+
 const senderName = computed(() => {
   return props.message.sender?.nickname || props.message.username || '用户'
 })
@@ -412,7 +424,6 @@ const avatarUrl = computed(() => {
   if (avatar.startsWith('http://') || avatar.startsWith('https://')) {
     return avatar
   }
-  const serverUrl = import.meta.env.VITE_SERVER_URL || ''
   return serverUrl + avatar
 })
 
@@ -421,38 +432,13 @@ const avatarChar = computed(() => {
 })
 
 // 处理图片URL
-const imageUrl = computed(() => {
-  const url = props.message.imageUrl || props.message.content
-  if (!url) return ''
-  // blob URL、http、https 都直接返回
-  if (url.startsWith('blob:') || url.startsWith('http://') || url.startsWith('https://')) {
-    return url
-  }
-  const serverUrl = import.meta.env.VITE_SERVER_URL || ''
-  return serverUrl + url
-})
+const imageUrl = computed(() => processUrl(props.message.imageUrl || props.message.content))
 
 // 处理视频URL
-const videoUrl = computed(() => {
-  const url = props.message.videoUrl
-  if (!url) return ''
-  if (url.startsWith('blob:') || url.startsWith('http://') || url.startsWith('https://')) {
-    return url
-  }
-  const serverUrl = import.meta.env.VITE_SERVER_URL || ''
-  return serverUrl + url
-})
+const videoUrl = computed(() => processUrl(props.message.videoUrl))
 
 // 处理视频缩略图URL
-const videoThumbnailUrl = computed(() => {
-  const url = props.message.videoThumbnail
-  if (!url) return ''
-  if (url.startsWith('blob:') || url.startsWith('http://') || url.startsWith('https://')) {
-    return url
-  }
-  const serverUrl = import.meta.env.VITE_SERVER_URL || ''
-  return serverUrl + url
-})
+const videoThumbnailUrl = computed(() => processUrl(props.message.videoThumbnail))
 
 const bubbleClass = computed(() => ({
   'msg-image': props.message.type === 'image',
@@ -481,6 +467,16 @@ const replyNickname = computed(() => {
   return props.message.replyTo?.nickname || '用户'
 })
 
+// 消息类型映射（常量）
+const MESSAGE_TYPE_MAP: Record<number | string, string> = {
+  2: '[图片]',
+  5: '[视频]',
+  3: '[文件]',
+  'image': '[图片]',
+  'video': '[视频]',
+  'file': '[文件]'
+}
+
 // 引用文本
 const replyQuoteText = computed(() => {
   const replyTo = props.message.replyTo
@@ -490,20 +486,12 @@ const replyQuoteText = computed(() => {
     return '原消息已撤回'
   }
 
-  // 消息类型映射
-  const typeMap: Record<number | string, string> = {
-    2: '[图片]',
-    5: '[视频]',
-    3: '[文件]',
-    'image': '[图片]',
-    'video': '[视频]',
-    'file': '[文件]'
+  // 检查消息类型
+  if (replyTo.message_type && MESSAGE_TYPE_MAP[replyTo.message_type]) {
+    return MESSAGE_TYPE_MAP[replyTo.message_type]
   }
 
-  if (replyTo.message_type && typeMap[replyTo.message_type]) {
-    return typeMap[replyTo.message_type]
-  }
-
+  // 截断长文本
   const text = replyTo.content || ''
   return text.length > 50 ? text.substring(0, 50) + '...' : text
 })
@@ -523,19 +511,11 @@ const formatFileSize = (bytes?: number) => {
   return Math.round(bytes / Math.pow(k, i) * 100) / 100 + ' ' + sizes[i]
 }
 
-// 回复消息
-const handleReply = () => {
-  popoverVisible.value = false
-  emit('reply', props.message)
-}
-
-// 复制消息
-const handleCopy = async () => {
-  popoverVisible.value = false
-  const text = props.message.text || props.message.content || ''
+// 通用复制函数
+const copyToClipboard = async (text: string, successMsg: string = '已复制') => {
   try {
     await navigator.clipboard.writeText(text)
-    antMessage.success('已复制')
+    antMessage.success(successMsg)
   } catch {
     // 降级方案
     const textarea = document.createElement('textarea')
@@ -546,8 +526,21 @@ const handleCopy = async () => {
     textarea.select()
     document.execCommand('copy')
     document.body.removeChild(textarea)
-    antMessage.success('已复制')
+    antMessage.success(successMsg)
   }
+}
+
+// 回复消息
+const handleReply = () => {
+  popoverVisible.value = false
+  emit('reply', props.message)
+}
+
+// 复制消息
+const handleCopy = async () => {
+  popoverVisible.value = false
+  const text = props.message.text || props.message.content || ''
+  await copyToClipboard(text)
 }
 
 // 复制链接
@@ -555,22 +548,7 @@ const handleCopyLink = async () => {
   popoverVisible.value = false
   const url = displayUrls.value[0]
   if (!url) return
-  
-  try {
-    await navigator.clipboard.writeText(url)
-    antMessage.success('链接已复制')
-  } catch {
-    // 降级方案
-    const textarea = document.createElement('textarea')
-    textarea.value = url
-    textarea.style.position = 'fixed'
-    textarea.style.opacity = '0'
-    document.body.appendChild(textarea)
-    textarea.select()
-    document.execCommand('copy')
-    document.body.removeChild(textarea)
-    antMessage.success('链接已复制')
-  }
+  await copyToClipboard(url, '链接已复制')
 }
 
 // 焚毁消息

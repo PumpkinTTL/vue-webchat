@@ -35,16 +35,6 @@ export function isValidUrl(url: string): boolean {
 }
 
 /**
- * 将文本中的链接转换为可点击的 HTML
- */
-export function linkify(text: string): string {
-  if (!text) return ''
-  return text.replace(URL_REGEX, (url) => {
-    return `<a href="${url}" target="_blank" rel="noopener noreferrer" class="message-link">${url}</a>`
-  })
-}
-
-/**
  * 检查文本是否包含链接
  */
 export function hasUrl(text: string): boolean {
@@ -54,29 +44,26 @@ export function hasUrl(text: string): boolean {
 }
 
 /**
- * 分离文本和URL - 返回纯文本和URL数组
+ * 分离文本和URL - 返回纯文本和URL数组（优化版）
  */
 export function separateTextAndUrls(text: string): { text: string; urls: string[] } {
   if (!text) return { text: '', urls: [] }
   
-  const urls: string[] = []
-  const urlMatches = Array.from(text.matchAll(URL_REGEX))
-  
-  // 提取所有URL（去重）
-  urlMatches.forEach(match => {
-    if (!urls.includes(match[0])) {
-      urls.push(match[0])
-    }
-  })
-  
-  // 移除URL后的纯文本
+  // 使用 Set 自动去重
+  const urlSet = new Set<string>()
   let pureText = text
-  urls.forEach(url => {
-    pureText = pureText.replace(url, '').trim()
+  
+  // 一次遍历完成提取和替换
+  pureText = text.replace(URL_REGEX, (url) => {
+    urlSet.add(url)
+    return '' // 移除 URL
   })
+  
+  // 清理多余的空格
+  pureText = pureText.replace(/\s+/g, ' ').trim()
   
   return {
     text: pureText,
-    urls: urls
+    urls: Array.from(urlSet)
   }
 }
