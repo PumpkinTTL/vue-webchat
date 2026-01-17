@@ -789,21 +789,28 @@ defineExpose({
 .text-content {
   white-space: pre-wrap;
 
-  // 链接样式
+  // 链接样式 - Modern Minimal Design
   :deep(.message-link) {
-    color: $primary-light;
+    color: $primary-color;
     text-decoration: none;
-    font-weight: $font-weight-medium;
-    border-bottom: 1px solid rgba($primary-light, 0.3);
+    font-weight: $font-weight-semibold;
+    padding: 2px 6px;
+    margin: 0 2px;
+    border-radius: 4px;
+    background: rgba($primary-color, 0.08);
     transition: all $transition-fast;
     word-break: break-all;
-    padding: 1px 2px;
-    border-radius: 2px;
+    display: inline-block;
+    line-height: 1.4;
 
     &:hover {
-      color: $primary-color;
-      border-bottom-color: $primary-color;
-      background: rgba($primary-color, 0.08);
+      background: rgba($primary-color, 0.15);
+      transform: translateY(-1px);
+      box-shadow: 0 2px 4px rgba($primary-color, 0.15);
+    }
+
+    &:active {
+      transform: translateY(0);
     }
   }
 }
@@ -813,12 +820,12 @@ defineExpose({
   .text-content {
     :deep(.message-link) {
       color: white;
-      border-bottom-color: rgba(255, 255, 255, 0.5);
+      background: rgba(255, 255, 255, 0.2);
       font-weight: $font-weight-semibold;
 
       &:hover {
-        border-bottom-color: white;
-        background: rgba(255, 255, 255, 0.2);
+        background: rgba(255, 255, 255, 0.3);
+        box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
       }
     }
   }
@@ -847,12 +854,11 @@ defineExpose({
   .text-content {
     :deep(.message-link) {
       color: $primary-lighter;
-      border-bottom-color: rgba($primary-lighter, 0.4);
+      background: rgba($primary-lighter, 0.12);
 
       &:hover {
-        color: $primary-light;
-        border-bottom-color: $primary-light;
-        background: rgba($primary-light, 0.12);
+        background: rgba($primary-lighter, 0.2);
+        box-shadow: 0 2px 4px rgba($primary-lighter, 0.2);
       }
     }
   }
@@ -861,11 +867,11 @@ defineExpose({
     .text-content {
       :deep(.message-link) {
         color: white;
-        border-bottom-color: rgba(255, 255, 255, 0.6);
+        background: rgba(255, 255, 255, 0.15);
 
         &:hover {
-          border-bottom-color: white;
           background: rgba(255, 255, 255, 0.25);
+          box-shadow: 0 2px 4px rgba(0, 0, 0, 0.15);
         }
       }
     }
