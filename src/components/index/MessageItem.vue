@@ -1490,12 +1490,12 @@ defineExpose({
 .dark-mode .reply-quote-other .reply-quote-nickname {
   color: #60A5FA;
   font-weight: 700;
-  text-shadow: 0 1px 3px rgba(96, 165, 250, 0.3);
+  text-shadow: none;
 }
 
 .dark-mode .reply-quote-other .reply-quote-text {
   color: #CBD5E1;
-  text-shadow: 0 1px 2px rgba(0, 0, 0, 0.2);
+  text-shadow: none;
 }
 
 .dark-mode .reply-quote-line {
@@ -1525,12 +1525,12 @@ defineExpose({
 .dark-mode .reply-quote-own .reply-quote-nickname {
   color: rgba(255, 255, 255, 1);
   font-weight: 700;
-  text-shadow: 0 1px 3px rgba(0, 0, 0, 0.3);
+  text-shadow: none;
 }
 
 .dark-mode .reply-quote-own .reply-quote-text {
   color: rgba(255, 255, 255, 0.95);
-  text-shadow: 0 1px 2px rgba(0, 0, 0, 0.2);
+  text-shadow: none;
 }
 
 // 移动端
