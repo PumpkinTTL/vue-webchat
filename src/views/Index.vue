@@ -22,26 +22,22 @@
         </button>
         <ChatHeader :room-name="currentRoom?.name" :total-users="currentRoom?.totalUsers || 0"
           :online-users="currentRoom?.onlineUsers || 0" :ws-connected="wsConnected"
-          :is-private-room="currentRoom?.isPrivate || false" :typing-users="typingUsers" :is-locked="currentRoom?.lock === 1"
-          :intimacy-info="intimacyStore.currentIntimacy"
+          :is-private-room="currentRoom?.isPrivate || false" :typing-users="typingUsers"
+          :is-locked="currentRoom?.lock === 1" :intimacy-info="intimacyStore.currentIntimacy"
           @toggle-intimacy-panel="showIntimacyPanel = !showIntimacyPanel" />
       </header>
 
       <!-- 亲密度面板 -->
-      <IntimacyPanel
-        :visible="showIntimacyPanel"
-        :intimacy-info="intimacyStore.currentIntimacy"
-        :levels="intimacyStore.levels"
-        :interaction="intimacyStore.interaction"
-        @close="handleCloseIntimacyPanel"
-        @collect-reward="handleCollectIntimacyReward"
-      />
+      <IntimacyPanel :visible="showIntimacyPanel" :intimacy-info="intimacyStore.currentIntimacy"
+        :levels="intimacyStore.levels" :interaction="intimacyStore.interaction" @close="handleCloseIntimacyPanel"
+        @collect-reward="handleCollectIntimacyReward" />
 
       <!-- 消息区域 -->
       <section class="messages-area">
         <MessageList ref="messageListRef" :messages="messages" :loading="messagesLoading" :has-more="hasMoreMessages"
-          :loading-more="loadingMoreMessages" :upload-progress="uploadProgress" :has-reply="!!replyToMessage" @load-more="handleLoadMore"
-          @reply="handleReplyMessage" @burn="handleBurnMessage" @edit="handleEditMessage" @scroll-change="handleScrollChange" />
+          :loading-more="loadingMoreMessages" :upload-progress="uploadProgress" :has-reply="!!replyToMessage"
+          @load-more="handleLoadMore" @reply="handleReplyMessage" @burn="handleBurnMessage" @edit="handleEditMessage"
+          @scroll-change="handleScrollChange" />
 
         <!-- 新消息提示按钮 -->
         <Transition name="new-msg-fade">
@@ -56,13 +52,12 @@
 
       <!-- 输入区域 -->
       <footer class="input-area">
-        <InputBar ref="inputBarRef" :disabled="isInputDisabled" :reply-to="replyToMessage" 
-          :is-admin="userStore.isAdmin" :current-room="currentRoom" :deleted-count="deletedCount"
-          @send="handleSendMessage"
+        <InputBar ref="inputBarRef" :disabled="isInputDisabled" :reply-to="replyToMessage" :is-admin="userStore.isAdmin"
+          :current-room="currentRoom" :deleted-count="deletedCount" @send="handleSendMessage"
           @send-image="handleSendImage" @send-video="handleSendVideo" @send-file="handleSendFile"
           @start-recording="handleStartRecording" @stop-recording="handleStopRecording" @typing="handleTyping"
-          @cancel-reply="handleCancelReply" 
-          @toggle-lock="handleToggleLock" @clear-room="handleClearRoom" @restore-room="handleRestoreRoom" />
+          @cancel-reply="handleCancelReply" @toggle-lock="handleToggleLock" @clear-room="handleClearRoom"
+          @restore-room="handleRestoreRoom" />
       </footer>
     </main>
 
@@ -143,12 +138,9 @@
   </div>
 
   <!-- 亲密度升级弹窗 -->
-  <IntimacyLevelUpModal 
-    :visible="intimacyStore.showLevelUpModal"
-    :level-up-data="intimacyStore.levelUpData"
-    @close="intimacyStore.closeLevelUp"
-  />
-  
+  <IntimacyLevelUpModal :visible="intimacyStore.showLevelUpModal" :level-up-data="intimacyStore.levelUpData"
+    @close="intimacyStore.closeLevelUp" />
+
   <!-- 经验获得提示 -->
   <IntimacyExpTip :tips="intimacyStore.expTips" />
 </template>
@@ -246,13 +238,13 @@ const isInputDisabled = computed(() => {
 onMounted(async () => {
   // 初始化用户信息
   userStore.initUserInfo()
-  
+
   // 初始化 WebSocket
   initChat()
-  
+
   // 加载亲密度等级配置
   await intimacyStore.loadLevels()
-  
+
   // 覆盖 onRoomCleared 处理，添加重新加载消息的逻辑
   wsStore.setOnRoomCleared((data) => {
     if (data.is_restore) {
@@ -275,18 +267,18 @@ onMounted(async () => {
       chatStore.addSystemMessage(`${data.cleared_by_nickname} 清空了聊天记录`)
     }
   })
-  
+
   // 监听亲密度互动事件
   wsStore.setOnIntimacyStart(() => {
     console.log('[亲密度] 互动开始')
     intimacyStore.startInteraction()
   })
-  
+
   wsStore.setOnIntimacyComplete(() => {
     console.log('[亲密度] 互动完成')
     intimacyStore.completeInteraction()
   })
-  
+
   wsStore.setOnIntimacyReset(() => {
     console.log('[亲密度] 互动重置')
     intimacyStore.resetInteraction()
@@ -403,7 +395,7 @@ const loadRoomMessages = async (roomId: number) => {
     const result = await getMessageList(roomId, 1, 100)
     if (result.code === 0 && result.data) {
       const serverUrl = import.meta.env.VITE_SERVER_URL || ''
-      
+
       // 后端已经格式化好了消息，直接映射字段
       const convertedMessages: ChatMessageItem[] = result.data.messages.map(msg => {
         // 映射消息类型：normal/reply -> text
@@ -509,7 +501,7 @@ const handleLoadMore = async () => {
     const result = await getMessageList(currentRoom.value.id, currentPage.value, 100)
     if (result.code === 0 && result.data) {
       const serverUrl = import.meta.env.VITE_SERVER_URL || ''
-      
+
       const convertedMessages: ChatMessageItem[] = result.data.messages.map(msg => {
         let msgType = msg.type
         if (msgType === 'normal' || msgType === 'reply') {
@@ -774,7 +766,7 @@ const handleSelectRoom = async (room: any) => {
   if (wsStore.isAuthed) {
     enterRoom(roomId)
   }
-  
+
   // 设置 chatStore 的当前房间并同步锁定状态
   chatStore.setCurrentRoom({
     id: roomId,
@@ -784,12 +776,12 @@ const handleSelectRoom = async (room: any) => {
     totalUsers: currentRoom.value.totalUsers,
     isPrivate: room.private === 1
   })
-  
+
   // 更新软删除消息数量（仅管理员需要）
   if (userStore.isAdmin) {
     await updateDeletedCount()
   }
-  
+
   // 加载亲密度信息（仅私密房间）
   if (room.private === 1) {
     await intimacyStore.loadIntimacyInfo(roomId)
@@ -824,16 +816,16 @@ const handleLeaveRoomAction = async (room: any) => {
 // 锁定/解锁房间
 const handleToggleLock = async () => {
   if (!currentRoom.value) return
-  
+
   const newLockStatus = currentRoom.value.lock === 1 ? 0 : 1
   const actionText = newLockStatus === 1 ? '锁定' : '解锁'
-  
+
   try {
     const result = await toggleRoomLockApi(currentRoom.value.id, newLockStatus)
     if (result.code === 0) {
       message.success(`房间已${actionText}`)
       currentRoom.value.lock = newLockStatus
-      
+
       // 通过 WebSocket 广播锁定状态变化
       toggleRoomLock(newLockStatus === 1)
     } else {
@@ -847,13 +839,13 @@ const handleToggleLock = async () => {
 // 清理房间消息
 const handleClearRoom = async (hardDelete: boolean) => {
   if (!currentRoom.value) return
-  
+
   const actionText = hardDelete ? '物理删除' : '软删除'
-  
+
   Modal.confirm({
     title: `确认${actionText}所有消息？`,
-    content: hardDelete 
-      ? '物理删除将永久删除所有消息和文件，无法恢复！' 
+    content: hardDelete
+      ? '物理删除将永久删除所有消息和文件，无法恢复！'
       : '软删除的消息可以通过"恢复消息"功能恢复。',
     okText: '确认',
     okType: hardDelete ? 'danger' : 'primary',
@@ -863,16 +855,16 @@ const handleClearRoom = async (hardDelete: boolean) => {
         const result = await clearRoomMessages(currentRoom.value!.id, hardDelete)
         if (result.code === 0) {
           message.success(`${actionText}成功，共删除 ${result.data.deleted_messages} 条消息`)
-          
+
           // 清空本地消息列表
           chatStore.clearMessages()
-          
+
           // 重新加载消息
           await loadRoomMessages(currentRoom.value!.id)
-          
+
           // 更新软删除消息数量
           await updateDeletedCount()
-          
+
           // 通过 WebSocket 广播清理事件
           broadcastClearRoom(hardDelete)
         } else {
@@ -888,12 +880,12 @@ const handleClearRoom = async (hardDelete: boolean) => {
 // 恢复房间消息
 const handleRestoreRoom = async () => {
   if (!currentRoom.value) return
-  
+
   if (deletedCount.value === 0) {
     message.info('没有可恢复的消息')
     return
   }
-  
+
   Modal.confirm({
     title: '确认恢复消息？',
     content: `将恢复 ${deletedCount.value} 条软删除的消息。`,
@@ -904,13 +896,13 @@ const handleRestoreRoom = async () => {
         const result = await restoreRoomMessages(currentRoom.value!.id)
         if (result.code === 0) {
           message.success(`恢复成功，共恢复 ${result.data.restored_messages} 条消息`)
-          
+
           // 重新加载消息
           await loadRoomMessages(currentRoom.value!.id)
-          
+
           // 更新软删除消息数量
           await updateDeletedCount()
-          
+
           // 通过 WebSocket 广播恢复事件
           broadcastRestoreRoom()
         } else {
@@ -926,7 +918,7 @@ const handleRestoreRoom = async () => {
 // 更新软删除消息数量
 const updateDeletedCount = async () => {
   if (!currentRoom.value) return
-  
+
   try {
     const result = await getDeletedMessagesCount(currentRoom.value.id)
     if (result.code === 0) {
@@ -1032,7 +1024,7 @@ const handleSendMessage = async (text: string) => {
             currentExp: result.data.intimacy.current_exp,
             currentLevel: result.data.intimacy.current_level
           }
-          
+
           // 更新亲密度 store
           intimacyStore.updateIntimacyFromMessage(result.data.intimacy)
         }
@@ -1522,14 +1514,14 @@ const submitEditMessage = async () => {
     const result = await editMessage(editMessageForm.messageId, editMessageForm.content.trim())
     if (result.code === 0 && result.data) {
       const editedAt = (result.data as any).edited_at || new Date().toISOString()
-      
+
       // 更新本地消息
       chatStore.editMessage(editMessageForm.messageId, editMessageForm.content.trim(), editedAt)
-      
+
       // 广播给其他用户
       const { broadcastEditMessage } = useChat()
       broadcastEditMessage(editMessageForm.messageId, editMessageForm.content.trim(), editedAt)
-      
+
       message.success('消息已编辑')
       resetEditMessageForm()
     } else {
@@ -1549,7 +1541,7 @@ const handleCollectIntimacyReward = async () => {
     message.warning('请先选择房间')
     return
   }
-  
+
   const result = await intimacyStore.collectReward(currentRoom.value.id)
   if (result.success) {
     message.success(result.message)
@@ -1732,6 +1724,7 @@ const handleCloseIntimacyPanel = () => {
 
 // 主聊天区域 - 关键的flex布局
 .chat-main {
+  position: relative; // 为 IntimacyPanel 提供定位上下文
   flex: 1;
   display: flex;
   flex-direction: column;

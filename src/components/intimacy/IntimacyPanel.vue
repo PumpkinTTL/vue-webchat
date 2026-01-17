@@ -149,12 +149,16 @@ function getLevelDesc(level: number): string {
 <style lang="scss" scoped>
 // ==================== 面板容器（下拉展开式） ====================
 .intimacy-panel {
+  position: absolute;
+  top: 56px; // chat-header 的高度
+  left: 0;
+  right: 0;
+  z-index: 100;
   background: rgba(255, 255, 255, 0.98);
   backdrop-filter: blur(10px);
   border-bottom: 1px solid rgba(0, 0, 0, 0.08);
   padding: 22px 24px;
   box-shadow: 0 4px 16px rgba(0, 0, 0, 0.1);
-  position: relative;
 }
 
 .close-btn {
