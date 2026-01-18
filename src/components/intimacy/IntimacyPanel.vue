@@ -1,6 +1,16 @@
 <template>
   <Transition name="intimacy-slide">
     <div v-if="visible" class="intimacy-card-expanded" @click.stop :style="{ '--intimacy-color': intimacyInfo?.level_color || '#ec4899' }">
+      <!-- 背景装饰 -->
+      <div class="bg-decoration">
+        <div class="sparkle-particle p1"></div>
+        <div class="sparkle-particle p2"></div>
+        <div class="sparkle-particle p3"></div>
+        <div class="sparkle-particle p4"></div>
+        <div class="wave-line w1"></div>
+        <div class="wave-line w2"></div>
+      </div>
+      
       <button class="intimacy-close" @click="emit('close')">
         <font-awesome-icon icon="times" />
       </button>
@@ -12,6 +22,7 @@
             <div class="intimacy-heart-wrapper">
               <font-awesome-icon icon="heart" class="intimacy-heart-icon" :style="{ color: intimacyInfo.level_color }" />
               <div class="heart-glow" :style="{ background: intimacyInfo.level_color }"></div>
+              <div class="heart-ring"></div>
             </div>
             <div class="intimacy-level-text">
               <div class="level-name-row">
@@ -57,6 +68,11 @@
                    '--level-color-light': intimacyInfo.level_color + '99'
                  }">
               <div class="progress-shine"></div>
+              <div class="progress-particles">
+                <span class="particle"></span>
+                <span class="particle"></span>
+                <span class="particle"></span>
+              </div>
             </div>
           </div>
         </div>
@@ -77,6 +93,7 @@
           <div class="intimacy-message-count">
             <div class="message-icon-wrapper">
               <font-awesome-icon icon="comments" />
+              <div class="icon-pulse"></div>
             </div>
             <div class="message-text">
               <span class="message-label">我们已经聊了</span>
@@ -165,6 +182,117 @@ const showBondEffect = ref(localStorage.getItem('intimacy_show_bond_effect') !==
   padding: 22px 24px;
   box-shadow: 0 4px 16px rgba(0, 0, 0, 0.1);
   z-index: 100;
+  overflow: hidden;
+}
+
+/* 背景装饰 */
+.bg-decoration {
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  overflow: hidden;
+  z-index: 0;
+}
+
+/* 闪烁粒子 */
+.sparkle-particle {
+  position: absolute;
+  width: 4px;
+  height: 4px;
+  background: var(--intimacy-color, #ec4899);
+  border-radius: 50%;
+  opacity: 0;
+  
+  &::before,
+  &::after {
+    content: '';
+    position: absolute;
+    background: var(--intimacy-color, #ec4899);
+    border-radius: 50%;
+  }
+  
+  &::before {
+    width: 1px;
+    height: 8px;
+    top: -2px;
+    left: 1.5px;
+  }
+  
+  &::after {
+    width: 8px;
+    height: 1px;
+    top: 1.5px;
+    left: -2px;
+  }
+  
+  &.p1 {
+    top: 15%;
+    left: 10%;
+    animation: sparkle-float 3s ease-in-out infinite;
+  }
+  
+  &.p2 {
+    top: 25%;
+    right: 15%;
+    animation: sparkle-float 3s ease-in-out 1s infinite;
+  }
+  
+  &.p3 {
+    bottom: 20%;
+    left: 20%;
+    animation: sparkle-float 3s ease-in-out 2s infinite;
+  }
+  
+  &.p4 {
+    bottom: 30%;
+    right: 10%;
+    animation: sparkle-float 3s ease-in-out 1.5s infinite;
+  }
+}
+
+@keyframes sparkle-float {
+  0%, 100% {
+    opacity: 0;
+    transform: translateY(0) scale(0) rotate(0deg);
+  }
+  50% {
+    opacity: 0.6;
+    transform: translateY(-10px) scale(1) rotate(180deg);
+  }
+}
+
+/* 波浪线装饰 */
+.wave-line {
+  position: absolute;
+  width: 100%;
+  height: 2px;
+  background: linear-gradient(90deg, 
+    transparent,
+    var(--intimacy-color, #ec4899),
+    transparent
+  );
+  opacity: 0.1;
+  
+  &.w1 {
+    top: 30%;
+    animation: wave-move 4s ease-in-out infinite;
+  }
+  
+  &.w2 {
+    bottom: 30%;
+    animation: wave-move 4s ease-in-out 2s infinite;
+  }
+}
+
+@keyframes wave-move {
+  0%, 100% {
+    transform: translateX(-100%) scaleX(0.5);
+    opacity: 0;
+  }
+  50% {
+    transform: translateX(0) scaleX(1);
+    opacity: 0.15;
+  }
 }
 
 /* 关闭按钮 */
@@ -194,7 +322,7 @@ const showBondEffect = ref(localStorage.getItem('intimacy_show_bond_effect') !==
 
 .intimacy-close:hover {
   background: color-mix(in srgb, var(--intimacy-color, #ec4899) 20%, transparent);
-  transform: rotate(90deg);
+  transform: rotate(90deg) scale(1.1);
 }
 
 /* ==================== 顶部区域：等级和经验 ==================== */
@@ -204,6 +332,8 @@ const showBondEffect = ref(localStorage.getItem('intimacy_show_bond_effect') !==
   align-items: center;
   margin-bottom: 18px;
   padding-right: 40px;
+  position: relative;
+  z-index: 1;
 }
 
 .intimacy-level-display {
@@ -212,7 +342,7 @@ const showBondEffect = ref(localStorage.getItem('intimacy_show_bond_effect') !==
   gap: 14px;
 }
 
-/* 爱心图标包装器 - 添加发光效果 */
+/* 爱心图标包装器 - 添加发光效果和脉冲环 */
 .intimacy-heart-wrapper {
   position: relative;
   display: flex;
@@ -225,6 +355,7 @@ const showBondEffect = ref(localStorage.getItem('intimacy_show_bond_effect') !==
   position: relative;
   z-index: 2;
   animation: heart-pulse 2s ease-in-out infinite;
+  filter: drop-shadow(0 0 8px var(--intimacy-color, #ec4899));
 }
 
 .heart-glow {
@@ -234,6 +365,18 @@ const showBondEffect = ref(localStorage.getItem('intimacy_show_bond_effect') !==
   border-radius: 50%;
   opacity: 0.15;
   animation: glow-pulse 2s ease-in-out infinite;
+  z-index: 0;
+}
+
+.heart-ring {
+  position: absolute;
+  width: 60px;
+  height: 60px;
+  border: 2px solid var(--intimacy-color, #ec4899);
+  border-radius: 50%;
+  opacity: 0;
+  animation: ring-pulse 2s ease-in-out infinite;
+  z-index: 0;
 }
 
 @keyframes heart-pulse {
@@ -256,6 +399,17 @@ const showBondEffect = ref(localStorage.getItem('intimacy_show_bond_effect') !==
   }
 }
 
+@keyframes ring-pulse {
+  0% {
+    transform: scale(0.8);
+    opacity: 0.6;
+  }
+  100% {
+    transform: scale(1.3);
+    opacity: 0;
+  }
+}
+
 .intimacy-level-text {
   display: flex;
   flex-direction: column;
@@ -272,6 +426,7 @@ const showBondEffect = ref(localStorage.getItem('intimacy_show_bond_effect') !==
   font-size: 20px;
   font-weight: 700;
   line-height: 1;
+  text-shadow: 0 0 20px color-mix(in srgb, var(--intimacy-color, #ec4899) 30%, transparent);
 }
 
 .intimacy-level-badge {
@@ -281,6 +436,16 @@ const showBondEffect = ref(localStorage.getItem('intimacy_show_bond_effect') !==
   font-weight: 600;
   border: 1px solid;
   line-height: 1;
+  animation: badge-float 3s ease-in-out infinite;
+}
+
+@keyframes badge-float {
+  0%, 100% {
+    transform: translateY(0);
+  }
+  50% {
+    transform: translateY(-2px);
+  }
 }
 
 .level-subtitle {
@@ -317,6 +482,16 @@ const showBondEffect = ref(localStorage.getItem('intimacy_show_bond_effect') !==
   font-size: 20px;
   color: var(--intimacy-color, #ec4899);
   line-height: 1;
+  animation: number-glow 2s ease-in-out infinite;
+}
+
+@keyframes number-glow {
+  0%, 100% {
+    text-shadow: 0 0 10px color-mix(in srgb, var(--intimacy-color, #ec4899) 40%, transparent);
+  }
+  50% {
+    text-shadow: 0 0 20px color-mix(in srgb, var(--intimacy-color, #ec4899) 60%, transparent);
+  }
 }
 
 .exp-separator {
@@ -333,6 +508,8 @@ const showBondEffect = ref(localStorage.getItem('intimacy_show_bond_effect') !==
 /* ==================== 进度条区域 ==================== */
 .intimacy-progress-section {
   margin-bottom: 18px;
+  position: relative;
+  z-index: 1;
 }
 
 .progress-header {
@@ -387,7 +564,7 @@ const showBondEffect = ref(localStorage.getItem('intimacy_show_bond_effect') !==
   left: -100%;
   width: 100%;
   height: 100%;
-  background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.3), transparent);
+  background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.4), transparent);
   animation: progress-shine 2s ease-in-out infinite;
 }
 
@@ -400,11 +577,56 @@ const showBondEffect = ref(localStorage.getItem('intimacy_show_bond_effect') !==
   }
 }
 
+/* 进度条粒子 */
+.progress-particles {
+  position: absolute;
+  inset: 0;
+  
+  .particle {
+    position: absolute;
+    width: 3px;
+    height: 3px;
+    background: white;
+    border-radius: 50%;
+    opacity: 0;
+    top: 50%;
+    transform: translateY(-50%);
+    
+    &:nth-child(1) {
+      left: 20%;
+      animation: particle-float 2s ease-in-out infinite;
+    }
+    
+    &:nth-child(2) {
+      left: 50%;
+      animation: particle-float 2s ease-in-out 0.7s infinite;
+    }
+    
+    &:nth-child(3) {
+      left: 80%;
+      animation: particle-float 2s ease-in-out 1.4s infinite;
+    }
+  }
+}
+
+@keyframes particle-float {
+  0%, 100% {
+    opacity: 0;
+    transform: translateY(-50%) scale(0);
+  }
+  50% {
+    opacity: 0.8;
+    transform: translateY(-50%) scale(1.5);
+  }
+}
+
 /* ==================== 底部区域：统计和设置 ==================== */
 .intimacy-bottom-section {
   display: flex;
   flex-direction: column;
   gap: 14px;
+  position: relative;
+  z-index: 1;
 }
 
 .intimacy-message-count {
@@ -415,10 +637,37 @@ const showBondEffect = ref(localStorage.getItem('intimacy_show_bond_effect') !==
   background: color-mix(in srgb, var(--intimacy-color, #ec4899) 8%, transparent);
   border-radius: 12px;
   transition: all 0.3s ease;
+  position: relative;
+  overflow: hidden;
+  
+  &::before {
+    content: '';
+    position: absolute;
+    inset: 0;
+    background: linear-gradient(45deg, transparent 30%, color-mix(in srgb, var(--intimacy-color, #ec4899) 10%, transparent) 50%, transparent 70%);
+    background-size: 200% 200%;
+    animation: shimmer 3s ease-in-out infinite;
+    opacity: 0;
+    transition: opacity 0.3s;
+  }
+  
+  &:hover::before {
+    opacity: 1;
+  }
+}
+
+@keyframes shimmer {
+  0%, 100% {
+    background-position: 0% 50%;
+  }
+  50% {
+    background-position: 100% 50%;
+  }
 }
 
 .intimacy-message-count:hover {
   background: color-mix(in srgb, var(--intimacy-color, #ec4899) 12%, transparent);
+  transform: translateY(-1px);
 }
 
 .message-icon-wrapper {
@@ -430,12 +679,36 @@ const showBondEffect = ref(localStorage.getItem('intimacy_show_bond_effect') !==
   align-items: center;
   justify-content: center;
   flex-shrink: 0;
+  position: relative;
 }
 
 .message-icon-wrapper i,
 .message-icon-wrapper svg {
   font-size: 18px;
   color: var(--intimacy-color, #ec4899);
+  position: relative;
+  z-index: 2;
+}
+
+/* 图标脉冲效果 */
+.icon-pulse {
+  position: absolute;
+  inset: -2px;
+  border-radius: 10px;
+  border: 2px solid var(--intimacy-color, #ec4899);
+  opacity: 0;
+  animation: icon-pulse 2s ease-in-out infinite;
+}
+
+@keyframes icon-pulse {
+  0% {
+    transform: scale(0.9);
+    opacity: 0.6;
+  }
+  100% {
+    transform: scale(1.2);
+    opacity: 0;
+  }
 }
 
 .message-text {
@@ -525,6 +798,7 @@ const showBondEffect = ref(localStorage.getItem('intimacy_show_bond_effect') !==
 
 .intimacy-switch input:checked + .intimacy-slider {
   background: linear-gradient(135deg, var(--intimacy-color, #ec4899), color-mix(in srgb, var(--intimacy-color, #ec4899) 80%, white));
+  box-shadow: 0 0 10px color-mix(in srgb, var(--intimacy-color, #ec4899) 50%, transparent);
 }
 
 .intimacy-switch input:checked + .intimacy-slider:before {
@@ -562,32 +836,32 @@ const showBondEffect = ref(localStorage.getItem('intimacy_show_bond_effect') !==
 
 /* ==================== 展开/收缩动画 ==================== */
 .intimacy-slide-enter-active {
-  animation: intimacy-slide-in 0.3s cubic-bezier(0.16, 1, 0.3, 1);
+  animation: intimacy-slide-in 0.4s cubic-bezier(0.16, 1, 0.3, 1);
 }
 
 .intimacy-slide-leave-active {
-  animation: intimacy-slide-out 0.25s cubic-bezier(0.4, 0, 1, 1);
+  animation: intimacy-slide-out 0.3s cubic-bezier(0.4, 0, 1, 1);
 }
 
 @keyframes intimacy-slide-in {
   from {
     opacity: 0;
-    transform: translateY(-10px);
+    transform: translateY(-20px) scale(0.95);
   }
   to {
     opacity: 1;
-    transform: translateY(0);
+    transform: translateY(0) scale(1);
   }
 }
 
 @keyframes intimacy-slide-out {
   from {
     opacity: 1;
-    transform: translateY(0);
+    transform: translateY(0) scale(1);
   }
   to {
     opacity: 0;
-    transform: translateY(-10px);
+    transform: translateY(-10px) scale(0.98);
   }
 }
 
