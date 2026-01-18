@@ -890,12 +890,10 @@ const handleSelectRoom = async (room: any) => {
     const result = await getRoomUserCount(roomId)
     if (result.code === 0 && currentRoom.value?.id === roomId) {
       currentRoom.value.totalUsers = result.data.total_count
-      // 只有当WebSocket还没连接时才使用HTTP返回的在线人数
+      // 刷新页面时，使用HTTP返回的在线人数
       // 如果HTTP返回0，至少显示1（自己）
-      if (!wsStore.isConnected) {
-        currentRoom.value.onlineUsers = Math.max(1, result.data.online_count)
-      }
-      console.log('[房间] HTTP获取人数 - 总数:', result.data.total_count, '在线:', result.data.online_count, '(实际显示:', currentRoom.value.onlineUsers, ')')
+      currentRoom.value.onlineUsers = Math.max(1, result.data.online_count)
+      console.log('[房间] HTTP获取人数 - 总数:', result.data.total_count, '在线:', result.data.online_count)
     }
   } catch (error) {
     console.error('获取房间人数失败:', error)
