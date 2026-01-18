@@ -23,6 +23,7 @@ declare module 'vue' {
     ContactList: typeof import('./src/components/index/ContactList.vue')['default']
     InputBar: typeof import('./src/components/index/InputBar.vue')['default']
     IntimacyBadge: typeof import('./src/components/intimacy/IntimacyBadge.vue')['default']
+    IntimacyBondNotification: typeof import('./src/components/intimacy/IntimacyBondNotification.vue')['default']
     IntimacyExpTip: typeof import('./src/components/intimacy/IntimacyExpTip.vue')['default']
     IntimacyHeader: typeof import('./src/components/intimacy/IntimacyHeader.vue')['default']
     IntimacyInteraction: typeof import('./src/components/intimacy/IntimacyInteraction.vue')['default']

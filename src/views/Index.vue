@@ -145,6 +145,17 @@
 
   <!-- 经验获得提示 -->
   <IntimacyExpTip :tips="intimacyStore.expTips" />
+
+  <!-- 羁绊上线提醒 -->
+  <IntimacyBondNotification 
+    :visible="showBondNotification"
+    :current-user="userStore.userInfo"
+    :partner="intimacyPartner"
+    :intimacy-color="intimacyStore.currentIntimacy?.level_color || '#ec4899'"
+    :intimacy-level="intimacyStore.currentIntimacy?.current_level || 1"
+    :level-name="intimacyStore.currentIntimacy?.level_name || '恋人'"
+    @close="handleCloseBondNotification"
+  />
 </template>
 
 <script setup lang="ts">
@@ -157,6 +168,7 @@ import InputBar from '@/components/index/InputBar.vue'
 import IntimacyPanel from '@/components/intimacy/IntimacyPanel.vue'
 import IntimacyLevelUpModal from '@/components/intimacy/IntimacyLevelUpModal.vue'
 import IntimacyExpTip from '@/components/intimacy/IntimacyExpTip.vue'
+import IntimacyBondNotification from '@/components/intimacy/IntimacyBondNotification.vue'
 import { getUserRooms, createRoom, joinRoom, leaveRoom, getRoomUserCount, toggleRoomLock as toggleRoomLockApi, clearRoomMessages, restoreRoomMessages, getDeletedMessagesCount } from '@/apis/room'
 import { getMessageList, sendTextMessage, sendImageMessage, sendVideoMessage, sendFileMessage, editMessage } from '@/apis/message'
 import type { CreateRoomParams, JoinRoomParams } from '@/apis/room'
@@ -191,6 +203,10 @@ const showIntimacyPanel = ref(false)
 // 爱心飘出动画状态
 const showFloatingHearts = ref(false)
 const heartsAnimationKey = ref(0)
+
+// 羁绊上线提醒状态
+const showBondNotification = ref(false)
+let bondNotificationTimer: ReturnType<typeof setTimeout> | null = null
 
 // 触发爱心飘出动画（只在两人都在线时触发）
 const triggerFloatingHearts = () => {
@@ -382,10 +398,28 @@ watch(() => chatStore.currentRoom?.isLocked, (isLocked) => {
 })
 
 // 监听房间在线人数变化
-watch(() => wsStore.onlineCount, (count) => {
+watch(() => wsStore.onlineCount, (count, oldCount) => {
   console.log('[房间] WebSocket在线人数变化:', count)
   if (currentRoom.value) {
+    const wasLit = currentRoom.value.totalUsers === 2 && currentRoom.value.onlineUsers === 2
     currentRoom.value.onlineUsers = count
+    const isNowLit = currentRoom.value.totalUsers === 2 && count === 2
+    
+    // 检查是否应该显示羁绊上线提醒
+    if (!wasLit && isNowLit && currentRoom.value.isPrivate && intimacyStore.currentIntimacy) {
+      // 从未点亮变为点亮，显示羁绊上线提醒
+      const showBondEffect = localStorage.getItem('intimacy_show_bond_effect')
+      if (showBondEffect !== '0') {
+        // 清除之前的定时器
+        if (bondNotificationTimer) {
+          clearTimeout(bondNotificationTimer)
+        }
+        // 延迟500ms显示，让爱心点亮动画先完成
+        bondNotificationTimer = setTimeout(() => {
+          showBondNotification.value = true
+        }, 500)
+      }
+    }
   }
 })
 
@@ -1622,6 +1656,15 @@ const handleToggleExpToast = (value: boolean) => {
 // 处理羁绊上线提醒开关
 const handleToggleBondEffect = (value: boolean) => {
   localStorage.setItem('intimacy_show_bond_effect', value ? '1' : '0')
+}
+
+// 关闭羁绊上线提醒
+const handleCloseBondNotification = () => {
+  showBondNotification.value = false
+  if (bondNotificationTimer) {
+    clearTimeout(bondNotificationTimer)
+    bondNotificationTimer = null
+  }
 }
 
 // 处理亲密度面板关闭
