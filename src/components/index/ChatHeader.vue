@@ -44,7 +44,11 @@
             <div 
               v-if="isPrivateRoom" 
               class="badge badge-private" 
-              :class="{ 'has-intimacy': intimacyInfo, 'lit': isPrivateBadgeLit }"
+              :class="{ 
+                'has-intimacy': intimacyInfo, 
+                'lit': isPrivateBadgeLit,
+                'burst': showFloatingHearts
+              }"
               :style="isPrivateBadgeLit && intimacyInfo ? { '--badge-color': intimacyInfo.level_color } : {}"
               @click.stop="$emit('toggle-intimacy-panel')"
               :title="intimacyInfo ? `Lv.${intimacyInfo.current_level} ${intimacyInfo.level_name}` : '私密房间'"
@@ -57,30 +61,32 @@
               <div v-if="isPrivateBadgeLit" class="sparkle s2"></div>
               <div v-if="isPrivateBadgeLit" class="sparkle s3"></div>
               
+              <!-- 发送消息时的超强爆发效果 -->
+              <template v-if="showFloatingHearts">
+                <!-- 多层波纹 -->
+                <div class="burst-ring ring-1" :key="`ring1-${heartsAnimationKey}`"></div>
+                <div class="burst-ring ring-2" :key="`ring2-${heartsAnimationKey}`"></div>
+                <div class="burst-ring ring-3" :key="`ring3-${heartsAnimationKey}`"></div>
+                
+                <!-- 8方向爆发星光 -->
+                <div class="burst-sparkle bs1" :key="`bs1-${heartsAnimationKey}`"></div>
+                <div class="burst-sparkle bs2" :key="`bs2-${heartsAnimationKey}`"></div>
+                <div class="burst-sparkle bs3" :key="`bs3-${heartsAnimationKey}`"></div>
+                <div class="burst-sparkle bs4" :key="`bs4-${heartsAnimationKey}`"></div>
+                <div class="burst-sparkle bs5" :key="`bs5-${heartsAnimationKey}`"></div>
+                <div class="burst-sparkle bs6" :key="`bs6-${heartsAnimationKey}`"></div>
+                <div class="burst-sparkle bs7" :key="`bs7-${heartsAnimationKey}`"></div>
+                <div class="burst-sparkle bs8" :key="`bs8-${heartsAnimationKey}`"></div>
+                
+                <!-- 闪光效果 -->
+                <div class="burst-flash" :key="`flash-${heartsAnimationKey}`"></div>
+              </template>
+              
               <svg viewBox="0 0 24 24" fill="currentColor">
                 <path d="M20.84 4.61a5.5 5.5 0 00-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 00-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 000-7.78z"/>
               </svg>
               <span v-if="intimacyInfo">Lv.{{ intimacyInfo.current_level }}</span>
               <span v-else>私密</span>
-              
-              <!-- 爱心飘动动画 -->
-              <div v-if="showFloatingHearts" class="floating-hearts" :key="heartsAnimationKey">
-                <font-awesome-icon 
-                  icon="heart" 
-                  class="fh fh-1" 
-                  :style="{ color: intimacyInfo?.level_color || '#ec4899' }" 
-                />
-                <font-awesome-icon 
-                  icon="heart" 
-                  class="fh fh-2" 
-                  :style="{ color: intimacyInfo?.level_color || '#ec4899' }" 
-                />
-                <font-awesome-icon 
-                  icon="heart" 
-                  class="fh fh-3" 
-                  :style="{ color: intimacyInfo?.level_color || '#ec4899' }" 
-                />
-              </div>
             </div>
           </div>
         </Transition>
@@ -481,6 +487,153 @@ const isPrivateBadgeLit = computed(() => {
       animation: sparkle 2s ease-in-out 1.4s infinite;
     }
   }
+  
+  // 5. 发送消息时的爆发效果
+  &.burst {
+    animation: burst-shake 0.5s ease-out;
+    
+    svg {
+      animation: heartbeat 1.5s ease-in-out infinite, burst-scale 0.5s cubic-bezier(0.68, -0.55, 0.265, 1.55) !important;
+    }
+    
+    // 强化背景流动
+    &::after {
+      animation: gradient-flow 3s ease-in-out infinite, burst-glow 0.6s ease-out;
+    }
+    
+    // 边框加速
+    &::before {
+      animation: border-snake 0.5s linear !important;
+    }
+  }
+  
+  // 多层爆发波纹
+  .burst-ring {
+    position: absolute;
+    border-radius: $border-radius-base;
+    border: 3px solid var(--badge-color, #ec4899);
+    opacity: 0;
+    pointer-events: none;
+    z-index: 0;
+    
+    &.ring-1 {
+      inset: -6px;
+      animation: burst-ring 0.8s cubic-bezier(0.4, 0, 0.2, 1);
+    }
+    
+    &.ring-2 {
+      inset: -4px;
+      border-width: 2px;
+      animation: burst-ring 0.8s cubic-bezier(0.4, 0, 0.2, 1) 0.1s;
+    }
+    
+    &.ring-3 {
+      inset: -8px;
+      border-width: 4px;
+      animation: burst-ring 0.8s cubic-bezier(0.4, 0, 0.2, 1) 0.05s;
+    }
+  }
+  
+  // 爆发星光（8个方向）
+  .burst-sparkle {
+    position: absolute;
+    width: 5px;
+    height: 5px;
+    background: var(--badge-color, #ec4899);
+    border-radius: 50%;
+    box-shadow: 0 0 8px var(--badge-color, #ec4899);
+    opacity: 0;
+    pointer-events: none;
+    z-index: 3;
+    
+    &::before,
+    &::after {
+      content: '';
+      position: absolute;
+      background: var(--badge-color, #ec4899);
+      border-radius: 50%;
+      box-shadow: 0 0 6px var(--badge-color, #ec4899);
+    }
+    
+    &::before {
+      width: 2px;
+      height: 12px;
+      top: -3.5px;
+      left: 1.5px;
+    }
+    
+    &::after {
+      width: 12px;
+      height: 2px;
+      top: 1.5px;
+      left: -3.5px;
+    }
+    
+    // 8个方向
+    &.bs1 {
+      top: 50%;
+      left: -15px;
+      animation: burst-sparkle-left 0.8s cubic-bezier(0.68, -0.55, 0.265, 1.55);
+    }
+    
+    &.bs2 {
+      top: -15px;
+      left: 50%;
+      animation: burst-sparkle-top 0.8s cubic-bezier(0.68, -0.55, 0.265, 1.55) 0.05s;
+    }
+    
+    &.bs3 {
+      top: 50%;
+      right: -15px;
+      animation: burst-sparkle-right 0.8s cubic-bezier(0.68, -0.55, 0.265, 1.55) 0.1s;
+    }
+    
+    &.bs4 {
+      bottom: -15px;
+      left: 50%;
+      animation: burst-sparkle-bottom 0.8s cubic-bezier(0.68, -0.55, 0.265, 1.55) 0.08s;
+    }
+    
+    &.bs5 {
+      top: 10%;
+      left: 10%;
+      animation: burst-sparkle-tl 0.8s cubic-bezier(0.68, -0.55, 0.265, 1.55) 0.03s;
+    }
+    
+    &.bs6 {
+      top: 10%;
+      right: 10%;
+      animation: burst-sparkle-tr 0.8s cubic-bezier(0.68, -0.55, 0.265, 1.55) 0.06s;
+    }
+    
+    &.bs7 {
+      bottom: 10%;
+      right: 10%;
+      animation: burst-sparkle-br 0.8s cubic-bezier(0.68, -0.55, 0.265, 1.55) 0.09s;
+    }
+    
+    &.bs8 {
+      bottom: 10%;
+      left: 10%;
+      animation: burst-sparkle-bl 0.8s cubic-bezier(0.68, -0.55, 0.265, 1.55) 0.04s;
+    }
+  }
+  
+  // 闪光效果
+  .burst-flash {
+    position: absolute;
+    inset: -20px;
+    border-radius: $border-radius-base;
+    background: radial-gradient(
+      circle,
+      var(--badge-color, #ec4899) 0%,
+      transparent 70%
+    );
+    opacity: 0;
+    animation: burst-flash 0.4s ease-out;
+    pointer-events: none;
+    z-index: 1;
+  }
 }
 
 // 动画定义
@@ -524,6 +677,199 @@ const isPrivateBadgeLit = computed(() => {
   }
 }
 
+// 爆发动画
+@keyframes burst-ring {
+  0% {
+    transform: scale(0.8);
+    opacity: 0.9;
+  }
+  100% {
+    transform: scale(2.5);
+    opacity: 0;
+  }
+}
+
+// 8方向星光爆发
+@keyframes burst-sparkle-left {
+  0% {
+    opacity: 0;
+    transform: translate(20px, 0) scale(0) rotate(0deg);
+  }
+  30% {
+    opacity: 1;
+    transform: translate(10px, 0) scale(1.5) rotate(180deg);
+  }
+  100% {
+    opacity: 0;
+    transform: translate(-30px, 0) scale(0.3) rotate(360deg);
+  }
+}
+
+@keyframes burst-sparkle-top {
+  0% {
+    opacity: 0;
+    transform: translate(0, 20px) scale(0) rotate(0deg);
+  }
+  30% {
+    opacity: 1;
+    transform: translate(0, 10px) scale(1.5) rotate(180deg);
+  }
+  100% {
+    opacity: 0;
+    transform: translate(0, -30px) scale(0.3) rotate(360deg);
+  }
+}
+
+@keyframes burst-sparkle-right {
+  0% {
+    opacity: 0;
+    transform: translate(-20px, 0) scale(0) rotate(0deg);
+  }
+  30% {
+    opacity: 1;
+    transform: translate(-10px, 0) scale(1.5) rotate(180deg);
+  }
+  100% {
+    opacity: 0;
+    transform: translate(30px, 0) scale(0.3) rotate(360deg);
+  }
+}
+
+@keyframes burst-sparkle-bottom {
+  0% {
+    opacity: 0;
+    transform: translate(0, -20px) scale(0) rotate(0deg);
+  }
+  30% {
+    opacity: 1;
+    transform: translate(0, -10px) scale(1.5) rotate(180deg);
+  }
+  100% {
+    opacity: 0;
+    transform: translate(0, 30px) scale(0.3) rotate(360deg);
+  }
+}
+
+@keyframes burst-sparkle-tl {
+  0% {
+    opacity: 0;
+    transform: translate(15px, 15px) scale(0) rotate(0deg);
+  }
+  30% {
+    opacity: 1;
+    transform: translate(8px, 8px) scale(1.5) rotate(180deg);
+  }
+  100% {
+    opacity: 0;
+    transform: translate(-25px, -25px) scale(0.3) rotate(360deg);
+  }
+}
+
+@keyframes burst-sparkle-tr {
+  0% {
+    opacity: 0;
+    transform: translate(-15px, 15px) scale(0) rotate(0deg);
+  }
+  30% {
+    opacity: 1;
+    transform: translate(-8px, 8px) scale(1.5) rotate(180deg);
+  }
+  100% {
+    opacity: 0;
+    transform: translate(25px, -25px) scale(0.3) rotate(360deg);
+  }
+}
+
+@keyframes burst-sparkle-br {
+  0% {
+    opacity: 0;
+    transform: translate(-15px, -15px) scale(0) rotate(0deg);
+  }
+  30% {
+    opacity: 1;
+    transform: translate(-8px, -8px) scale(1.5) rotate(180deg);
+  }
+  100% {
+    opacity: 0;
+    transform: translate(25px, 25px) scale(0.3) rotate(360deg);
+  }
+}
+
+@keyframes burst-sparkle-bl {
+  0% {
+    opacity: 0;
+    transform: translate(15px, -15px) scale(0) rotate(0deg);
+  }
+  30% {
+    opacity: 1;
+    transform: translate(8px, -8px) scale(1.5) rotate(180deg);
+  }
+  100% {
+    opacity: 0;
+    transform: translate(-25px, 25px) scale(0.3) rotate(360deg);
+  }
+}
+
+@keyframes burst-scale {
+  0% {
+    transform: scale(1);
+  }
+  40% {
+    transform: scale(1.5);
+  }
+  100% {
+    transform: scale(1);
+  }
+}
+
+@keyframes burst-glow {
+  0% {
+    opacity: 0.3;
+  }
+  50% {
+    opacity: 1;
+  }
+  100% {
+    opacity: 0.3;
+  }
+}
+
+@keyframes burst-flash {
+  0% {
+    opacity: 0;
+  }
+  30% {
+    opacity: 0.6;
+  }
+  100% {
+    opacity: 0;
+  }
+}
+
+@keyframes burst-shake {
+  0%, 100% {
+    transform: translateY(0) rotate(0deg);
+  }
+  10% {
+    transform: translateY(-2px) rotate(-2deg);
+  }
+  20% {
+    transform: translateY(2px) rotate(2deg);
+  }
+  30% {
+    transform: translateY(-2px) rotate(-1deg);
+  }
+  40% {
+    transform: translateY(2px) rotate(1deg);
+  }
+  50% {
+    transform: translateY(-1px) rotate(-0.5deg);
+  }
+  60% {
+    transform: translateY(1px) rotate(0.5deg);
+  }
+}
+
 // 深色模式 - 私密徽章未点亮
 :global(.dark-mode) .badge-private {
   background: rgba($text-tertiary-dark, 0.15);
@@ -548,59 +894,7 @@ const isPrivateBadgeLit = computed(() => {
   }
 }
 
-// 爱心飘动动画
-.floating-hearts {
-  position: absolute;
-  top: -5px;
-  left: 50%;
-  transform: translateX(-50%);
-  pointer-events: none;
-  z-index: 100;
-}
-
-.floating-hearts .fh {
-  position: absolute;
-  opacity: 0;
-}
-
-.floating-hearts .fh-1 {
-  font-size: 10px;
-  left: -8px;
-  animation: heart-float 1.2s ease-out forwards;
-}
-
-.floating-hearts .fh-2 {
-  font-size: 12px;
-  left: 2px;
-  animation: heart-float 1.2s ease-out 0.15s forwards;
-}
-
-.floating-hearts .fh-3 {
-  font-size: 9px;
-  left: 12px;
-  animation: heart-float 1.2s ease-out 0.3s forwards;
-}
-
-@keyframes heart-float {
-  0% {
-    opacity: 1;
-    transform: translateY(0) scale(0.6) rotate(0deg);
-  }
-  30% {
-    opacity: 1;
-    transform: translateY(-15px) scale(1) rotate(-10deg);
-  }
-  60% {
-    opacity: 0.8;
-    transform: translateY(-30px) scale(0.9) rotate(10deg);
-  }
-  100% {
-    opacity: 0;
-    transform: translateY(-50px) scale(0.6) rotate(-5deg);
-  }
-}
-
-// ==================== 右侧区域 ====================
+// 深色模式 - 私密徽章未点亮
 .header-right {
   display: flex;
   align-items: center;
