@@ -24,13 +24,14 @@
           :online-users="currentRoom?.onlineUsers || 0" :ws-connected="wsConnected"
           :is-private-room="currentRoom?.isPrivate || false" :typing-users="typingUsers"
           :is-locked="currentRoom?.lock === 1" :intimacy-info="intimacyStore.currentIntimacy"
-          @toggle-intimacy-panel="showIntimacyPanel = !showIntimacyPanel" />
+          @toggle-intimacy-panel="handleToggleIntimacyPanel" />
+        
+        <!-- 亲密度面板 -->
+        <IntimacyPanel :visible="showIntimacyPanel" :intimacy-info="intimacyStore.currentIntimacy"
+          :levels="intimacyStore.levels" :interaction="intimacyStore.interaction" :current-user="userStore.userInfo"
+          :partner="intimacyPartner" @close="handleCloseIntimacyPanel" @collect-reward="handleCollectIntimacyReward"
+          @toggle-exp-toast="handleToggleExpToast" @toggle-bond-effect="handleToggleBondEffect" />
       </header>
-
-      <!-- 亲密度面板 -->
-      <IntimacyPanel :visible="showIntimacyPanel" :intimacy-info="intimacyStore.currentIntimacy"
-        :levels="intimacyStore.levels" :interaction="intimacyStore.interaction" @close="handleCloseIntimacyPanel"
-        @collect-reward="handleCollectIntimacyReward" />
 
       <!-- 消息区域 -->
       <section class="messages-area">
@@ -185,6 +186,16 @@ const sidebarOpen = ref(false)
 
 // 亲密度面板状态
 const showIntimacyPanel = ref(false)
+
+// 亲密度伴侣信息（从store获取）
+const intimacyPartner = computed(() => {
+  if (!intimacyStore.partnerUser) return undefined
+  
+  return {
+    name: intimacyStore.partnerUser.nick_name,
+    avatar: intimacyStore.partnerUser.avatar
+  }
+})
 
 // WebSocket 连接状态
 const wsConnected = computed(() => wsStore.isConnected)
@@ -1550,9 +1561,32 @@ const handleCollectIntimacyReward = async () => {
   }
 }
 
+// 处理经验提示开关
+const handleToggleExpToast = (value: boolean) => {
+  localStorage.setItem('intimacy_show_exp_toast', value ? '1' : '0')
+}
+
+// 处理羁绊上线提醒开关
+const handleToggleBondEffect = (value: boolean) => {
+  localStorage.setItem('intimacy_show_bond_effect', value ? '1' : '0')
+}
+
 // 处理亲密度面板关闭
 const handleCloseIntimacyPanel = () => {
   showIntimacyPanel.value = false
+}
+
+// 处理亲密度面板切换
+const handleToggleIntimacyPanel = () => {
+  showIntimacyPanel.value = !showIntimacyPanel.value
+  
+  // 如果打开面板且是私密房间，检查是否需要启动互动
+  if (showIntimacyPanel.value && currentRoom.value?.isPrivate && currentRoom.value?.onlineUsers >= 2) {
+    // 如果互动未激活，启动互动
+    if (!intimacyStore.interaction.active) {
+      intimacyStore.startInteraction()
+    }
+  }
 }
 </script>
 
@@ -1736,6 +1770,7 @@ const handleCloseIntimacyPanel = () => {
 
 // 聊天头部 - 固定高度
 .chat-header {
+  position: relative; // 为 IntimacyPanel 提供定位上下文
   flex: 0 0 56px;
   display: flex;
   align-items: center;

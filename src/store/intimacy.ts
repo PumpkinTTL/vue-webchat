@@ -15,6 +15,13 @@ export const useIntimacyStore = defineStore('intimacy', () => {
   // 当前房间的亲密度信息
   const currentIntimacy = ref<IntimacyInfo | null>(null)
   
+  // 伴侣用户信息
+  const partnerUser = ref<{
+    id: number
+    nick_name: string
+    avatar?: string
+  } | null>(null)
+  
   // 60秒互动状态
   const interaction = ref<InteractionState>({
     active: false,
@@ -72,12 +79,38 @@ export const useIntimacyStore = defineStore('intimacy', () => {
       const result = await getIntimacyInfo(roomId)
       if (result.code === 0) {
         currentIntimacy.value = result.data
+        
+        // 保存伴侣信息并处理头像URL
+        if (result.data.partner) {
+          partnerUser.value = {
+            id: result.data.partner.id,
+            nick_name: result.data.partner.nick_name,
+            avatar: result.data.partner.avatar ? processAvatarUrl(result.data.partner.avatar) : undefined
+          }
+        }
+        
         return result.data
       }
     } catch (error) {
       console.error('[亲密度] 加载亲密度信息失败:', error)
       return null
     }
+  }
+  
+  /**
+   * 处理头像URL（内网穿透）
+   */
+  function processAvatarUrl(avatar: string): string {
+    if (!avatar) return ''
+    
+    // 如果已经是完整URL，直接返回
+    if (avatar.startsWith('http://') || avatar.startsWith('https://')) {
+      return avatar
+    }
+    
+    // 如果是相对路径，拼接服务器URL
+    const serverUrl = import.meta.env.VITE_SERVER_URL || ''
+    return serverUrl + (avatar.startsWith('/') ? avatar : '/' + avatar)
   }
 
   /**
@@ -313,6 +346,7 @@ export const useIntimacyStore = defineStore('intimacy', () => {
    */
   function clearIntimacy() {
     currentIntimacy.value = null
+    partnerUser.value = null
     resetInteraction()
   }
 
@@ -320,6 +354,7 @@ export const useIntimacyStore = defineStore('intimacy', () => {
     // 状态
     levels,
     currentIntimacy,
+    partnerUser,
     interaction,
     showLevelUpModal,
     levelUpData,

@@ -32,9 +32,28 @@ export const useUserStore = defineStore('user', () => {
 
   // 设置用户信息
   const setUserInfo = (info: UserInfo) => {
+    // 处理头像URL
+    if (info.avatar) {
+      info.avatar = processAvatarUrl(info.avatar)
+    }
+    
     userInfo.value = info
     saveUserInfo(info)
     console.log('✅ 用户信息已保存到 Pinia 和本地存储:', info)
+  }
+  
+  // 处理头像URL（内网穿透）
+  const processAvatarUrl = (avatar: string): string => {
+    if (!avatar) return ''
+    
+    // 如果已经是完整URL，直接返回
+    if (avatar.startsWith('http://') || avatar.startsWith('https://')) {
+      return avatar
+    }
+    
+    // 如果是相对路径，拼接服务器URL
+    const serverUrl = import.meta.env.VITE_SERVER_URL || ''
+    return serverUrl + (avatar.startsWith('/') ? avatar : '/' + avatar)
   }
 
   // 清除用户信息

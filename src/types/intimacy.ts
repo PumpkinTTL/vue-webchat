@@ -24,6 +24,11 @@ export interface IntimacyInfo {
   total_messages: number
   next_level_exp: number
   progress_percent: number
+  partner?: {
+    id: number
+    nick_name: string
+    avatar?: string
+  }
 }
 
 // 经验获得提示

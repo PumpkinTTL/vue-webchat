@@ -30,7 +30,13 @@ import {
   faComments,
   faShieldAlt,
   faSignOutAlt,
-  faRightFromBracket
+  faRightFromBracket,
+  faHeart,
+  faChartLine,
+  faClock,
+  faGift,
+  faBell,
+  faSpinner
 } from '@fortawesome/free-solid-svg-icons'
 
 /**
@@ -62,7 +68,13 @@ export default {
       faComments,
       faShieldAlt,
       faSignOutAlt,
-      faRightFromBracket
+      faRightFromBracket,
+      faHeart,
+      faChartLine,
+      faClock,
+      faGift,
+      faBell,
+      faSpinner
     )
 
     // 注册全局组件

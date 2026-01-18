@@ -45,7 +45,7 @@
               v-if="isPrivateRoom" 
               class="badge badge-private" 
               :class="{ 'has-intimacy': intimacyInfo }"
-              @click="intimacyInfo && $emit('toggle-intimacy-panel')"
+              @click.stop="$emit('toggle-intimacy-panel')"
               :title="intimacyInfo ? `Lv.${intimacyInfo.current_level} ${intimacyInfo.level_name}` : '私密房间'"
             >
               <svg viewBox="0 0 24 24" fill="currentColor">
@@ -285,24 +285,26 @@ const typingText = computed(() => {
   color: $pink-color;
   border: 1px solid rgba($pink-color, 0.2);
   transition: all 0.2s;
+  cursor: pointer;
 
   svg {
     animation: heartbeat 1.5s ease-in-out infinite;
   }
   
+  &:hover {
+    background: linear-gradient(135deg, rgba($pink-color, 0.15), rgba($pink-color, 0.2));
+    border-color: rgba($pink-color, 0.3);
+    transform: translateY(-1px);
+    box-shadow: 0 2px 8px rgba($pink-color, 0.2);
+  }
+  
+  &:active {
+    transform: translateY(0);
+  }
+  
   &.has-intimacy {
-    cursor: pointer;
-    
-    &:hover {
-      background: linear-gradient(135deg, rgba($pink-color, 0.15), rgba($pink-color, 0.2));
-      border-color: rgba($pink-color, 0.3);
-      transform: translateY(-1px);
-      box-shadow: 0 2px 8px rgba($pink-color, 0.2);
-    }
-    
-    &:active {
-      transform: translateY(0);
-    }
+    // 有亲密度信息时的额外样式
+    font-weight: 600;
   }
 }
 
