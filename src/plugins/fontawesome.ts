@@ -41,7 +41,8 @@ import {
   faImage,
   faVideo,
   faFileAlt,
-  faStar
+  faStar,
+  faCrown
 } from '@fortawesome/free-solid-svg-icons'
 
 /**
@@ -84,7 +85,8 @@ export default {
       faImage,
       faVideo,
       faFileAlt,
-      faStar
+      faStar,
+      faCrown
     )
 
     // 注册全局组件

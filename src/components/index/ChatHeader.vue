@@ -15,7 +15,7 @@
           class="title-badge"
           :style="{ '--intimacy-color': intimacyInfo.level_color }"
         >
-          <font-awesome-icon :icon="['fas', 'home']" />
+          <font-awesome-icon :icon="['fas', 'crown']" />
         </span>
         {{ roomName || '选择房间开始聊天' }}
       </h2>
