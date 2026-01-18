@@ -1,7 +1,17 @@
 <template>
   <div class="header-content">
     <div class="header-left">
-      <h2 class="room-title animate__animated animate__fadeInLeft" style="--animate-duration: 0.4s">{{ roomName || '选择房间开始聊天' }}</h2>
+      <h2 
+        class="room-title animate__animated animate__fadeInLeft" 
+        :class="{ 'private-room-title': isPrivateRoom && intimacyInfo && isPrivateBadgeLit }"
+        :style="isPrivateRoom && intimacyInfo && isPrivateBadgeLit ? { 
+          '--intimacy-color': intimacyInfo.level_color,
+          color: intimacyInfo.level_color 
+        } : {}"
+        style="--animate-duration: 0.4s"
+      >
+        {{ roomName || '选择房间开始聊天' }}
+      </h2>
       
       <!-- 房间信息徽章 / 正在输入 二选一 -->
       <div v-if="roomName" class="header-status">
@@ -30,6 +40,7 @@
             
             <!-- 连接状态 -->
             <div class="badge badge-connection" :class="{ 'ws-connected': wsConnected }">
+              <div class="connection-glow"></div>
               <svg v-if="wsConnected" viewBox="0 0 24 24" fill="none" stroke="currentColor">
                 <path d="M13 10V3L4 14h7v7l9-11h-7z" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
               </svg>
@@ -178,9 +189,72 @@ const isPrivateBadgeLit = computed(() => {
   color: $text-primary;
   margin: 0;
   white-space: nowrap;
-  overflow: hidden;
+  overflow: visible;
   text-overflow: ellipsis;
   flex-shrink: 0;
+  transition: all 0.3s ease;
+  position: relative;
+}
+
+// 私密房间标题特效
+.private-room-title {
+  font-weight: $font-weight-bold !important;
+  position: relative;
+  
+  // 左侧装饰条
+  &::before {
+    content: '';
+    position: absolute;
+    left: -12px;
+    top: 50%;
+    transform: translateY(-50%);
+    width: 2px;
+    height: 0;
+    background: var(--intimacy-color, #ec4899);
+    border-radius: 2px;
+    animation: bar-grow 2s ease-in-out infinite;
+    pointer-events: none;
+  }
+  
+  // 底部装饰线
+  &::after {
+    content: '';
+    position: absolute;
+    bottom: -4px;
+    left: 0;
+    width: 0;
+    height: 2px;
+    background: linear-gradient(
+      90deg,
+      transparent,
+      var(--intimacy-color, #ec4899),
+      transparent
+    );
+    animation: underline-flow 3s ease-in-out infinite;
+    pointer-events: none;
+  }
+}
+
+@keyframes bar-grow {
+  0%, 100% {
+    height: 0;
+    opacity: 0.5;
+  }
+  50% {
+    height: 100%;
+    opacity: 1;
+  }
+}
+
+@keyframes underline-flow {
+  0%, 100% {
+    width: 0;
+    left: 0;
+  }
+  50% {
+    width: 100%;
+    left: 0;
+  }
 }
 
 .dark-mode .room-title {
@@ -270,6 +344,15 @@ const isPrivateBadgeLit = computed(() => {
   background: rgba($success-color, 0.1);
   color: $success-color;
   border: 1px solid rgba($success-color, 0.2);
+  position: relative;
+  overflow: visible;
+  transition: all 0.3s ease;
+  
+  &:hover {
+    background: rgba($success-color, 0.15);
+    border-color: rgba($success-color, 0.3);
+    transform: translateY(-1px);
+  }
 }
 
 .online-dot {
@@ -278,14 +361,19 @@ const isPrivateBadgeLit = computed(() => {
   background: $success-color;
   border-radius: $border-radius-round;
   animation: pulse 2s ease-in-out infinite;
+  position: relative;
+  z-index: 2;
+  box-shadow: 0 0 8px $success-color;
 }
 
 @keyframes pulse {
   0%, 100% {
     opacity: 1;
+    transform: scale(1);
   }
   50% {
-    opacity: 0.5;
+    opacity: 0.7;
+    transform: scale(0.9);
   }
 }
 
@@ -294,11 +382,75 @@ const isPrivateBadgeLit = computed(() => {
   background: rgba($text-tertiary, 0.1);
   color: $text-tertiary;
   border: 1px solid rgba($text-tertiary, 0.2);
+  position: relative;
+  overflow: hidden;
+  transition: all 0.3s ease;
 
   &.ws-connected {
     background: rgba($primary-color, 0.1);
     color: $primary-color;
     border-color: rgba($primary-color, 0.2);
+    
+    svg {
+      animation: lightning-pulse 2s ease-in-out infinite;
+      filter: drop-shadow(0 0 4px $primary-color);
+    }
+    
+    .connection-glow {
+      opacity: 1;
+    }
+    
+    &:hover {
+      background: rgba($primary-color, 0.15);
+      border-color: rgba($primary-color, 0.3);
+      transform: translateY(-1px);
+    }
+  }
+  
+  &:not(.ws-connected) {
+    svg {
+      animation: rotate-slow 3s linear infinite;
+    }
+  }
+}
+
+.connection-glow {
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(45deg, transparent 30%, rgba($primary-color, 0.1) 50%, transparent 70%);
+  background-size: 200% 200%;
+  animation: shimmer-connection 3s ease-in-out infinite;
+  opacity: 0;
+  transition: opacity 0.3s;
+  pointer-events: none;
+}
+
+@keyframes lightning-pulse {
+  0%, 100% {
+    transform: scale(1);
+    opacity: 1;
+  }
+  50% {
+    transform: scale(1.1);
+    opacity: 0.8;
+  }
+}
+
+@keyframes rotate-slow {
+  from {
+    transform: rotate(0deg);
+  }
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+@keyframes shimmer-connection {
+  0%, 100% {
+    background-position: 0% 50%;
+  }
+  50% {
+    background-position: 100% 50%;
   }
 }
 
@@ -312,6 +464,11 @@ const isPrivateBadgeLit = computed(() => {
     background: rgba($primary-color, 0.15);
     color: $primary-color;
     border-color: rgba($primary-color, 0.3);
+    
+    &:hover {
+      background: rgba($primary-color, 0.2);
+      border-color: rgba($primary-color, 0.4);
+    }
   }
 }
 
@@ -319,6 +476,11 @@ const isPrivateBadgeLit = computed(() => {
 :global(.dark-mode) .badge-online {
   background: rgba($success-color, 0.15);
   border-color: rgba($success-color, 0.3);
+  
+  &:hover {
+    background: rgba($success-color, 0.2);
+    border-color: rgba($success-color, 0.4);
+  }
 }
 
 // 深色模式 - 正在输入提示
@@ -396,6 +558,9 @@ const isPrivateBadgeLit = computed(() => {
         linear-gradient(#fff 0 0) content-box, 
         linear-gradient(#fff 0 0);
       -webkit-mask-composite: xor;
+      mask: 
+        linear-gradient(#fff 0 0) content-box, 
+        linear-gradient(#fff 0 0);
       mask-composite: exclude;
       animation: border-snake 2s linear infinite;
       pointer-events: none;
