@@ -200,60 +200,27 @@ const isPrivateBadgeLit = computed(() => {
 .private-room-title {
   font-weight: $font-weight-bold !important;
   position: relative;
-  
-  // 左侧装饰条
-  &::before {
-    content: '';
-    position: absolute;
-    left: -12px;
-    top: 50%;
-    transform: translateY(-50%);
-    width: 2px;
-    height: 0;
-    background: var(--intimacy-color, #ec4899);
-    border-radius: 2px;
-    animation: bar-grow 2s ease-in-out infinite;
-    pointer-events: none;
-  }
-  
-  // 底部装饰线
-  &::after {
-    content: '';
-    position: absolute;
-    bottom: -4px;
-    left: 0;
-    width: 0;
-    height: 2px;
-    background: linear-gradient(
-      90deg,
-      transparent,
-      var(--intimacy-color, #ec4899),
-      transparent
-    );
-    animation: underline-flow 3s ease-in-out infinite;
-    pointer-events: none;
-  }
+  background: linear-gradient(
+    90deg,
+    var(--intimacy-color, #ec4899) 0%,
+    var(--intimacy-color, #ec4899) 30%,
+    #ffffff 50%,
+    var(--intimacy-color, #ec4899) 70%,
+    var(--intimacy-color, #ec4899) 100%
+  );
+  background-size: 200% 100%;
+  background-clip: text;
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  animation: shine-sweep 3s linear infinite;
 }
 
-@keyframes bar-grow {
-  0%, 100% {
-    height: 0;
-    opacity: 0.5;
+@keyframes shine-sweep {
+  0% {
+    background-position: -200% 0;
   }
-  50% {
-    height: 100%;
-    opacity: 1;
-  }
-}
-
-@keyframes underline-flow {
-  0%, 100% {
-    width: 0;
-    left: 0;
-  }
-  50% {
-    width: 100%;
-    left: 0;
+  100% {
+    background-position: 200% 0;
   }
 }
 
