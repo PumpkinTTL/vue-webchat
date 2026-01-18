@@ -128,16 +128,29 @@ export const useIntimacyStore = defineStore('intimacy', () => {
 
     const oldLevel = currentIntimacy.value.current_level
     
-    // 更新经验和等级
-    currentIntimacy.value.current_exp = data.current_exp
+    // 增量更新经验值（如果有exp_gain，则累加）
+    if (data.exp_gain) {
+      currentIntimacy.value.current_exp = (currentIntimacy.value.current_exp || 0) + data.exp_gain
+      
+      // 显示经验提示
+      addExpTip(data.exp_gain, 'message')
+    } else {
+      // 否则直接使用返回的current_exp
+      currentIntimacy.value.current_exp = data.current_exp
+    }
+    
+    // 更新等级
     currentIntimacy.value.current_level = data.current_level
     
     if (data.level_name) {
       currentIntimacy.value.level_name = data.level_name
     }
     
+    // 消息数+1（实时统计）
     if (data.total_messages !== undefined) {
       currentIntimacy.value.total_messages = data.total_messages
+    } else {
+      currentIntimacy.value.total_messages = (currentIntimacy.value.total_messages || 0) + 1
     }
 
     // 重新计算进度
@@ -145,7 +158,7 @@ export const useIntimacyStore = defineStore('intimacy', () => {
     const nextLevelConfig = levels.value.find(l => l.level === data.current_level + 1)
     
     if (currentLevelConfig && nextLevelConfig) {
-      const expInCurrentLevel = data.current_exp - currentLevelConfig.required_exp
+      const expInCurrentLevel = currentIntimacy.value.current_exp - currentLevelConfig.required_exp
       const expNeededForNext = nextLevelConfig.required_exp - currentLevelConfig.required_exp
       currentIntimacy.value.progress_percent = Math.min(100, Math.max(0, (expInCurrentLevel / expNeededForNext) * 100))
       currentIntimacy.value.next_level_exp = nextLevelConfig.required_exp
@@ -154,6 +167,9 @@ export const useIntimacyStore = defineStore('intimacy', () => {
       if (!data.level_name) {
         currentIntimacy.value.level_name = currentLevelConfig.name
       }
+      
+      // 更新等级颜色
+      currentIntimacy.value.level_color = currentLevelConfig.color
     } else if (currentLevelConfig && !nextLevelConfig) {
       // 已达到最高级
       currentIntimacy.value.progress_percent = 100
@@ -163,6 +179,9 @@ export const useIntimacyStore = defineStore('intimacy', () => {
       if (!data.level_name) {
         currentIntimacy.value.level_name = currentLevelConfig.name
       }
+      
+      // 更新等级颜色
+      currentIntimacy.value.level_color = currentLevelConfig.color
     }
 
     // 检查是否升级
@@ -175,11 +194,6 @@ export const useIntimacyStore = defineStore('intimacy', () => {
           levelColor: levelConfig.color
         })
       }
-    }
-
-    // 显示经验提示
-    if (data.exp_gain && data.exp_gain > 0) {
-      addExpTip(data.exp_gain, 'message')
     }
   }
 

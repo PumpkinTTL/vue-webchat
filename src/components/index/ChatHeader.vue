@@ -44,7 +44,8 @@
             <div 
               v-if="isPrivateRoom" 
               class="badge badge-private" 
-              :class="{ 'has-intimacy': intimacyInfo }"
+              :class="{ 'has-intimacy': intimacyInfo, 'lit': intimacyInfo }"
+              :style="intimacyInfo ? { '--badge-color': intimacyInfo.level_color } : {}"
               @click.stop="$emit('toggle-intimacy-panel')"
               :title="intimacyInfo ? `Lv.${intimacyInfo.current_level} ${intimacyInfo.level_name}` : '私密房间'"
             >
@@ -53,6 +54,25 @@
               </svg>
               <span v-if="intimacyInfo">Lv.{{ intimacyInfo.current_level }}</span>
               <span v-else>私密</span>
+              
+              <!-- 爱心飘动动画 -->
+              <div v-if="showFloatingHearts" class="floating-hearts" :key="heartsAnimationKey">
+                <font-awesome-icon 
+                  icon="heart" 
+                  class="fh fh-1" 
+                  :style="{ color: intimacyInfo?.level_color || '#ec4899' }" 
+                />
+                <font-awesome-icon 
+                  icon="heart" 
+                  class="fh fh-2" 
+                  :style="{ color: intimacyInfo?.level_color || '#ec4899' }" 
+                />
+                <font-awesome-icon 
+                  icon="heart" 
+                  class="fh fh-3" 
+                  :style="{ color: intimacyInfo?.level_color || '#ec4899' }" 
+                />
+              </div>
             </div>
           </div>
         </Transition>
@@ -78,6 +98,8 @@ interface Props {
   typingUsers?: Array<{ id: string | number; nickname: string }>
   isLocked?: boolean
   intimacyInfo?: IntimacyInfo | null
+  showFloatingHearts?: boolean
+  heartsAnimationKey?: number
 }
 
 const props = withDefaults(defineProps<Props>(), {
@@ -87,7 +109,9 @@ const props = withDefaults(defineProps<Props>(), {
   isPrivateRoom: false,
   typingUsers: () => [],
   isLocked: false,
-  intimacyInfo: null
+  intimacyInfo: null,
+  showFloatingHearts: false,
+  heartsAnimationKey: 0
 })
 
 defineEmits<{
@@ -286,6 +310,8 @@ const typingText = computed(() => {
   border: 1px solid rgba($pink-color, 0.2);
   transition: all 0.2s;
   cursor: pointer;
+  position: relative;
+  overflow: visible;
 
   svg {
     animation: heartbeat 1.5s ease-in-out infinite;
@@ -306,6 +332,15 @@ const typingText = computed(() => {
     // 有亲密度信息时的额外样式
     font-weight: 600;
   }
+  
+  // 点亮状态（使用后端返回的颜色）
+  &.lit {
+    background: color-mix(in srgb, var(--badge-color, #ec4899) 10%, transparent);
+    color: var(--badge-color, #ec4899);
+    border: 1px solid color-mix(in srgb, var(--badge-color, #ec4899) 30%, transparent);
+    box-shadow: 0 0 8px color-mix(in srgb, var(--badge-color, #ec4899) 30%, transparent);
+    animation: private-glow 2s ease-in-out infinite;
+  }
 }
 
 @keyframes heartbeat {
@@ -317,6 +352,67 @@ const typingText = computed(() => {
   }
   20%, 40% {
     transform: scale(1);
+  }
+}
+
+@keyframes private-glow {
+  0%, 100% {
+    box-shadow: 0 0 8px color-mix(in srgb, var(--badge-color, #ec4899) 30%, transparent);
+  }
+  50% {
+    box-shadow: 0 0 14px color-mix(in srgb, var(--badge-color, #ec4899) 50%, transparent);
+  }
+}
+
+// 爱心飘动动画
+.floating-hearts {
+  position: absolute;
+  top: -5px;
+  left: 50%;
+  transform: translateX(-50%);
+  pointer-events: none;
+  z-index: 100;
+}
+
+.floating-hearts .fh {
+  position: absolute;
+  opacity: 0;
+}
+
+.floating-hearts .fh-1 {
+  font-size: 10px;
+  left: -8px;
+  animation: heart-float 1.2s ease-out forwards;
+}
+
+.floating-hearts .fh-2 {
+  font-size: 12px;
+  left: 2px;
+  animation: heart-float 1.2s ease-out 0.15s forwards;
+}
+
+.floating-hearts .fh-3 {
+  font-size: 9px;
+  left: 12px;
+  animation: heart-float 1.2s ease-out 0.3s forwards;
+}
+
+@keyframes heart-float {
+  0% {
+    opacity: 1;
+    transform: translateY(0) scale(0.6) rotate(0deg);
+  }
+  30% {
+    opacity: 1;
+    transform: translateY(-15px) scale(1) rotate(-10deg);
+  }
+  60% {
+    opacity: 0.8;
+    transform: translateY(-30px) scale(0.9) rotate(10deg);
+  }
+  100% {
+    opacity: 0;
+    transform: translateY(-50px) scale(0.6) rotate(-5deg);
   }
 }
 

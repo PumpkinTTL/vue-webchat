@@ -24,6 +24,7 @@
           :online-users="currentRoom?.onlineUsers || 0" :ws-connected="wsConnected"
           :is-private-room="currentRoom?.isPrivate || false" :typing-users="typingUsers"
           :is-locked="currentRoom?.lock === 1" :intimacy-info="intimacyStore.currentIntimacy"
+          :show-floating-hearts="showFloatingHearts" :hearts-animation-key="heartsAnimationKey"
           @toggle-intimacy-panel="handleToggleIntimacyPanel" />
         
         <!-- 亲密度面板 -->
@@ -187,6 +188,23 @@ const sidebarOpen = ref(false)
 // 亲密度面板状态
 const showIntimacyPanel = ref(false)
 
+// 爱心飘出动画状态
+const showFloatingHearts = ref(false)
+const heartsAnimationKey = ref(0)
+
+// 触发爱心飘出动画
+const triggerFloatingHearts = () => {
+  if (!currentRoom.value?.isPrivate || !intimacyStore.currentIntimacy) return
+  
+  showFloatingHearts.value = true
+  heartsAnimationKey.value++
+  
+  // 1.2秒后隐藏动画（与CSS动画时长一致）
+  setTimeout(() => {
+    showFloatingHearts.value = false
+  }, 1200)
+}
+
 // 亲密度伴侣信息（从store获取）
 const intimacyPartner = computed(() => {
   if (!intimacyStore.partnerUser) return undefined
@@ -293,6 +311,25 @@ onMounted(async () => {
   wsStore.setOnIntimacyReset(() => {
     console.log('[亲密度] 互动重置')
     intimacyStore.resetInteraction()
+  })
+
+  // 监听WebSocket消息，更新亲密度信息
+  wsStore.setOnMessage((data) => {
+    // 如果消息包含亲密度信息，更新store并触发动画
+    if (data.intimacy && currentRoom.value?.isPrivate) {
+      console.log('[亲密度] WebSocket收到更新:', data.intimacy)
+      intimacyStore.updateIntimacyFromMessage(data.intimacy)
+      
+      // 如果是别人发送的消息，也触发爱心动画
+      if (data.from_user_id !== userStore.userInfo?.id) {
+        triggerFloatingHearts()
+      }
+    }
+    
+    // 调用原有的消息处理逻辑
+    if (wsStore.currentUserId) {
+      chatStore.handleWsMessage(data, wsStore.currentUserId)
+    }
   })
 
   // 加载房间列表
@@ -1028,20 +1065,20 @@ const handleSendMessage = async (text: string) => {
       if (msg) {
         msg.id = result.data.id
         msg.status = 'sent'
-
-        // 如果有好感度信息，更新
-        if (result.data.intimacy) {
-          msg.intimacy = {
-            currentExp: result.data.intimacy.current_exp,
-            currentLevel: result.data.intimacy.current_level
-          }
-
-          // 更新亲密度 store
-          intimacyStore.updateIntimacyFromMessage(result.data.intimacy)
-        }
       }
 
-      // 通过 WebSocket 广播消息给其他用户
+      // 私密房间：处理亲密度信息（注意：intimacy在result根级别，不是result.data下）
+      if (currentRoom.value?.isPrivate && result.intimacy && result.intimacy.code === 0) {
+        console.log('[亲密度] 收到更新:', result.intimacy)
+        
+        // 更新亲密度 store（即时刷新消息记录和经验值）
+        intimacyStore.updateIntimacyFromMessage(result.intimacy.data)
+        
+        // 触发爱心飘出动画
+        triggerFloatingHearts()
+      }
+
+      // 通过 WebSocket 广播消息给其他用户（携带亲密度信息）
       broadcastMessage({
         message_id: Number(result.data.id),
         message_type: 'text',
@@ -1054,7 +1091,7 @@ const handleSendMessage = async (text: string) => {
           message_type: currentReplyTo.type,
           deleted: false
         } : undefined,
-        intimacy: result.data.intimacy
+        intimacy: result.intimacy?.data // 只传递data部分，不传递整个intimacy对象
       })
     } else {
       // 发送失败
