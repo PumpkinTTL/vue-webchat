@@ -9,6 +9,12 @@
             <div class="orb-shine"></div>
             <div class="orb-highlight"></div>
             
+            <!-- 凹凸感：顶部凸起 -->
+            <div class="orb-bump top-bump"></div>
+            <div class="orb-bump bottom-bump"></div>
+            <div class="orb-bump left-bump"></div>
+            <div class="orb-bump right-bump"></div>
+            
             <!-- 玻璃球内部内容 -->
             <div class="orb-content">
               <!-- 左侧用户头像 -->
@@ -21,7 +27,18 @@
 
               <!-- 中间连接线和爱心 -->
               <div class="connection-area">
-                <!-- 闪电连接线 -->
+                <!-- SVG渐变定义 -->
+                <svg width="0" height="0" style="position: absolute;">
+                  <defs>
+                    <linearGradient id="lightningGradient" x1="0%" y1="0%" x2="100%" y2="100%">
+                      <stop offset="0%" style="stop-color:#93c5fd;stop-opacity:1" />
+                      <stop offset="50%" style="stop-color:#60a5fa;stop-opacity:1" />
+                      <stop offset="100%" style="stop-color:#3b82f6;stop-opacity:1" />
+                    </linearGradient>
+                  </defs>
+                </svg>
+                
+                <!-- 主闪电连接线 -->
                 <svg class="lightning-bolt" viewBox="0 0 100 100" xmlns="http://www.w3.org/2000/svg">
                   <path 
                     class="bolt-path"
@@ -63,9 +80,6 @@
                 <div class="avatar-ring" :style="{ borderColor: intimacyColor }"></div>
               </div>
             </div>
-
-            <!-- 玻璃球边缘光晕 -->
-            <div class="orb-rim" :style="{ borderColor: intimacyColor }"></div>
           </div>
 
           <!-- 标题文字 -->
@@ -78,7 +92,7 @@
           </div>
 
           <!-- 等级信息 -->
-          <div class="level-info" :style="{ color: intimacyColor }">
+          <div class="level-info" :style="{ '--level-color': intimacyColor }">
             <div class="level-badge">
               <font-awesome-icon icon="heart" />
               <span>Lv.{{ intimacyLevel }}</span>
@@ -102,7 +116,7 @@
 </template>
 
 <script setup lang="ts">
-import { computed } from 'vue'
+import { computed, ref } from 'vue'
 
 interface User {
   nick_name: string
@@ -173,13 +187,18 @@ const handleClose = () => {
   left: 0;
   right: 0;
   bottom: 0;
-  background: rgba(0, 0, 0, 0.85);
-  backdrop-filter: blur(10px);
+  background: rgba(0, 0, 0, 0.03);
+  backdrop-filter: blur(1px);
   display: flex;
   align-items: center;
   justify-content: center;
   z-index: 10000;
   padding: 20px;
+}
+
+/* 暗色模式：稍微深一点 */
+:global(.dark-mode) .bond-notification-overlay {
+  background: rgba(0, 0, 0, 0.06);
 }
 
 .bond-notification-container {
@@ -208,19 +227,44 @@ const handleClose = () => {
   width: 320px;
   height: 320px;
   border-radius: 50%;
-  background: linear-gradient(135deg, 
-    rgba(255, 255, 255, 0.1) 0%,
-    rgba(255, 255, 255, 0.05) 50%,
-    rgba(255, 255, 255, 0.02) 100%
-  );
+  /* 亮色模式：更明亮的玻璃效果 */
+  background: 
+    radial-gradient(circle at 30% 30%, rgba(255, 255, 255, 0.6) 0%, transparent 50%),
+    radial-gradient(circle at 70% 70%, rgba(0, 0, 0, 0.1) 0%, transparent 50%),
+    linear-gradient(135deg, 
+      rgba(255, 255, 255, 0.5) 0%,
+      rgba(255, 255, 255, 0.3) 50%,
+      rgba(255, 255, 255, 0.2) 100%
+    );
   backdrop-filter: blur(20px);
-  border: 2px solid rgba(255, 255, 255, 0.2);
+  border: 2px solid rgba(255, 255, 255, 0.5);
   box-shadow: 
-    0 20px 60px rgba(0, 0, 0, 0.5),
-    inset 0 0 60px rgba(255, 255, 255, 0.1),
+    0 20px 60px rgba(0, 0, 0, 0.3),
+    inset 0 0 80px rgba(255, 255, 255, 0.3),
+    inset -15px -15px 40px rgba(0, 0, 0, 0.08),
+    inset 15px 15px 40px rgba(255, 255, 255, 0.4),
     0 0 100px rgba(236, 72, 153, 0.3);
   animation: orbFloat 6s ease-in-out infinite;
-  overflow: visible;
+  overflow: hidden;
+}
+
+/* 暗色模式：更深邃的玻璃效果 */
+:global(.dark-mode) .glass-orb {
+  background: 
+    radial-gradient(circle at 30% 30%, rgba(255, 255, 255, 0.25) 0%, transparent 50%),
+    radial-gradient(circle at 70% 70%, rgba(0, 0, 0, 0.3) 0%, transparent 50%),
+    linear-gradient(135deg, 
+      rgba(255, 255, 255, 0.2) 0%,
+      rgba(255, 255, 255, 0.12) 50%,
+      rgba(255, 255, 255, 0.08) 100%
+    );
+  border: 2px solid rgba(255, 255, 255, 0.25);
+  box-shadow: 
+    0 20px 60px rgba(0, 0, 0, 0.6),
+    inset 0 0 80px rgba(255, 255, 255, 0.15),
+    inset -15px -15px 40px rgba(0, 0, 0, 0.4),
+    inset 15px 15px 40px rgba(255, 255, 255, 0.15),
+    0 0 100px rgba(236, 72, 153, 0.4);
 }
 
 @keyframes orbFloat {
@@ -230,6 +274,120 @@ const handleClose = () => {
   50% {
     transform: translateY(-20px) rotate(5deg);
   }
+}
+
+/* ==================== 凹凸感效果 ==================== */
+.orb-bump {
+  position: absolute;
+  border-radius: 50%;
+  pointer-events: none;
+  z-index: 1;
+}
+
+.top-bump {
+  top: 12%;
+  left: 50%;
+  transform: translateX(-50%);
+  width: 80px;
+  height: 80px;
+  background: radial-gradient(circle at 50% 30%, 
+    rgba(255, 255, 255, 0.8) 0%,
+    rgba(255, 255, 255, 0.4) 30%,
+    rgba(255, 255, 255, 0.1) 60%,
+    transparent 80%
+  );
+  filter: blur(6px);
+  animation: bumpShine 3s ease-in-out infinite;
+}
+
+@keyframes bumpShine {
+  0%, 100% {
+    opacity: 0.8;
+  }
+  50% {
+    opacity: 1;
+  }
+}
+
+.bottom-bump {
+  bottom: 15%;
+  left: 50%;
+  transform: translateX(-50%);
+  width: 70px;
+  height: 70px;
+  background: radial-gradient(circle at 50% 70%, 
+    rgba(0, 0, 0, 0.25) 0%,
+    rgba(0, 0, 0, 0.12) 40%,
+    rgba(0, 0, 0, 0.05) 60%,
+    transparent 80%
+  );
+  filter: blur(8px);
+}
+
+.left-bump {
+  top: 50%;
+  left: 12%;
+  transform: translateY(-50%);
+  width: 70px;
+  height: 70px;
+  background: radial-gradient(circle at 25% 50%, 
+    rgba(255, 255, 255, 0.6) 0%,
+    rgba(255, 255, 255, 0.3) 40%,
+    rgba(255, 255, 255, 0.1) 60%,
+    transparent 80%
+  );
+  filter: blur(6px);
+}
+
+.right-bump {
+  top: 50%;
+  right: 12%;
+  transform: translateY(-50%);
+  width: 70px;
+  height: 70px;
+  background: radial-gradient(circle at 75% 50%, 
+    rgba(0, 0, 0, 0.2) 0%,
+    rgba(0, 0, 0, 0.1) 40%,
+    rgba(0, 0, 0, 0.05) 60%,
+    transparent 80%
+  );
+  filter: blur(8px);
+}
+
+:global(.dark-mode) .top-bump {
+  background: radial-gradient(circle at 50% 30%, 
+    rgba(255, 255, 255, 0.4) 0%,
+    rgba(255, 255, 255, 0.2) 30%,
+    rgba(255, 255, 255, 0.05) 60%,
+    transparent 80%
+  );
+}
+
+:global(.dark-mode) .bottom-bump {
+  background: radial-gradient(circle at 50% 70%, 
+    rgba(0, 0, 0, 0.4) 0%,
+    rgba(0, 0, 0, 0.2) 40%,
+    rgba(0, 0, 0, 0.1) 60%,
+    transparent 80%
+  );
+}
+
+:global(.dark-mode) .left-bump {
+  background: radial-gradient(circle at 25% 50%, 
+    rgba(255, 255, 255, 0.3) 0%,
+    rgba(255, 255, 255, 0.15) 40%,
+    rgba(255, 255, 255, 0.05) 60%,
+    transparent 80%
+  );
+}
+
+:global(.dark-mode) .right-bump {
+  background: radial-gradient(circle at 75% 50%, 
+    rgba(0, 0, 0, 0.35) 0%,
+    rgba(0, 0, 0, 0.18) 40%,
+    rgba(0, 0, 0, 0.08) 60%,
+    transparent 80%
+  );
 }
 
 /* 玻璃球光泽 */
@@ -274,28 +432,6 @@ const handleClose = () => {
   filter: blur(15px);
 }
 
-/* 玻璃球边缘光晕 */
-.orb-rim {
-  position: absolute;
-  inset: -10px;
-  border-radius: 50%;
-  border: 3px solid;
-  opacity: 0.5;
-  filter: blur(5px);
-  animation: rimPulse 2s ease-in-out infinite;
-}
-
-@keyframes rimPulse {
-  0%, 100% {
-    opacity: 0.3;
-    transform: scale(1);
-  }
-  50% {
-    opacity: 0.6;
-    transform: scale(1.05);
-  }
-}
-
 /* ==================== 玻璃球内容 ==================== */
 .orb-content {
   position: relative;
@@ -305,6 +441,7 @@ const handleClose = () => {
   align-items: center;
   justify-content: space-between;
   padding: 40px;
+  z-index: 2;
 }
 
 /* ==================== 用户头像 ==================== */
@@ -436,6 +573,9 @@ const handleClose = () => {
   }
 }
 
+/* ==================== 随机闪电（已移除） ==================== */
+
+/* ==================== 连接线光效 ==================== */
 .connection-glow {
   position: absolute;
   width: 100%;
@@ -558,9 +698,7 @@ const handleClose = () => {
 .level-info {
   display: flex;
   align-items: center;
-  gap: 12px;
-  font-size: 16px;
-  font-weight: 600;
+  gap: 16px;
   animation: levelAppear 0.8s 1.2s cubic-bezier(0.34, 1.56, 0.64, 1) backwards;
 }
 
@@ -578,16 +716,62 @@ const handleClose = () => {
 .level-badge {
   display: flex;
   align-items: center;
-  gap: 6px;
-  padding: 8px 16px;
-  background: rgba(255, 255, 255, 0.1);
-  backdrop-filter: blur(10px);
-  border-radius: 20px;
-  border: 1px solid rgba(255, 255, 255, 0.2);
+  gap: 8px;
+  padding: 10px 20px;
+  background: var(--level-color);
+  border-radius: 24px;
+  border: 2px solid rgba(255, 255, 255, 0.3);
+  font-size: 18px;
+  font-weight: 700;
+  color: white;
+  box-shadow: 
+    0 4px 20px rgba(0, 0, 0, 0.2),
+    0 0 30px var(--level-color),
+    inset 0 1px 0 rgba(255, 255, 255, 0.4),
+    inset 0 -1px 0 rgba(0, 0, 0, 0.2);
+  position: relative;
+  overflow: hidden;
+  
+  /* 光泽效果 */
+  &::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: -100%;
+    width: 100%;
+    height: 100%;
+    background: linear-gradient(
+      90deg,
+      transparent,
+      rgba(255, 255, 255, 0.3),
+      transparent
+    );
+    animation: badgeShine 3s ease-in-out infinite;
+  }
+  
+  i, svg {
+    filter: drop-shadow(0 2px 4px rgba(0, 0, 0, 0.3));
+  }
+}
+
+@keyframes badgeShine {
+  0% {
+    left: -100%;
+  }
+  50% {
+    left: 100%;
+  }
+  100% {
+    left: 100%;
+  }
 }
 
 .level-name {
-  opacity: 0.9;
+  font-size: 20px;
+  font-weight: 600;
+  color: var(--level-color);
+  filter: drop-shadow(0 0 10px currentColor);
+  letter-spacing: 1px;
 }
 
 /* ==================== 关闭按钮 ==================== */
