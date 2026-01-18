@@ -470,17 +470,27 @@ watch(() => chatStore.messages.length, (newLength, oldLength) => {
   if (newLength > oldLength && !isLoadingHistory.value) {
     // 获取新增的消息
     const newMessages = chatStore.messages.slice(oldLength)
-    // 过滤掉系统消息
-    const nonSystemMessages = newMessages.filter(msg => msg.type !== 'system')
+    
+    // 过滤掉系统消息和自己的消息
+    const nonSystemMessages = newMessages.filter(msg => msg.type !== 'system' && !msg.isOwn)
 
     // 如果在底部，自动滚动
     if (isAtBottom.value) {
       nextTick(() => {
         messageListRef.value?.scrollToBottom(true)
       })
-    } else if (nonSystemMessages.length > 0) {
-      // 如果不在底部且有非系统消息，增加新消息计数
-      newMessageCount.value += nonSystemMessages.length
+    } else {
+      // 不在底部时的处理
+      if (nonSystemMessages.length > 0) {
+        // 别人的消息：增加新消息计数
+        newMessageCount.value += nonSystemMessages.length
+      }
+      
+      // 自己的消息：显示toast提示
+      const ownMessages = newMessages.filter(msg => msg.type !== 'system' && msg.isOwn)
+      if (ownMessages.length > 0) {
+        message.success('发送成功，继续看历史记录吧！')
+      }
     }
 
     // 对于别人的新消息，触发已读检测
@@ -1135,10 +1145,12 @@ const handleSendMessage = async (text: string) => {
   // 清除引用状态
   replyToMessage.value = null
 
-  // 滚动到底部
-  nextTick(() => {
-    messageListRef.value?.scrollToBottom(true)
-  })
+  // 只有在底部时才自动滚动
+  if (isAtBottom.value) {
+    nextTick(() => {
+      messageListRef.value?.scrollToBottom(true)
+    })
+  }
 
   try {
     // 通过 HTTP API 发送消息（带引用参数）
@@ -1228,10 +1240,12 @@ const handleSendImage = async (file: File) => {
 
   chatStore.addMessage(tempMessage)
 
-  // 滚动到底部
-  nextTick(() => {
-    messageListRef.value?.scrollToBottom(true)
-  })
+  // 只有在底部时才自动滚动
+  if (isAtBottom.value) {
+    nextTick(() => {
+      messageListRef.value?.scrollToBottom(true)
+    })
+  }
 
   // 模拟上传进度（因为实际上传可能很快，模拟一个平滑的进度）
   const progressInterval = setInterval(() => {
@@ -1379,10 +1393,12 @@ const handleSendVideo = async (file: File) => {
 
   chatStore.addMessage(tempMessage)
 
-  // 滚动到底部
-  nextTick(() => {
-    messageListRef.value?.scrollToBottom(true)
-  })
+  // 只有在底部时才自动滚动
+  if (isAtBottom.value) {
+    nextTick(() => {
+      messageListRef.value?.scrollToBottom(true)
+    })
+  }
 
   // 模拟上传进度（视频上传较慢）
   const progressInterval = setInterval(() => {
