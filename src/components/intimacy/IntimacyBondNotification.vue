@@ -3,17 +3,20 @@
     <Transition name="bond-notification">
       <div v-if="visible" class="bond-notification-overlay" @click="handleClose">
         <div class="bond-notification-container" @click.stop>
-          <!-- 3D玻璃球容器 -->
-          <div class="glass-orb">
+          <!-- 发光容器 -->
+          <div class="orb-glow-wrapper">
+            <!-- 3D玻璃球容器 -->
+            <div class="glass-orb" :style="{ '--orb-color': intimacyColor }">
+            <!-- 内发光层 -->
+            <div class="inner-glow" :style="{ background: intimacyColor }"></div>
+            
             <!-- 玻璃球装饰圆环 -->
             <div class="orb-ring ring-1"></div>
             <div class="orb-ring ring-2"></div>
             <div class="orb-ring ring-3"></div>
             
-            <!-- 玻璃球内部装饰点 -->
-            <div class="orb-dots">
-              <div class="dot" v-for="i in 12" :key="i" :style="getDotStyle(i)"></div>
-            </div>
+            <!-- 玻璃球装饰光晕 -->
+            <div class="orb-aura" :style="{ background: `radial-gradient(circle, ${intimacyColor}15 0%, transparent 70%)` }"></div>
             
             <!-- 玻璃球光泽层 -->
             <div class="orb-shine"></div>
@@ -87,6 +90,8 @@
               </div>
             </div>
           </div>
+          </div>
+          <!-- /发光容器 -->
 
           <!-- 标题文字 -->
           <div class="notification-title">
@@ -163,20 +168,6 @@ const processAvatarUrl = (avatar: string | undefined): string | undefined => {
 const currentUserAvatar = computed(() => processAvatarUrl(props.currentUser?.avatar))
 const partnerAvatar = computed(() => processAvatarUrl(props.partner?.avatar))
 
-// 生成装饰点样式
-const getDotStyle = (index: number) => {
-  const angle = (index - 1) * 30 // 每30度一个点
-  const radius = 45 // 距离中心的百分比
-  const x = 50 + radius * Math.cos(angle * Math.PI / 180)
-  const y = 50 + radius * Math.sin(angle * Math.PI / 180)
-  
-  return {
-    left: `${x}%`,
-    top: `${y}%`,
-    animationDelay: `${(index - 1) * 0.1}s`
-  }
-}
-
 const handleClose = () => {
   emit('close')
 }
@@ -189,7 +180,7 @@ const handleClose = () => {
   left: 0;
   right: 0;
   bottom: 0;
-  background: rgba(0, 0, 0, 0.15);
+  background: rgba(0, 0, 0, 0.05);
   backdrop-filter: blur(4px);
   display: flex;
   align-items: center;
@@ -200,7 +191,7 @@ const handleClose = () => {
 
 /* 暗色模式：稍微深一点 */
 :global(.dark-mode) .bond-notification-overlay {
-  background: rgba(0, 0, 0, 0.25);
+  background: rgba(0, 0, 0, 0.15);
 }
 
 .bond-notification-container {
@@ -221,6 +212,11 @@ const handleClose = () => {
     opacity: 1;
     transform: scale(1) translateY(0);
   }
+}
+
+/* ==================== 发光容器 ==================== */
+.orb-glow-wrapper {
+  position: relative;
 }
 
 /* ==================== 3D玻璃球 ==================== */
@@ -247,6 +243,29 @@ const handleClose = () => {
     inset 10px 10px 30px rgba(255, 255, 255, 0.3);
   animation: orbFloat 6s ease-in-out infinite, orbRotate 30s linear infinite;
   overflow: hidden;
+  z-index: 1;
+}
+
+/* ==================== 内发光层 ==================== */
+.inner-glow {
+  position: absolute;
+  inset: 0;
+  border-radius: 50%;
+  opacity: 0.4;
+  filter: blur(40px);
+  animation: innerGlowPulse 3s ease-in-out infinite;
+  z-index: 0;
+}
+
+@keyframes innerGlowPulse {
+  0%, 100% {
+    opacity: 0.4;
+    transform: scale(0.8);
+  }
+  50% {
+    opacity: 0.7;
+    transform: scale(1);
+  }
 }
 
 @keyframes orbRotate {
@@ -269,11 +288,6 @@ const handleClose = () => {
       rgba(255, 255, 255, 0.05) 100%
     );
   border: 2px solid rgba(255, 255, 255, 0.2);
-  box-shadow: 
-    0 15px 40px rgba(0, 0, 0, 0.2),
-    inset 0 0 60px rgba(255, 255, 255, 0.1),
-    inset -10px -10px 30px rgba(0, 0, 0, 0.15),
-    inset 10px 10px 30px rgba(255, 255, 255, 0.1);
 }
 
 @keyframes orbFloat {
@@ -291,7 +305,7 @@ const handleClose = () => {
   top: 50%;
   left: 50%;
   border-radius: 50%;
-  border: 1px solid rgba(255, 255, 255, 0.15);
+  border: 1px solid rgba(255, 255, 255, 0.4);
   pointer-events: none;
   z-index: 1;
 }
@@ -308,7 +322,7 @@ const handleClose = () => {
   height: 85%;
   transform: translate(-50%, -50%);
   animation: ringPulse 4s ease-in-out 1.3s infinite;
-  border-color: rgba(255, 255, 255, 0.1);
+  border-color: rgba(255, 255, 255, 0.3);
 }
 
 .ring-3 {
@@ -316,47 +330,38 @@ const handleClose = () => {
   height: 55%;
   transform: translate(-50%, -50%);
   animation: ringPulse 4s ease-in-out 2.6s infinite;
-  border-color: rgba(255, 255, 255, 0.2);
+  border-color: rgba(255, 255, 255, 0.5);
 }
 
 @keyframes ringPulse {
   0%, 100% {
-    opacity: 0.3;
+    opacity: 0.5;
     transform: translate(-50%, -50%) scale(1);
   }
   50% {
-    opacity: 0.6;
+    opacity: 0.9;
     transform: translate(-50%, -50%) scale(1.05);
   }
 }
 
-/* ==================== 玻璃球装饰点 ==================== */
-.orb-dots {
+/* ==================== 玻璃球装饰光晕 ==================== */
+.orb-aura {
   position: absolute;
-  inset: 0;
-  pointer-events: none;
-  z-index: 1;
-}
-
-.dot {
-  position: absolute;
-  width: 4px;
-  height: 4px;
-  background: rgba(255, 255, 255, 0.6);
+  inset: -20px;
   border-radius: 50%;
-  transform: translate(-50%, -50%);
-  animation: dotTwinkle 3s ease-in-out infinite;
-  box-shadow: 0 0 6px rgba(255, 255, 255, 0.4);
+  pointer-events: none;
+  z-index: 0;
+  animation: auraGlow 4s ease-in-out infinite;
 }
 
-@keyframes dotTwinkle {
+@keyframes auraGlow {
   0%, 100% {
     opacity: 0.3;
-    transform: translate(-50%, -50%) scale(0.8);
+    transform: scale(1);
   }
   50% {
-    opacity: 1;
-    transform: translate(-50%, -50%) scale(1.2);
+    opacity: 0.6;
+    transform: scale(1.1);
   }
 }
 
@@ -575,25 +580,6 @@ const handleClose = () => {
   border: 3px solid rgba(255, 255, 255, 0.3);
   box-shadow: 0 4px 16px rgba(0, 0, 0, 0.08);
   position: relative;
-}
-
-/* 头像边框装饰 */
-.user-avatar::before {
-  content: '';
-  position: absolute;
-  inset: -6px;
-  border-radius: 50%;
-  border: 2px solid rgba(255, 255, 255, 0.2);
-  border-top-color: rgba(255, 255, 255, 0.5);
-  border-right-color: rgba(255, 255, 255, 0.5);
-}
-
-.user-avatar::after {
-  content: '';
-  position: absolute;
-  inset: -10px;
-  border-radius: 50%;
-  border: 1px solid rgba(255, 255, 255, 0.1);
 }
 
 .avatar-placeholder {
