@@ -5,6 +5,16 @@
         <div class="bond-notification-container" @click.stop>
           <!-- 发光容器 -->
           <div class="orb-glow-wrapper">
+            <!-- 飘浮的小爱心 -->
+            <div class="floating-hearts">
+              <div v-for="i in 6" :key="i" class="heart" :style="getHeartStyle(i)">♥</div>
+            </div>
+            
+            <!-- 星星闪烁 -->
+            <div class="twinkling-stars">
+              <div v-for="i in 12" :key="i" class="star" :style="getStarStyle(i)">✦</div>
+            </div>
+            
             <!-- 3D玻璃球容器 -->
             <div class="glass-orb" :style="{ '--orb-color': intimacyColor }">
             <!-- 内发光层 -->
@@ -15,18 +25,9 @@
             <div class="orb-ring ring-2"></div>
             <div class="orb-ring ring-3"></div>
             
-            <!-- 玻璃球装饰光晕 -->
-            <div class="orb-aura" :style="{ background: `radial-gradient(circle, ${intimacyColor}15 0%, transparent 70%)` }"></div>
-            
             <!-- 玻璃球光泽层 -->
             <div class="orb-shine"></div>
             <div class="orb-highlight"></div>
-            
-            <!-- 凹凸感：顶部凸起 -->
-            <div class="orb-bump top-bump"></div>
-            <div class="orb-bump bottom-bump"></div>
-            <div class="orb-bump left-bump"></div>
-            <div class="orb-bump right-bump"></div>
             
             <!-- 玻璃球内部内容 -->
             <div class="orb-content">
@@ -38,17 +39,6 @@
 
               <!-- 中间连接线 -->
               <div class="connection-area">
-                <!-- SVG渐变定义 -->
-                <svg width="0" height="0" style="position: absolute;">
-                  <defs>
-                    <linearGradient id="lightningGradient" x1="0%" y1="0%" x2="100%" y2="100%">
-                      <stop offset="0%" style="stop-color:#93c5fd;stop-opacity:1" />
-                      <stop offset="50%" style="stop-color:#60a5fa;stop-opacity:1" />
-                      <stop offset="100%" style="stop-color:#3b82f6;stop-opacity:1" />
-                    </linearGradient>
-                  </defs>
-                </svg>
-                
                 <!-- 主闪电连接线 -->
                 <svg class="lightning-bolt" viewBox="0 0 100 100" xmlns="http://www.w3.org/2000/svg">
                   <path 
@@ -78,9 +68,6 @@
                     </animateMotion>
                   </circle>
                 </svg>
-
-                <!-- 连接线光效 -->
-                <div class="connection-glow" :style="{ background: `linear-gradient(90deg, transparent, ${intimacyColor}, transparent)` }"></div>
               </div>
 
               <!-- 右侧伴侣头像 -->
@@ -168,6 +155,43 @@ const processAvatarUrl = (avatar: string | undefined): string | undefined => {
 const currentUserAvatar = computed(() => processAvatarUrl(props.currentUser?.avatar))
 const partnerAvatar = computed(() => processAvatarUrl(props.partner?.avatar))
 
+// 生成飘浮爱心样式
+const getHeartStyle = (index: number) => {
+  const delay = index * 0.8
+  const left = 20 + (index * 10) % 60
+  return {
+    left: `${left}%`,
+    animationDelay: `${delay}s`,
+    color: props.intimacyColor
+  }
+}
+
+// 生成星星样式
+const getStarStyle = (index: number) => {
+  const positions = [
+    { left: '10%', top: '15%' },
+    { left: '20%', top: '80%' },
+    { left: '85%', top: '20%' },
+    { left: '90%', top: '75%' },
+    { left: '50%', top: '5%' },
+    { left: '50%', top: '95%' },
+    { left: '5%', top: '50%' },
+    { left: '95%', top: '50%' },
+    { left: '25%', top: '25%' },
+    { left: '75%', top: '25%' },
+    { left: '25%', top: '75%' },
+    { left: '75%', top: '75%' }
+  ]
+  
+  const pos = positions[index - 1]
+  return {
+    left: pos.left,
+    top: pos.top,
+    animationDelay: `${index * 0.3}s`,
+    color: props.intimacyColor
+  }
+}
+
 const handleClose = () => {
   emit('close')
 }
@@ -180,8 +204,8 @@ const handleClose = () => {
   left: 0;
   right: 0;
   bottom: 0;
-  background: rgba(0, 0, 0, 0.05);
-  backdrop-filter: blur(4px);
+  background: rgba(0, 0, 0, 0.1);
+  backdrop-filter: blur(8px);
   display: flex;
   align-items: center;
   justify-content: center;
@@ -191,7 +215,7 @@ const handleClose = () => {
 
 /* 暗色模式：稍微深一点 */
 :global(.dark-mode) .bond-notification-overlay {
-  background: rgba(0, 0, 0, 0.15);
+  background: rgba(0, 0, 0, 0.25);
 }
 
 .bond-notification-container {
@@ -219,6 +243,67 @@ const handleClose = () => {
   position: relative;
 }
 
+/* ==================== 飘浮爱心 ==================== */
+.floating-hearts {
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  z-index: 3;
+}
+
+.heart {
+  position: absolute;
+  bottom: -20px;
+  font-size: 20px;
+  opacity: 0;
+  animation: floatUp 4s ease-in infinite;
+}
+
+@keyframes floatUp {
+  0% {
+    bottom: -20px;
+    opacity: 0;
+    transform: translateX(0) scale(0.5);
+  }
+  20% {
+    opacity: 0.8;
+  }
+  80% {
+    opacity: 0.8;
+  }
+  100% {
+    bottom: 120%;
+    opacity: 0;
+    transform: translateX(20px) scale(1);
+  }
+}
+
+/* ==================== 星星闪烁 ==================== */
+.twinkling-stars {
+  position: absolute;
+  inset: -60px;
+  pointer-events: none;
+  z-index: 1;
+}
+
+.star {
+  position: absolute;
+  font-size: 16px;
+  opacity: 0;
+  animation: twinkle 3s ease-in-out infinite;
+}
+
+@keyframes twinkle {
+  0%, 100% {
+    opacity: 0;
+    transform: scale(0.5) rotate(0deg);
+  }
+  50% {
+    opacity: 1;
+    transform: scale(1.2) rotate(180deg);
+  }
+}
+
 /* ==================== 3D玻璃球 ==================== */
 .glass-orb {
   position: relative;
@@ -228,7 +313,6 @@ const handleClose = () => {
   /* 亮色模式：清爽的玻璃效果 */
   background: 
     radial-gradient(circle at 30% 30%, rgba(255, 255, 255, 0.5) 0%, transparent 50%),
-    radial-gradient(circle at 70% 70%, rgba(0, 0, 0, 0.02) 0%, transparent 50%),
     linear-gradient(135deg, 
       rgba(255, 255, 255, 0.4) 0%,
       rgba(255, 255, 255, 0.25) 50%,
@@ -237,9 +321,8 @@ const handleClose = () => {
   backdrop-filter: blur(20px);
   border: 2px solid rgba(255, 255, 255, 0.6);
   box-shadow: 
-    0 15px 40px rgba(0, 0, 0, 0.08),
+    0 15px 40px rgba(255, 255, 255, 0.1),
     inset 0 0 60px rgba(255, 255, 255, 0.2),
-    inset -10px -10px 30px rgba(0, 0, 0, 0.02),
     inset 10px 10px 30px rgba(255, 255, 255, 0.3);
   animation: orbFloat 6s ease-in-out infinite, orbRotate 30s linear infinite;
   overflow: hidden;
@@ -251,7 +334,7 @@ const handleClose = () => {
   position: absolute;
   inset: 0;
   border-radius: 50%;
-  opacity: 0.4;
+  opacity: 0.6;
   filter: blur(40px);
   animation: innerGlowPulse 3s ease-in-out infinite;
   z-index: 0;
@@ -259,8 +342,8 @@ const handleClose = () => {
 
 @keyframes innerGlowPulse {
   0%, 100% {
-    opacity: 0.4;
-    transform: scale(0.8);
+    opacity: 0.5;
+    transform: scale(0.9);
   }
   50% {
     opacity: 0.7;
@@ -281,7 +364,6 @@ const handleClose = () => {
 :global(.dark-mode) .glass-orb {
   background: 
     radial-gradient(circle at 30% 30%, rgba(255, 255, 255, 0.2) 0%, transparent 50%),
-    radial-gradient(circle at 70% 70%, rgba(0, 0, 0, 0.15) 0%, transparent 50%),
     linear-gradient(135deg, 
       rgba(255, 255, 255, 0.15) 0%,
       rgba(255, 255, 255, 0.1) 50%,
@@ -344,142 +426,7 @@ const handleClose = () => {
   }
 }
 
-/* ==================== 玻璃球装饰光晕 ==================== */
-.orb-aura {
-  position: absolute;
-  inset: -20px;
-  border-radius: 50%;
-  pointer-events: none;
-  z-index: 0;
-  animation: auraGlow 4s ease-in-out infinite;
-}
-
-@keyframes auraGlow {
-  0%, 100% {
-    opacity: 0.3;
-    transform: scale(1);
-  }
-  50% {
-    opacity: 0.6;
-    transform: scale(1.1);
-  }
-}
-
-/* ==================== 凹凸感效果 ==================== */
-.orb-bump {
-  position: absolute;
-  border-radius: 50%;
-  pointer-events: none;
-  z-index: 1;
-}
-
-.top-bump {
-  top: 12%;
-  left: 50%;
-  transform: translateX(-50%);
-  width: 80px;
-  height: 80px;
-  background: radial-gradient(circle at 50% 30%, 
-    rgba(255, 255, 255, 0.8) 0%,
-    rgba(255, 255, 255, 0.4) 30%,
-    rgba(255, 255, 255, 0.1) 60%,
-    transparent 80%
-  );
-  filter: blur(6px);
-  animation: bumpShine 3s ease-in-out infinite;
-}
-
-@keyframes bumpShine {
-  0%, 100% {
-    opacity: 0.8;
-  }
-  50% {
-    opacity: 1;
-  }
-}
-
-.bottom-bump {
-  bottom: 15%;
-  left: 50%;
-  transform: translateX(-50%);
-  width: 70px;
-  height: 70px;
-  background: radial-gradient(circle at 50% 70%, 
-    rgba(0, 0, 0, 0.08) 0%,
-    rgba(0, 0, 0, 0.04) 40%,
-    rgba(0, 0, 0, 0.02) 60%,
-    transparent 80%
-  );
-  filter: blur(8px);
-}
-
-.left-bump {
-  top: 50%;
-  left: 12%;
-  transform: translateY(-50%);
-  width: 70px;
-  height: 70px;
-  background: radial-gradient(circle at 25% 50%, 
-    rgba(255, 255, 255, 0.6) 0%,
-    rgba(255, 255, 255, 0.3) 40%,
-    rgba(255, 255, 255, 0.1) 60%,
-    transparent 80%
-  );
-  filter: blur(6px);
-}
-
-.right-bump {
-  top: 50%;
-  right: 12%;
-  transform: translateY(-50%);
-  width: 70px;
-  height: 70px;
-  background: radial-gradient(circle at 75% 50%, 
-    rgba(0, 0, 0, 0.08) 0%,
-    rgba(0, 0, 0, 0.04) 40%,
-    rgba(0, 0, 0, 0.02) 60%,
-    transparent 80%
-  );
-  filter: blur(8px);
-}
-
-:global(.dark-mode) .top-bump {
-  background: radial-gradient(circle at 50% 30%, 
-    rgba(255, 255, 255, 0.4) 0%,
-    rgba(255, 255, 255, 0.2) 30%,
-    rgba(255, 255, 255, 0.05) 60%,
-    transparent 80%
-  );
-}
-
-:global(.dark-mode) .bottom-bump {
-  background: radial-gradient(circle at 50% 70%, 
-    rgba(0, 0, 0, 0.2) 0%,
-    rgba(0, 0, 0, 0.1) 40%,
-    rgba(0, 0, 0, 0.05) 60%,
-    transparent 80%
-  );
-}
-
-:global(.dark-mode) .left-bump {
-  background: radial-gradient(circle at 25% 50%, 
-    rgba(255, 255, 255, 0.3) 0%,
-    rgba(255, 255, 255, 0.15) 40%,
-    rgba(255, 255, 255, 0.05) 60%,
-    transparent 80%
-  );
-}
-
-:global(.dark-mode) .right-bump {
-  background: radial-gradient(circle at 75% 50%, 
-    rgba(0, 0, 0, 0.15) 0%,
-    rgba(0, 0, 0, 0.08) 40%,
-    rgba(0, 0, 0, 0.04) 60%,
-    transparent 80%
-  );
-}
-
-/* 玻璃球光泽 */
+/* ==================== 玻璃球光泽 ==================== */
 .orb-shine {
   position: absolute;
   top: 10%;
@@ -578,7 +525,6 @@ const handleClose = () => {
   border-radius: 50%;
   object-fit: cover;
   border: 3px solid rgba(255, 255, 255, 0.3);
-  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.08);
   position: relative;
 }
 
@@ -663,26 +609,6 @@ const handleClose = () => {
 }
 
 /* ==================== 随机闪电（已移除） ==================== */
-
-/* ==================== 连接线光效 ==================== */
-.connection-glow {
-  position: absolute;
-  width: 100%;
-  height: 4px;
-  opacity: 0.6;
-  animation: glowMove 2s ease-in-out infinite;
-}
-
-@keyframes glowMove {
-  0%, 100% {
-    transform: scaleX(0.8);
-    opacity: 0.4;
-  }
-  50% {
-    transform: scaleX(1.2);
-    opacity: 0.8;
-  }
-}
 
 /* ==================== 标题文字 ==================== */
 .notification-title {
@@ -793,9 +719,7 @@ const handleClose = () => {
   font-weight: 700;
   color: white;
   box-shadow: 
-    0 4px 20px rgba(0, 0, 0, 0.1),
-    inset 0 1px 0 rgba(255, 255, 255, 0.4),
-    inset 0 -1px 0 rgba(0, 0, 0, 0.1);
+    inset 0 1px 0 rgba(255, 255, 255, 0.4);
   position: relative;
   overflow: hidden;
   
@@ -827,7 +751,6 @@ const handleClose = () => {
   }
   
   i, svg {
-    filter: drop-shadow(0 1px 2px rgba(0, 0, 0, 0.1));
     animation: heartPulse 2s ease-in-out infinite;
   }
 }
@@ -930,13 +853,11 @@ const handleClose = () => {
   font-size: 16px;
   color: #666;
   transition: all 0.3s ease;
-  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
   
   &:hover {
     background: rgba(255, 255, 255, 1);
     color: #333;
     transform: rotate(90deg) scale(1.1);
-    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
   }
   
   &:active {
@@ -997,10 +918,6 @@ const handleClose = () => {
     height: 60px;
   }
 
-  .center-heart {
-    font-size: 24px;
-  }
-
   .title-main {
     font-size: 22px;
   }
@@ -1023,10 +940,6 @@ const handleClose = () => {
   .user-avatar {
     width: 50px;
     height: 50px;
-  }
-
-  .center-heart {
-    font-size: 20px;
   }
 
   .title-main {

@@ -1,5 +1,5 @@
 <template>
-  <div class="emoji-picker" :class="{ 'dark-mode': isDarkMode }">
+  <div class="emoji-picker" :class="{ 'dark-mode': isDarkMode }" ref="pickerRef">
     <!-- 分类标签栏 -->
     <div class="category-tabs">
       <button
@@ -42,6 +42,9 @@ const emit = defineEmits<{
   close: []
 }>()
 
+// 表情面板引用
+const pickerRef = ref<HTMLElement>()
+
 // 深色模式状态
 const isDarkMode = ref(false)
 
@@ -62,8 +65,26 @@ window.addEventListener('storage', (e) => {
   }
 })
 
+// 点击外部关闭面板
+const handleClickOutside = (event: MouseEvent) => {
+  if (!pickerRef.value) return
+
+  const target = event.target as Node
+  // 检查点击是否在面板外部
+  if (!pickerRef.value.contains(target)) {
+    emit('close')
+  }
+}
+
+onMounted(() => {
+  // 监听全局点击事件
+  document.addEventListener('click', handleClickOutside)
+})
+
 onUnmounted(() => {
+  // 移除监听
   window.removeEventListener('darkModeChange', handleDarkModeChange)
+  document.removeEventListener('click', handleClickOutside)
 })
 
 // 分类数据

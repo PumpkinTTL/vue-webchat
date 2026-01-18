@@ -114,11 +114,11 @@
           @focus="handleFocus"
           @blur="handleBlur"
         >
-        
+
         <!-- 表情按钮（在输入框内） -->
-        <button 
+        <button
           class="emoji-btn"
-          @click="toggleEmojiPicker"
+          @click.stop="toggleEmojiPicker"
           :disabled="disabled"
           title="表情"
         >
@@ -245,9 +245,9 @@
 
       <!-- 表情面板 -->
       <Transition
-        enter-active-class="animate__animated animate__fadeInUp"
-        leave-active-class="animate__animated animate__fadeOutDown"
-        :duration="200"
+        enter-active-class="animate__animated animate__zoomIn"
+        leave-active-class="animate__animated animate__zoomOut"
+        :duration="400"
       >
         <div v-if="showEmojiPicker" class="emoji-picker-wrapper">
           <EmojiPicker
