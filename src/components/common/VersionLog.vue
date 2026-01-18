@@ -18,7 +18,10 @@
         <div class="version-features">
           <h4>🚀 重构</h4>
           <ul>
-            <li><strong>客户端全面重构</strong> - 基于 Vite + Vue 3 + TypeScript 重写，构建速度提升 10 倍，开发体验显著改善</li>
+            <li><strong>客户端全面重构</strong> - Vite+Vue3全新的前端技术架构，页面加载速度大幅提升，界面响应更加迅速，整体使用体验更加流畅</li>
+            <li><strong>Pinia 状态管理</strong> - 采用新一代状态管理方案，数据流转更清晰，多标签页数据同步更可靠</li>
+            <li><strong>Vue Router 路由</strong> - 页面切换更加平滑，支持浏览器前进后退，提供更接近原生应用的体验</li>
+            <li><strong>Axios 网络请求</strong> - 统一的接口请求管理，自动处理错误和超时，网络交互更加稳定</li>
           </ul>
           
           <h4>✨ 新增</h4>
