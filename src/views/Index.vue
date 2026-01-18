@@ -399,30 +399,28 @@ watch(() => chatStore.currentRoom?.isLocked, (isLocked) => {
   }
 })
 
-// 监听房间在线人数变化
+// 监听房间在线人数变化（统一处理在线人数更新、亲密度互动、羁绊通知）
 watch(() => wsStore.onlineCount, (count, oldCount) => {
   console.log('[房间] WebSocket在线人数变化:', count, '(旧值:', oldCount, ')')
   if (currentRoom.value) {
     const previousOnline = currentRoom.value.onlineUsers
     currentRoom.value.onlineUsers = count
     
-    console.log('[羁绊通知] 检查条件:', {
-      isPrivate: currentRoom.value.isPrivate,
-      hasIntimacy: !!intimacyStore.currentIntimacy,
-      totalUsers: currentRoom.value.totalUsers,
-      previousOnline,
-      currentOnline: count,
-      alreadyShown: shownBondNotificationRooms.has(currentRoom.value.id),
-      roomId: currentRoom.value.id
-    })
-    
-    // 如果对方离线（从2变成1），清除通知记录，以便对方再次上线时可以显示通知
-    if (currentRoom.value.isPrivate && 
-        currentRoom.value.totalUsers === 2 &&
-        previousOnline === 2 && 
-        count === 1) {
-      shownBondNotificationRooms.delete(currentRoom.value.id)
-      console.log('[羁绊通知] 对方离线，清除通知记录')
+    // 如果是私密房间且有亲密度信息
+    if (currentRoom.value.isPrivate && intimacyStore.currentIntimacy && currentRoom.value.totalUsers === 2) {
+      // 对方上线（从1变成2）：启动亲密度互动
+      if (previousOnline === 1 && count === 2) {
+        console.log('[亲密度] 对方上线，启动互动')
+        intimacyStore.startInteraction()
+      }
+      
+      // 对方离线（从2变成1）：重置互动（不关闭面板）
+      if (previousOnline === 2 && count === 1) {
+        console.log('[亲密度] 对方离线，重置互动计时器')
+        intimacyStore.resetInteraction()
+        // 清除通知记录，以便对方再次上线时可以显示通知
+        shownBondNotificationRooms.delete(currentRoom.value.id)
+      }
     }
     
     // 检查是否应该显示羁绊上线提醒
@@ -878,6 +876,16 @@ const handleSelectRoom = async (room: any) => {
   if (currentRoom.value?.id) {
     shownBondNotificationRooms.delete(currentRoom.value.id)
     console.log('[羁绊通知] 离开房间，清除通知记录:', currentRoom.value.id)
+    
+    // 重置亲密度相关状态
+    console.log('[亲密度] 切换房间，重置互动状态')
+    intimacyStore.resetInteraction()
+    showIntimacyPanel.value = false
+    showBondNotification.value = false
+    if (bondNotificationTimer) {
+      clearTimeout(bondNotificationTimer)
+      bondNotificationTimer = null
+    }
   }
 
   // 切换房间时重置人数为0，等待WebSocket更新
@@ -1725,14 +1733,6 @@ const handleCloseIntimacyPanel = () => {
 // 处理亲密度面板切换
 const handleToggleIntimacyPanel = () => {
   showIntimacyPanel.value = !showIntimacyPanel.value
-  
-  // 如果打开面板且是私密房间，检查是否需要启动互动
-  if (showIntimacyPanel.value && currentRoom.value?.isPrivate && currentRoom.value?.onlineUsers >= 2) {
-    // 如果互动未激活，启动互动
-    if (!intimacyStore.interaction.active) {
-      intimacyStore.startInteraction()
-    }
-  }
 }
 </script>
 
