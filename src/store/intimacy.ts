@@ -201,6 +201,13 @@ export const useIntimacyStore = defineStore('intimacy', () => {
    * 添加经验提示
    */
   function addExpTip(expGain: number, messageType: string = 'message') {
+    // 检查用户是否开启了经验提示
+    const showExpToast = localStorage.getItem('intimacy_show_exp_toast')
+    if (showExpToast === '0') {
+      console.log('[亲密度] 经验提示已关闭，跳过显示')
+      return
+    }
+    
     const tip: ExpTip = {
       id: `exp-${Date.now()}-${Math.random()}`,
       expGain,

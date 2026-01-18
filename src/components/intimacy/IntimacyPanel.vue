@@ -148,8 +148,9 @@ const emit = defineEmits<{
   'toggle-bond-effect': [value: boolean]
 }>()
 
-const showExpToast = ref(true)
-const showBondEffect = ref(true)
+// 从localStorage读取初始值
+const showExpToast = ref(localStorage.getItem('intimacy_show_exp_toast') !== '0')
+const showBondEffect = ref(localStorage.getItem('intimacy_show_bond_effect') !== '0')
 </script>
 
 <style lang="scss" scoped>
