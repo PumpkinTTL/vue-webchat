@@ -346,8 +346,6 @@ const isPrivateBadgeLit = computed(() => {
     background: color-mix(in srgb, var(--badge-color, #ec4899) 10%, transparent);
     color: var(--badge-color, #ec4899);
     border: 1px solid color-mix(in srgb, var(--badge-color, #ec4899) 30%, transparent);
-    box-shadow: 0 0 8px color-mix(in srgb, var(--badge-color, #ec4899) 30%, transparent);
-    animation: private-glow 2s ease-in-out infinite;
     
     svg {
       animation: heartbeat 1.5s ease-in-out infinite;
@@ -356,8 +354,41 @@ const isPrivateBadgeLit = computed(() => {
     &:hover {
       background: color-mix(in srgb, var(--badge-color, #ec4899) 15%, transparent);
       border-color: color-mix(in srgb, var(--badge-color, #ec4899) 40%, transparent);
-      box-shadow: 0 2px 12px color-mix(in srgb, var(--badge-color, #ec4899) 40%, transparent);
     }
+    
+    // 边框运动动画
+    &::before {
+      content: '';
+      position: absolute;
+      inset: -1px;
+      border-radius: $border-radius-base;
+      padding: 2px;
+      background: linear-gradient(
+        90deg,
+        transparent,
+        transparent,
+        var(--badge-color, #ec4899),
+        transparent,
+        transparent
+      );
+      background-size: 200% 100%;
+      -webkit-mask: 
+        linear-gradient(#fff 0 0) content-box, 
+        linear-gradient(#fff 0 0);
+      -webkit-mask-composite: xor;
+      mask-composite: exclude;
+      animation: border-snake 2s linear infinite;
+      pointer-events: none;
+    }
+  }
+}
+
+@keyframes border-snake {
+  0% {
+    background-position: 200% 0;
+  }
+  100% {
+    background-position: -200% 0;
   }
 }
 
@@ -382,15 +413,6 @@ const isPrivateBadgeLit = computed(() => {
   }
   20%, 40% {
     transform: scale(1);
-  }
-}
-
-@keyframes private-glow {
-  0%, 100% {
-    box-shadow: 0 0 8px color-mix(in srgb, var(--badge-color, #ec4899) 30%, transparent);
-  }
-  50% {
-    box-shadow: 0 0 14px color-mix(in srgb, var(--badge-color, #ec4899) 50%, transparent);
   }
 }
 
