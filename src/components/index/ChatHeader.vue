@@ -10,6 +10,13 @@
         } : {}"
         style="--animate-duration: 0.4s"
       >
+        <span 
+          v-if="isPrivateRoom && intimacyInfo && isPrivateBadgeLit" 
+          class="title-badge"
+          :style="{ '--intimacy-color': intimacyInfo.level_color }"
+        >
+          <font-awesome-icon :icon="['fas', 'home']" />
+        </span>
         {{ roomName || '选择房间开始聊天' }}
       </h2>
       
@@ -200,6 +207,7 @@ const isPrivateBadgeLit = computed(() => {
 .private-room-title {
   font-weight: $font-weight-bold !important;
   position: relative;
+  padding-left: 28px;
   background: linear-gradient(
     90deg,
     var(--intimacy-color, #ec4899) 0%,
@@ -215,13 +223,49 @@ const isPrivateBadgeLit = computed(() => {
   animation: shine-sweep 3s linear infinite;
 }
 
+// 左侧装饰标签
+.title-badge {
+  position: absolute;
+  left: 0;
+  top: 50%;
+  transform: translateY(-50%);
+  width: 22px;
+  height: 22px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: color-mix(in srgb, var(--intimacy-color, #ec4899) 10%, transparent);
+  border: 1px solid color-mix(in srgb, var(--intimacy-color, #ec4899) 30%, transparent);
+  border-radius: 6px;
+  color: var(--intimacy-color, #ec4899);
+  animation: badge-pulse 2s ease-in-out infinite;
+  font-size: 12px;
+}
+
+@keyframes badge-pulse {
+  0%, 100% {
+    transform: translateY(-50%) scale(1);
+    box-shadow: 0 0 0 0 color-mix(in srgb, var(--intimacy-color, #ec4899) 40%, transparent);
+  }
+  50% {
+    transform: translateY(-50%) scale(1.05);
+    box-shadow: 0 0 0 4px color-mix(in srgb, var(--intimacy-color, #ec4899) 0%, transparent);
+  }
+}
+
 @keyframes shine-sweep {
   0% {
-    background-position: -200% 0;
+    background-position: 100% 0;
   }
   100% {
-    background-position: 200% 0;
+    background-position: -100% 0;
   }
+}
+
+// 深色模式
+:global(.dark-mode) .title-badge {
+  background: color-mix(in srgb, var(--intimacy-color, #ec4899) 15%, transparent);
+  border-color: color-mix(in srgb, var(--intimacy-color, #ec4899) 35%, transparent);
 }
 
 .dark-mode .room-title {
