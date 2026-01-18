@@ -1,40 +1,50 @@
 <template>
-  <div class="user-card animate__animated animate__fadeIn" style="--animate-duration: 0.4s">
-    <div class="user-avatar-wrapper">
-      <div class="user-avatar animate__animated animate__bounceIn" style="--animate-duration: 0.5s">
-        <img 
-          v-if="userInfo.avatar" 
-          :src="avatarUrl" 
-          :alt="userInfo.nick_name"
-        >
-        <span v-else class="avatar-placeholder">
-          {{ userInfo.nick_name?.charAt(0) || 'U' }}
-        </span>
+  <div class="user-card-wrapper animate__animated animate__fadeIn" style="--animate-duration: 0.4s">
+    <div class="user-card">
+      <div class="user-avatar-wrapper">
+        <div class="user-avatar animate__animated animate__bounceIn" style="--animate-duration: 0.5s">
+          <img 
+            v-if="userInfo.avatar" 
+            :src="avatarUrl" 
+            :alt="userInfo.nick_name"
+          >
+          <span v-else class="avatar-placeholder">
+            {{ userInfo.nick_name?.charAt(0) || 'U' }}
+          </span>
+        </div>
+        <div class="status-indicator animate__animated animate__bounceIn" style="--animate-duration: 0.4s; --animate-delay: 0.15s"></div>
       </div>
-      <div class="status-indicator animate__animated animate__bounceIn" style="--animate-duration: 0.4s; --animate-delay: 0.15s"></div>
-    </div>
 
-    <div class="user-info">
-      <div class="user-name animate__animated animate__fadeInLeft" style="--animate-duration: 0.35s; --animate-delay: 0.05s">{{ userInfo.nick_name || '用户' }}</div>
-      <div class="user-meta animate__animated animate__fadeInLeft" style="--animate-duration: 0.35s; --animate-delay: 0.1s">
-        <div class="user-id">
+      <div class="user-info">
+        <div class="user-name animate__animated animate__fadeInLeft" style="--animate-duration: 0.35s; --animate-delay: 0.05s">{{ userInfo.nick_name || '用户' }}</div>
+        <div class="user-id animate__animated animate__fadeInLeft" style="--animate-duration: 0.35s; --animate-delay: 0.1s">
           <span class="id-label">ID</span>
           <span class="id-value">{{ userInfo.id || '---' }}</span>
         </div>
-        <div class="version-tag" @click="showVersionLog = true" title="查看更新日志">
-          v2.0
-        </div>
       </div>
-    </div>
 
+      <button 
+        class="logout-btn animate__animated animate__fadeIn" style="--animate-duration: 0.3s; --animate-delay: 0.15s"
+        @click="handleLogout"
+        title="退出登录"
+      >
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor">
+          <path d="M9 21H5a2 2 0 01-2-2V5a2 2 0 012-2h4M16 17l5-5-5-5M21 12H9" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+        </svg>
+      </button>
+    </div>
+    
+    <!-- 版本日志按钮 -->
     <button 
-      class="logout-btn animate__animated animate__fadeIn" style="--animate-duration: 0.3s; --animate-delay: 0.15s"
-      @click="handleLogout"
-      title="退出登录"
+      class="version-log-btn animate__animated animate__fadeIn" 
+      style="--animate-duration: 0.3s; --animate-delay: 0.2s"
+      @click="showVersionLog = true"
     >
       <svg viewBox="0 0 24 24" fill="none" stroke="currentColor">
-        <path d="M9 21H5a2 2 0 01-2-2V5a2 2 0 012-2h4M16 17l5-5-5-5M21 12H9" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+        <path d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2m-6 9l2 2 4-4" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
       </svg>
+      <span>版本日志</span>
+      <span class="version-badge">v2.0</span>
     </button>
   </div>
   
@@ -95,14 +105,23 @@ const handleLogout = () => {
 <style lang="scss" scoped>
 // 变量已通过 vite.config.ts 全局导入
 
+.user-card-wrapper {
+  display: flex;
+  flex-direction: column;
+  border-bottom: 1px solid $border-light;
+  transition: border-color $transition-base;
+}
+
+.dark-mode .user-card-wrapper {
+  border-color: $border-light-dark;
+}
+
 .user-card {
   display: flex;
   align-items: center;
   gap: $spacing-md;
   padding: $spacing-lg;
   background: transparent;
-  border-bottom: 1px solid $border-light;
-  transition: border-color $transition-base;
   cursor: pointer;
 
   &:hover {
@@ -110,10 +129,6 @@ const handleLogout = () => {
       transform: scale(1.05);
     }
   }
-}
-
-.dark-mode .user-card {
-  border-color: $border-light-dark;
 }
 
 // ==================== 头像区域 ====================
@@ -188,12 +203,6 @@ const handleLogout = () => {
   color: $text-primary-dark;
 }
 
-.user-meta {
-  display: flex;
-  align-items: center;
-  gap: $spacing-sm;
-}
-
 .user-id {
   display: flex;
   align-items: center;
@@ -219,40 +228,6 @@ const handleLogout = () => {
 
 .dark-mode .id-value {
   color: $text-secondary-dark;
-}
-
-.version-tag {
-  padding: 2px 8px;
-  background: linear-gradient(135deg, rgba(102, 126, 234, 0.1) 0%, rgba(118, 75, 162, 0.1) 100%);
-  color: #667eea;
-  border: 1px solid rgba(102, 126, 234, 0.3);
-  border-radius: $border-radius-sm;
-  font-size: $font-size-xs;
-  font-weight: $font-weight-semibold;
-  font-family: 'Consolas', 'Monaco', monospace;
-  cursor: pointer;
-  transition: all $transition-fast;
-  user-select: none;
-  
-  &:hover {
-    background: linear-gradient(135deg, rgba(102, 126, 234, 0.15) 0%, rgba(118, 75, 162, 0.15) 100%);
-    border-color: rgba(102, 126, 234, 0.5);
-    transform: translateY(-1px);
-  }
-  
-  &:active {
-    transform: translateY(0);
-  }
-}
-
-.dark-mode .version-tag {
-  background: linear-gradient(135deg, rgba(102, 126, 234, 0.15) 0%, rgba(118, 75, 162, 0.15) 100%);
-  border-color: rgba(102, 126, 234, 0.4);
-  
-  &:hover {
-    background: linear-gradient(135deg, rgba(102, 126, 234, 0.2) 0%, rgba(118, 75, 162, 0.2) 100%);
-    border-color: rgba(102, 126, 234, 0.6);
-  }
 }
 
 // ==================== 退出按钮 ====================
@@ -289,6 +264,101 @@ const handleLogout = () => {
   color: $text-tertiary-dark;
 }
 
+// ==================== 版本日志按钮 ====================
+.version-log-btn {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: $spacing-sm;
+  width: 100%;
+  padding: $spacing-md $spacing-lg;
+  border: none;
+  background: transparent;
+  color: $text-secondary;
+  font-family: $font-family-body;
+  font-size: $font-size-sm;
+  font-weight: $font-weight-medium;
+  cursor: pointer;
+  transition: all $transition-base;
+  position: relative;
+  
+  &::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: $spacing-lg;
+    right: $spacing-lg;
+    height: 1px;
+    background: $border-light;
+    transition: background $transition-base;
+  }
+  
+  svg {
+    width: 18px;
+    height: 18px;
+    flex-shrink: 0;
+    transition: transform $transition-base;
+  }
+  
+  span {
+    transition: color $transition-base;
+  }
+  
+  .version-badge {
+    padding: 2px 8px;
+    background: rgba($primary-color, 0.1);
+    color: $primary-color;
+    border-radius: $border-radius-sm;
+    font-size: $font-size-xs;
+    font-weight: $font-weight-semibold;
+    font-family: 'Consolas', 'Monaco', monospace;
+    transition: all $transition-base;
+  }
+  
+  &:hover {
+    background: rgba($primary-color, 0.05);
+    color: $primary-color;
+    
+    &::before {
+      background: $primary-color;
+    }
+    
+    svg {
+      transform: translateY(-2px);
+    }
+    
+    .version-badge {
+      background: $primary-color;
+      color: white;
+    }
+  }
+  
+  &:active {
+    transform: scale(0.98);
+  }
+}
+
+.dark-mode .version-log-btn {
+  color: $text-secondary-dark;
+  
+  &::before {
+    background: $border-light-dark;
+  }
+  
+  .version-badge {
+    background: rgba($primary-color, 0.15);
+  }
+  
+  &:hover {
+    background: rgba($primary-color, 0.1);
+    color: $primary-light;
+    
+    &::before {
+      background: $primary-light;
+    }
+  }
+}
+
 // ==================== 移动端适配 ====================
 @media (max-width: 768px) {
   .user-card {
@@ -314,21 +384,12 @@ const handleLogout = () => {
     font-size: $font-size-sm;
   }
 
-  .user-meta {
-    gap: $spacing-xs;
-  }
-
   .user-id {
     font-size: 10px;
   }
 
   .id-label {
     padding: 1px 4px;
-  }
-  
-  .version-tag {
-    font-size: 10px;
-    padding: 1px 6px;
   }
 
   .logout-btn {
@@ -338,6 +399,27 @@ const handleLogout = () => {
     svg {
       width: 18px;
       height: 18px;
+    }
+  }
+  
+  .version-log-btn {
+    padding: $spacing-sm $spacing-md;
+    font-size: $font-size-xs;
+    gap: $spacing-xs;
+    
+    &::before {
+      left: $spacing-md;
+      right: $spacing-md;
+    }
+    
+    svg {
+      width: 16px;
+      height: 16px;
+    }
+    
+    .version-badge {
+      font-size: 10px;
+      padding: 1px 6px;
     }
   }
 }
