@@ -44,8 +44,8 @@
             <div 
               v-if="isPrivateRoom" 
               class="badge badge-private" 
-              :class="{ 'has-intimacy': intimacyInfo, 'lit': intimacyInfo }"
-              :style="intimacyInfo ? { '--badge-color': intimacyInfo.level_color } : {}"
+              :class="{ 'has-intimacy': intimacyInfo, 'lit': isPrivateBadgeLit }"
+              :style="isPrivateBadgeLit && intimacyInfo ? { '--badge-color': intimacyInfo.level_color } : {}"
               @click.stop="$emit('toggle-intimacy-panel')"
               :title="intimacyInfo ? `Lv.${intimacyInfo.current_level} ${intimacyInfo.level_name}` : '私密房间'"
             >
@@ -124,6 +124,15 @@ const typingText = computed(() => {
   if (users.length === 0) return ''
   if (users.length === 1) return `${users[0].nickname} 正在输入...`
   return `${users[0].nickname} 等${users.length}人正在输入...`
+})
+
+// 计算私密标签是否应该点亮（两人都在线）
+const isPrivateBadgeLit = computed(() => {
+  // 必须是私密房间且有亲密度信息
+  if (!props.isPrivateRoom || !props.intimacyInfo) return false
+  
+  // 私密房间总人数应该是2，在线人数也是2时才点亮
+  return props.totalUsers === 2 && props.onlineUsers === 2
 })
 </script>
 
@@ -305,23 +314,22 @@ const typingText = computed(() => {
 
 // 私密房间徽章
 .badge-private {
-  background: linear-gradient(135deg, rgba($pink-color, 0.1), rgba($pink-color, 0.15));
-  color: $pink-color;
-  border: 1px solid rgba($pink-color, 0.2);
-  transition: all 0.2s;
+  background: rgba($text-tertiary, 0.1);
+  color: $text-tertiary;
+  border: 1px solid rgba($text-tertiary, 0.2);
+  transition: all 0.3s;
   cursor: pointer;
   position: relative;
   overflow: visible;
 
   svg {
-    animation: heartbeat 1.5s ease-in-out infinite;
+    transition: all 0.3s;
   }
   
   &:hover {
-    background: linear-gradient(135deg, rgba($pink-color, 0.15), rgba($pink-color, 0.2));
-    border-color: rgba($pink-color, 0.3);
+    background: rgba($text-tertiary, 0.15);
+    border-color: rgba($text-tertiary, 0.3);
     transform: translateY(-1px);
-    box-shadow: 0 2px 8px rgba($pink-color, 0.2);
   }
   
   &:active {
@@ -340,6 +348,28 @@ const typingText = computed(() => {
     border: 1px solid color-mix(in srgb, var(--badge-color, #ec4899) 30%, transparent);
     box-shadow: 0 0 8px color-mix(in srgb, var(--badge-color, #ec4899) 30%, transparent);
     animation: private-glow 2s ease-in-out infinite;
+    
+    svg {
+      animation: heartbeat 1.5s ease-in-out infinite;
+    }
+    
+    &:hover {
+      background: color-mix(in srgb, var(--badge-color, #ec4899) 15%, transparent);
+      border-color: color-mix(in srgb, var(--badge-color, #ec4899) 40%, transparent);
+      box-shadow: 0 2px 12px color-mix(in srgb, var(--badge-color, #ec4899) 40%, transparent);
+    }
+  }
+}
+
+// 深色模式 - 私密徽章未点亮
+:global(.dark-mode) .badge-private {
+  background: rgba($text-tertiary-dark, 0.15);
+  color: $text-tertiary-dark;
+  border-color: rgba($text-tertiary-dark, 0.3);
+  
+  &:hover {
+    background: rgba($text-tertiary-dark, 0.2);
+    border-color: rgba($text-tertiary-dark, 0.4);
   }
 }
 
