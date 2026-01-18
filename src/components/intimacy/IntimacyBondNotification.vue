@@ -5,11 +5,14 @@
         <div class="bond-notification-container" @click.stop>
           <!-- 3D玻璃球容器 -->
           <div class="glass-orb">
-            <!-- 玻璃球内部星光点缀 -->
-            <div class="inner-stars">
-              <div v-for="i in 8" :key="i" class="star" :style="getStarStyle(i)">
-                <div class="star-glow" :style="{ background: intimacyColor }"></div>
-              </div>
+            <!-- 玻璃球装饰圆环 -->
+            <div class="orb-ring ring-1"></div>
+            <div class="orb-ring ring-2"></div>
+            <div class="orb-ring ring-3"></div>
+            
+            <!-- 玻璃球内部装饰点 -->
+            <div class="orb-dots">
+              <div class="dot" v-for="i in 12" :key="i" :style="getDotStyle(i)"></div>
             </div>
             
             <!-- 玻璃球光泽层 -->
@@ -26,13 +29,11 @@
             <div class="orb-content">
               <!-- 左侧用户头像 -->
               <div class="user-avatar left-user">
-                <div class="avatar-glow" :style="{ '--glow-color': intimacyColor }"></div>
                 <img v-if="currentUserAvatar" :src="currentUserAvatar" :alt="currentUser?.nick_name">
                 <div v-else class="avatar-placeholder">{{ currentUser?.nick_name?.charAt(0) || 'U' }}</div>
-                <div class="avatar-ring" :style="{ borderColor: intimacyColor }"></div>
               </div>
 
-              <!-- 中间连接线和爱心 -->
+              <!-- 中间连接线 -->
               <div class="connection-area">
                 <!-- SVG渐变定义 -->
                 <svg width="0" height="0" style="position: absolute;">
@@ -75,30 +76,27 @@
                   </circle>
                 </svg>
 
-                <!-- 中心爱心 -->
-                <div class="center-heart" :style="{ color: intimacyColor }">
-                  <font-awesome-icon icon="heart" />
-                </div>
-
                 <!-- 连接线光效 -->
                 <div class="connection-glow" :style="{ background: `linear-gradient(90deg, transparent, ${intimacyColor}, transparent)` }"></div>
               </div>
 
               <!-- 右侧伴侣头像 -->
               <div class="user-avatar right-user">
-                <div class="avatar-glow" :style="{ '--glow-color': intimacyColor }"></div>
                 <img v-if="partnerAvatar" :src="partnerAvatar" :alt="partner?.name">
                 <div v-else class="avatar-placeholder">{{ partner?.name?.charAt(0) || '?' }}</div>
-                <div class="avatar-ring" :style="{ borderColor: intimacyColor }"></div>
               </div>
             </div>
           </div>
 
           <!-- 标题文字 -->
           <div class="notification-title">
-            <div class="title-glow" :style="{ color: intimacyColor }">羁绊连接成功</div>
+            <div class="title-glow" :style="{ color: intimacyColor }">
+              <span class="title-line"></span>
+              羁绊连接成功
+              <span class="title-line"></span>
+            </div>
             <div class="title-main" :style="{ color: intimacyColor }">
-              <font-awesome-icon icon="link" class="title-icon" />
+              <font-awesome-icon icon="link" />
               <span>{{ currentUser?.nick_name }} ♥ {{ partner?.name }}</span>
             </div>
           </div>
@@ -109,18 +107,16 @@
               <font-awesome-icon icon="heart" />
               <span>Lv.{{ intimacyLevel }}</span>
             </div>
-            <div class="level-name">{{ levelName }}</div>
+            <div class="level-name-wrapper">
+              <div class="level-name">{{ levelName }}</div>
+              <div class="level-underline" :style="{ background: intimacyColor }"></div>
+            </div>
           </div>
 
           <!-- 关闭按钮 -->
-          <button class="close-btn" @click="handleClose" :style="{ color: intimacyColor }">
+          <button class="close-btn" @click="handleClose">
             <font-awesome-icon icon="times" />
           </button>
-
-          <!-- 背景粒子效果 -->
-          <div class="particles">
-            <div v-for="i in 20" :key="i" class="particle" :style="getParticleStyle(i)"></div>
-          </div>
         </div>
       </div>
     </Transition>
@@ -167,50 +163,17 @@ const processAvatarUrl = (avatar: string | undefined): string | undefined => {
 const currentUserAvatar = computed(() => processAvatarUrl(props.currentUser?.avatar))
 const partnerAvatar = computed(() => processAvatarUrl(props.partner?.avatar))
 
-// 生成粒子样式
-const getParticleStyle = (index: number) => {
-  const angle = (index / 20) * 360
-  const distance = 150 + Math.random() * 100
-  const size = 2 + Math.random() * 4
-  const duration = 2 + Math.random() * 3
-  const delay = Math.random() * 2
+// 生成装饰点样式
+const getDotStyle = (index: number) => {
+  const angle = (index - 1) * 30 // 每30度一个点
+  const radius = 45 // 距离中心的百分比
+  const x = 50 + radius * Math.cos(angle * Math.PI / 180)
+  const y = 50 + radius * Math.sin(angle * Math.PI / 180)
   
   return {
-    left: '50%',
-    top: '50%',
-    width: `${size}px`,
-    height: `${size}px`,
-    background: props.intimacyColor,
-    animation: `particleFloat ${duration}s ${delay}s infinite`,
-    '--angle': `${angle}deg`,
-    '--distance': `${distance}px`
-  }
-}
-
-// 生成星光样式
-const getStarStyle = (index: number) => {
-  const positions = [
-    { left: '15%', top: '20%' },
-    { left: '25%', top: '70%' },
-    { left: '75%', top: '25%' },
-    { left: '80%', top: '65%' },
-    { left: '50%', top: '15%' },
-    { left: '50%', top: '85%' },
-    { left: '20%', top: '45%' },
-    { left: '85%', top: '45%' }
-  ]
-  
-  const pos = positions[index - 1]
-  const size = 3 + Math.random() * 3
-  const duration = 3 + Math.random() * 4
-  const delay = Math.random() * 3
-  
-  return {
-    left: pos.left,
-    top: pos.top,
-    width: `${size}px`,
-    height: `${size}px`,
-    animation: `starTwinkle ${duration}s ${delay}s ease-in-out infinite`
+    left: `${x}%`,
+    top: `${y}%`,
+    animationDelay: `${(index - 1) * 0.1}s`
   }
 }
 
@@ -226,8 +189,8 @@ const handleClose = () => {
   left: 0;
   right: 0;
   bottom: 0;
-  background: rgba(0, 0, 0, 0.03);
-  backdrop-filter: blur(1px);
+  background: rgba(0, 0, 0, 0.15);
+  backdrop-filter: blur(4px);
   display: flex;
   align-items: center;
   justify-content: center;
@@ -237,7 +200,7 @@ const handleClose = () => {
 
 /* 暗色模式：稍微深一点 */
 :global(.dark-mode) .bond-notification-overlay {
-  background: rgba(0, 0, 0, 0.06);
+  background: rgba(0, 0, 0, 0.25);
 }
 
 .bond-notification-container {
@@ -269,7 +232,7 @@ const handleClose = () => {
   /* 亮色模式：清爽的玻璃效果 */
   background: 
     radial-gradient(circle at 30% 30%, rgba(255, 255, 255, 0.5) 0%, transparent 50%),
-    radial-gradient(circle at 70% 70%, rgba(0, 0, 0, 0.05) 0%, transparent 50%),
+    radial-gradient(circle at 70% 70%, rgba(0, 0, 0, 0.02) 0%, transparent 50%),
     linear-gradient(135deg, 
       rgba(255, 255, 255, 0.4) 0%,
       rgba(255, 255, 255, 0.25) 50%,
@@ -278,9 +241,9 @@ const handleClose = () => {
   backdrop-filter: blur(20px);
   border: 2px solid rgba(255, 255, 255, 0.6);
   box-shadow: 
-    0 15px 40px rgba(0, 0, 0, 0.15),
+    0 15px 40px rgba(0, 0, 0, 0.08),
     inset 0 0 60px rgba(255, 255, 255, 0.2),
-    inset -10px -10px 30px rgba(0, 0, 0, 0.05),
+    inset -10px -10px 30px rgba(0, 0, 0, 0.02),
     inset 10px 10px 30px rgba(255, 255, 255, 0.3);
   animation: orbFloat 6s ease-in-out infinite, orbRotate 30s linear infinite;
   overflow: hidden;
@@ -299,7 +262,7 @@ const handleClose = () => {
 :global(.dark-mode) .glass-orb {
   background: 
     radial-gradient(circle at 30% 30%, rgba(255, 255, 255, 0.2) 0%, transparent 50%),
-    radial-gradient(circle at 70% 70%, rgba(0, 0, 0, 0.25) 0%, transparent 50%),
+    radial-gradient(circle at 70% 70%, rgba(0, 0, 0, 0.15) 0%, transparent 50%),
     linear-gradient(135deg, 
       rgba(255, 255, 255, 0.15) 0%,
       rgba(255, 255, 255, 0.1) 50%,
@@ -307,9 +270,9 @@ const handleClose = () => {
     );
   border: 2px solid rgba(255, 255, 255, 0.2);
   box-shadow: 
-    0 15px 40px rgba(0, 0, 0, 0.4),
+    0 15px 40px rgba(0, 0, 0, 0.2),
     inset 0 0 60px rgba(255, 255, 255, 0.1),
-    inset -10px -10px 30px rgba(0, 0, 0, 0.3),
+    inset -10px -10px 30px rgba(0, 0, 0, 0.15),
     inset 10px 10px 30px rgba(255, 255, 255, 0.1);
 }
 
@@ -322,63 +285,78 @@ const handleClose = () => {
   }
 }
 
-/* ==================== 玻璃球内部星光 ==================== */
-.inner-stars {
+/* ==================== 玻璃球装饰圆环 ==================== */
+.orb-ring {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  border-radius: 50%;
+  border: 1px solid rgba(255, 255, 255, 0.15);
+  pointer-events: none;
+  z-index: 1;
+}
+
+.ring-1 {
+  width: 70%;
+  height: 70%;
+  transform: translate(-50%, -50%);
+  animation: ringPulse 4s ease-in-out infinite;
+}
+
+.ring-2 {
+  width: 85%;
+  height: 85%;
+  transform: translate(-50%, -50%);
+  animation: ringPulse 4s ease-in-out 1.3s infinite;
+  border-color: rgba(255, 255, 255, 0.1);
+}
+
+.ring-3 {
+  width: 55%;
+  height: 55%;
+  transform: translate(-50%, -50%);
+  animation: ringPulse 4s ease-in-out 2.6s infinite;
+  border-color: rgba(255, 255, 255, 0.2);
+}
+
+@keyframes ringPulse {
+  0%, 100% {
+    opacity: 0.3;
+    transform: translate(-50%, -50%) scale(1);
+  }
+  50% {
+    opacity: 0.6;
+    transform: translate(-50%, -50%) scale(1.05);
+  }
+}
+
+/* ==================== 玻璃球装饰点 ==================== */
+.orb-dots {
   position: absolute;
   inset: 0;
   pointer-events: none;
-  z-index: 2;
+  z-index: 1;
 }
 
-.star {
+.dot {
   position: absolute;
   width: 4px;
   height: 4px;
-  background: white;
+  background: rgba(255, 255, 255, 0.6);
   border-radius: 50%;
-  box-shadow: 0 0 8px rgba(255, 255, 255, 0.8);
-  
-  &::before,
-  &::after {
-    content: '';
-    position: absolute;
-    background: white;
-    border-radius: 50%;
-  }
-  
-  &::before {
-    width: 1px;
-    height: 8px;
-    top: -2px;
-    left: 1.5px;
-    box-shadow: 0 0 4px rgba(255, 255, 255, 0.6);
-  }
-  
-  &::after {
-    width: 8px;
-    height: 1px;
-    top: 1.5px;
-    left: -2px;
-    box-shadow: 0 0 4px rgba(255, 255, 255, 0.6);
-  }
+  transform: translate(-50%, -50%);
+  animation: dotTwinkle 3s ease-in-out infinite;
+  box-shadow: 0 0 6px rgba(255, 255, 255, 0.4);
 }
 
-.star-glow {
-  position: absolute;
-  inset: -4px;
-  border-radius: 50%;
-  opacity: 0.3;
-  filter: blur(4px);
-}
-
-@keyframes starTwinkle {
+@keyframes dotTwinkle {
   0%, 100% {
     opacity: 0.3;
-    transform: scale(0.8);
+    transform: translate(-50%, -50%) scale(0.8);
   }
   50% {
     opacity: 1;
-    transform: scale(1.2);
+    transform: translate(-50%, -50%) scale(1.2);
   }
 }
 
@@ -422,9 +400,9 @@ const handleClose = () => {
   width: 70px;
   height: 70px;
   background: radial-gradient(circle at 50% 70%, 
-    rgba(0, 0, 0, 0.25) 0%,
-    rgba(0, 0, 0, 0.12) 40%,
-    rgba(0, 0, 0, 0.05) 60%,
+    rgba(0, 0, 0, 0.08) 0%,
+    rgba(0, 0, 0, 0.04) 40%,
+    rgba(0, 0, 0, 0.02) 60%,
     transparent 80%
   );
   filter: blur(8px);
@@ -452,9 +430,9 @@ const handleClose = () => {
   width: 70px;
   height: 70px;
   background: radial-gradient(circle at 75% 50%, 
-    rgba(0, 0, 0, 0.2) 0%,
-    rgba(0, 0, 0, 0.1) 40%,
-    rgba(0, 0, 0, 0.05) 60%,
+    rgba(0, 0, 0, 0.08) 0%,
+    rgba(0, 0, 0, 0.04) 40%,
+    rgba(0, 0, 0, 0.02) 60%,
     transparent 80%
   );
   filter: blur(8px);
@@ -471,9 +449,9 @@ const handleClose = () => {
 
 :global(.dark-mode) .bottom-bump {
   background: radial-gradient(circle at 50% 70%, 
-    rgba(0, 0, 0, 0.4) 0%,
-    rgba(0, 0, 0, 0.2) 40%,
-    rgba(0, 0, 0, 0.1) 60%,
+    rgba(0, 0, 0, 0.2) 0%,
+    rgba(0, 0, 0, 0.1) 40%,
+    rgba(0, 0, 0, 0.05) 60%,
     transparent 80%
   );
 }
@@ -489,9 +467,9 @@ const handleClose = () => {
 
 :global(.dark-mode) .right-bump {
   background: radial-gradient(circle at 75% 50%, 
-    rgba(0, 0, 0, 0.35) 0%,
-    rgba(0, 0, 0, 0.18) 40%,
-    rgba(0, 0, 0, 0.08) 60%,
+    rgba(0, 0, 0, 0.15) 0%,
+    rgba(0, 0, 0, 0.08) 40%,
+    rgba(0, 0, 0, 0.04) 60%,
     transparent 80%
   );
 }
@@ -588,26 +566,6 @@ const handleClose = () => {
   }
 }
 
-.avatar-glow {
-  position: absolute;
-  inset: -15px;
-  border-radius: 50%;
-  background: radial-gradient(circle, var(--glow-color) 0%, transparent 70%);
-  opacity: 0.6;
-  animation: glowPulse 2s ease-in-out infinite;
-}
-
-@keyframes glowPulse {
-  0%, 100% {
-    opacity: 0.4;
-    transform: scale(1);
-  }
-  50% {
-    opacity: 0.8;
-    transform: scale(1.2);
-  }
-}
-
 .user-avatar img,
 .avatar-placeholder {
   width: 100%;
@@ -615,7 +573,27 @@ const handleClose = () => {
   border-radius: 50%;
   object-fit: cover;
   border: 3px solid rgba(255, 255, 255, 0.3);
-  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.3);
+  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.08);
+  position: relative;
+}
+
+/* 头像边框装饰 */
+.user-avatar::before {
+  content: '';
+  position: absolute;
+  inset: -6px;
+  border-radius: 50%;
+  border: 2px solid rgba(255, 255, 255, 0.2);
+  border-top-color: rgba(255, 255, 255, 0.5);
+  border-right-color: rgba(255, 255, 255, 0.5);
+}
+
+.user-avatar::after {
+  content: '';
+  position: absolute;
+  inset: -10px;
+  border-radius: 50%;
+  border: 1px solid rgba(255, 255, 255, 0.1);
 }
 
 .avatar-placeholder {
@@ -626,23 +604,6 @@ const handleClose = () => {
   color: white;
   font-size: 32px;
   font-weight: 700;
-}
-
-.avatar-ring {
-  position: absolute;
-  inset: -8px;
-  border-radius: 50%;
-  border: 2px solid;
-  animation: ringRotate 3s linear infinite;
-}
-
-@keyframes ringRotate {
-  from {
-    transform: rotate(0deg);
-  }
-  to {
-    transform: rotate(360deg);
-  }
 }
 
 /* ==================== 连接区域 ==================== */
@@ -737,35 +698,6 @@ const handleClose = () => {
   }
 }
 
-/* ==================== 中心爱心 ==================== */
-.center-heart {
-  position: relative;
-  font-size: 32px;
-  z-index: 2;
-  animation: heartBeat 1.5s ease-in-out infinite;
-}
-
-@keyframes heartBeat {
-  0%, 100% {
-    transform: scale(1);
-  }
-  10% {
-    transform: scale(1.2);
-  }
-  20% {
-    transform: scale(1.1);
-  }
-  30% {
-    transform: scale(1.3);
-  }
-  40% {
-    transform: scale(1.1);
-  }
-  50% {
-    transform: scale(1);
-  }
-}
-
 /* ==================== 标题文字 ==================== */
 .notification-title {
   text-align: center;
@@ -790,7 +722,37 @@ const handleClose = () => {
   letter-spacing: 3px;
   opacity: 0.8;
   margin-bottom: 8px;
-  filter: drop-shadow(0 0 10px currentColor);
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  justify-content: center;
+}
+
+.title-line {
+  width: 40px;
+  height: 2px;
+  background: currentColor;
+  opacity: 0.5;
+  position: relative;
+  
+  &::before {
+    content: '';
+    position: absolute;
+    width: 6px;
+    height: 6px;
+    background: currentColor;
+    border-radius: 50%;
+    top: 50%;
+    transform: translateY(-50%);
+  }
+  
+  &:first-child::before {
+    right: -3px;
+  }
+  
+  &:last-child::before {
+    left: -3px;
+  }
 }
 
 .title-main {
@@ -800,19 +762,17 @@ const handleClose = () => {
   align-items: center;
   gap: 12px;
   justify-content: center;
-  filter: drop-shadow(0 0 20px currentColor);
-}
-
-.title-icon {
-  animation: iconSpin 2s linear infinite;
-}
-
-@keyframes iconSpin {
-  from {
-    transform: rotate(0deg);
-  }
-  to {
-    transform: rotate(360deg);
+  position: relative;
+  
+  /* 添加微妙的背景装饰 */
+  &::before {
+    content: '';
+    position: absolute;
+    inset: -10px -20px;
+    background: linear-gradient(90deg, transparent, currentColor, transparent);
+    opacity: 0.03;
+    border-radius: 12px;
+    z-index: -1;
   }
 }
 
@@ -847,14 +807,13 @@ const handleClose = () => {
   font-weight: 700;
   color: white;
   box-shadow: 
-    0 4px 20px rgba(0, 0, 0, 0.2),
-    0 0 30px var(--level-color),
+    0 4px 20px rgba(0, 0, 0, 0.1),
     inset 0 1px 0 rgba(255, 255, 255, 0.4),
-    inset 0 -1px 0 rgba(0, 0, 0, 0.2);
+    inset 0 -1px 0 rgba(0, 0, 0, 0.1);
   position: relative;
   overflow: hidden;
   
-  /* 光泽效果 */
+  /* 镜面扫过效果 */
   &::before {
     content: '';
     position: absolute;
@@ -871,8 +830,28 @@ const handleClose = () => {
     animation: badgeShine 3s ease-in-out infinite;
   }
   
+  /* 边角装饰 */
+  &::after {
+    content: '';
+    position: absolute;
+    inset: 4px;
+    border-radius: 20px;
+    border: 1px solid rgba(255, 255, 255, 0.15);
+    pointer-events: none;
+  }
+  
   i, svg {
-    filter: drop-shadow(0 2px 4px rgba(0, 0, 0, 0.3));
+    filter: drop-shadow(0 1px 2px rgba(0, 0, 0, 0.1));
+    animation: heartPulse 2s ease-in-out infinite;
+  }
+}
+
+@keyframes heartPulse {
+  0%, 100% {
+    transform: scale(1);
+  }
+  50% {
+    transform: scale(1.1);
   }
 }
 
@@ -888,66 +867,104 @@ const handleClose = () => {
   }
 }
 
+.level-name-wrapper {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 6px;
+}
+
 .level-name {
   font-size: 20px;
   font-weight: 600;
   color: var(--level-color);
-  filter: drop-shadow(0 0 10px currentColor);
   letter-spacing: 1px;
+}
+
+.level-underline {
+  width: 0;
+  height: 2px;
+  border-radius: 1px;
+  animation: underlineExpand 0.8s 1.4s cubic-bezier(0.34, 1.56, 0.64, 1) forwards;
+  position: relative;
+  
+  &::before,
+  &::after {
+    content: '';
+    position: absolute;
+    width: 4px;
+    height: 4px;
+    background: inherit;
+    border-radius: 50%;
+    top: 50%;
+    transform: translateY(-50%);
+    opacity: 0;
+    animation: dotAppear 0.3s 2.2s ease-out forwards;
+  }
+  
+  &::before {
+    left: -6px;
+  }
+  
+  &::after {
+    right: -6px;
+  }
+}
+
+@keyframes underlineExpand {
+  from {
+    width: 0;
+  }
+  to {
+    width: 100%;
+  }
+}
+
+@keyframes dotAppear {
+  to {
+    opacity: 1;
+  }
 }
 
 /* ==================== 关闭按钮 ==================== */
 .close-btn {
   position: absolute;
-  top: 20px;
-  right: 20px;
-  width: 40px;
-  height: 40px;
+  top: -50px;
+  right: -50px;
+  width: 36px;
+  height: 36px;
   border-radius: 50%;
-  background: rgba(255, 255, 255, 0.1);
-  backdrop-filter: blur(10px);
-  border: 1px solid rgba(255, 255, 255, 0.2);
+  background: rgba(255, 255, 255, 0.9);
+  border: none;
   cursor: pointer;
   display: flex;
   align-items: center;
   justify-content: center;
-  font-size: 18px;
+  font-size: 16px;
+  color: #666;
   transition: all 0.3s ease;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
   
   &:hover {
-    background: rgba(255, 255, 255, 0.2);
-    transform: rotate(90deg);
+    background: rgba(255, 255, 255, 1);
+    color: #333;
+    transform: rotate(90deg) scale(1.1);
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+  }
+  
+  &:active {
+    transform: rotate(90deg) scale(0.95);
   }
 }
 
-/* ==================== 背景粒子 ==================== */
-.particles {
-  position: absolute;
-  inset: 0;
-  pointer-events: none;
-  overflow: hidden;
-}
-
-.particle {
-  position: absolute;
-  border-radius: 50%;
-  opacity: 0.6;
-}
-
-@keyframes particleFloat {
-  0% {
-    transform: translate(-50%, -50%) rotate(var(--angle)) translateX(0) scale(1);
-    opacity: 0;
-  }
-  10% {
-    opacity: 0.6;
-  }
-  90% {
-    opacity: 0.6;
-  }
-  100% {
-    transform: translate(-50%, -50%) rotate(var(--angle)) translateX(var(--distance)) scale(0);
-    opacity: 0;
+:global(.dark-mode) .close-btn {
+  background: rgba(50, 50, 50, 0.9);
+  color: #ccc;
+  
+  &:hover {
+    background: rgba(60, 60, 60, 1);
+    color: #fff;
   }
 }
 

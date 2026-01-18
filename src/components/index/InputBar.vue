@@ -243,6 +243,20 @@
         </div>
       </Transition>
 
+      <!-- 表情面板 -->
+      <Transition
+        enter-active-class="animate__animated animate__fadeInUp"
+        leave-active-class="animate__animated animate__fadeOutDown"
+        :duration="200"
+      >
+        <div v-if="showEmojiPicker" class="emoji-picker-wrapper">
+          <EmojiPicker
+            @select="handleSelectEmoji"
+            @close="showEmojiPicker = false"
+          />
+        </div>
+      </Transition>
+
       <!-- 隐藏的文件输入 -->
       <input ref="imageInput" type="file" accept="image/*" hidden @change="handleImageSelect">
       <input ref="videoInput" type="file" accept="video/*" hidden @change="handleVideoSelect">
@@ -255,6 +269,7 @@
 import { ref, computed, nextTick } from 'vue'
 import { getVideoDuration, formatDuration, validateVideoFile } from '@/utils/video'
 import { message } from 'ant-design-vue'
+import EmojiPicker from '@/components/emoji/EmojiPicker.vue'
 
 interface ReplyMessage {
   id: string | number
@@ -357,6 +372,12 @@ const closeAttachMenu = () => {
 const toggleEmojiPicker = () => {
   showEmojiPicker.value = !showEmojiPicker.value
   showAttachMenu.value = false
+}
+
+// 选择表情
+const handleSelectEmoji = (emoji: string) => {
+  inputText.value += emoji
+  emit('typing')
 }
 
 // 发送消息
@@ -1033,6 +1054,17 @@ defineExpose({
   border: 1px solid $border-base;
   border-radius: 16px;
   box-shadow: 0 8px 24px rgba(0, 0, 0, 0.12);
+  z-index: $z-index-dropdown;
+  --animate-duration: 0.2s;
+}
+
+// ==================== 表情面板 ====================
+.emoji-picker-wrapper {
+  position: absolute;
+  bottom: 100%;
+  left: 0;
+  right: 0;
+  margin-bottom: 16px;
   z-index: $z-index-dropdown;
   --animate-duration: 0.2s;
 }

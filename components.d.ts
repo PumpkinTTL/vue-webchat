@@ -21,6 +21,7 @@ declare module 'vue' {
     ATextarea: typeof import('ant-design-vue/es')['Textarea']
     ChatHeader: typeof import('./src/components/index/ChatHeader.vue')['default']
     ContactList: typeof import('./src/components/index/ContactList.vue')['default']
+    EmojiPicker: typeof import('./src/components/emoji/EmojiPicker.vue')['default']
     InputBar: typeof import('./src/components/index/InputBar.vue')['default']
     IntimacyBadge: typeof import('./src/components/intimacy/IntimacyBadge.vue')['default']
     IntimacyBondNotification: typeof import('./src/components/intimacy/IntimacyBondNotification.vue')['default']
