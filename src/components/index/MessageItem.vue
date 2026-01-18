@@ -49,7 +49,7 @@
             </template>
             <div class="msg-bubble" :class="bubbleClass">
               <!-- 图片 -->
-              <div v-if="message.type === 'image'" class="image-wrapper">
+              <div v-if="message.type === 'image'" class="image-wrapper" @click.stop>
                 <a-image :src="imageUrl" alt="Image" :preview="{ src: imageUrl }" />
               </div>
               <!-- 视频消息 -->
@@ -95,7 +95,7 @@
                     target="_blank" 
                     rel="noopener noreferrer" 
                     class="link-card"
-                    @click.stop
+                    @click.stop.prevent="handleLinkClick(url)"
                   >
                     <svg class="link-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
                       <path d="M10 13a5 5 0 007.54.54l3-3a5 5 0 00-7.07-7.07l-1.72 1.71" />
@@ -180,7 +180,7 @@
             </template>
             <div class="msg-bubble msg-bubble-own" :class="bubbleClass">
               <!-- 图片 -->
-              <div v-if="message.type === 'image'" class="image-wrapper">
+              <div v-if="message.type === 'image'" class="image-wrapper" @click.stop>
                 <a-image :src="imageUrl" alt="Image" :preview="{ src: imageUrl }" />
                 <!-- 上传进度遮罩 -->
                 <div v-if="message.status === 'sending' && uploadProgress !== undefined"
@@ -268,6 +268,7 @@
                     target="_blank" 
                     rel="noopener noreferrer" 
                     class="link-card link-card-own"
+                    @click.stop.prevent="handleLinkClick(url)"
                   >
                     <svg class="link-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
                       <path d="M10 13a5 5 0 007.54.54l3-3a5 5 0 00-7.07-7.07l-1.72 1.71" />
@@ -335,7 +336,7 @@
 
 <script setup lang="ts">
 import { ref, computed } from 'vue'
-import { message as antMessage } from 'ant-design-vue'
+import { message as antMessage, Modal } from 'ant-design-vue'
 import { formatDuration } from '@/utils/video'
 import { hasUrl, separateTextAndUrls } from '@/utils/linkParser'
 
@@ -568,6 +569,19 @@ const handleScrollToReply = () => {
   if (props.message.replyTo?.message_id) {
     emit('scrollToMessage', props.message.replyTo.message_id)
   }
+}
+
+// 处理链接点击
+const handleLinkClick = (url: string) => {
+  Modal.confirm({
+    title: '安全提示',
+    content: '跳转的链接不受本站管控，请勿在跳转的网站输入敏感信息，以防财产损失或数据泄露。确定跳转吗？',
+    okText: '确定',
+    cancelText: '取消',
+    onOk() {
+      window.open(url, '_blank', 'noopener,noreferrer')
+    }
+  })
 }
 
 // 处理视频点击
