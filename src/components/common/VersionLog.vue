@@ -26,7 +26,9 @@
             <li><strong>亲密度系统</strong> - 私密房间专属功能，记录互动经验、等级成长、实时计时</li>
             <li><strong>羁绊连接提醒</strong> - 对方上线时触发浪漫通知，爱心点亮动画</li>
             <li><strong>消息编辑功能</strong> - 支持编辑已发送的文本消息，显示编辑标记</li>
+            <li><strong>消息焚毁功能</strong> - 支持永久删除消息，所有人不可见</li>
             <li><strong>房间管理功能</strong> - 管理员可锁定房间、清理消息、恢复消息</li>
+            <li><strong>私密房间密码</strong> - 创建房间时可设置密码，保护隐私</li>
             <li><strong>版本日志</strong> - 在用户卡片下方查看完整的更新历史</li>
             <li><strong>深色模式</strong> - 完整的深色主题支持，自动适配系统设置</li>
           </ul>
@@ -63,11 +65,10 @@
         <div class="version-features">
           <h4>🎉 首次发布</h4>
           <ul>
-            <li><strong>实时通信</strong> - 基于 WebSocket 的实时聊天系统，消息即时送达</li>
+            <li><strong>WebSocket 实时通信</strong> - 基于 WebSocket 协议的实时聊天系统，消息即时送达</li>
             <li><strong>多媒体消息</strong> - 支持文本、图片、视频、文件等多种消息类型</li>
-            <li><strong>房间系统</strong> - 创建公开/私密房间，支持密码保护</li>
+            <li><strong>房间系统</strong> - 创建和加入聊天房间，支持多人在线</li>
             <li><strong>消息引用</strong> - 引用回复功能，保持对话上下文</li>
-            <li><strong>消息焚毁</strong> - 支持永久删除消息，保护隐私</li>
             <li><strong>已读状态</strong> - 实时显示消息已读人数和状态</li>
             <li><strong>输入提示</strong> - 显示正在输入的用户，增强互动感</li>
             <li><strong>用户系统</strong> - 完整的注册、登录、个人资料管理</li>
