@@ -5,6 +5,13 @@
         <div class="bond-notification-container" @click.stop>
           <!-- 3D玻璃球容器 -->
           <div class="glass-orb">
+            <!-- 玻璃球内部星光点缀 -->
+            <div class="inner-stars">
+              <div v-for="i in 8" :key="i" class="star" :style="getStarStyle(i)">
+                <div class="star-glow" :style="{ background: intimacyColor }"></div>
+              </div>
+            </div>
+            
             <!-- 玻璃球光泽层 -->
             <div class="orb-shine"></div>
             <div class="orb-highlight"></div>
@@ -41,6 +48,7 @@
                 <!-- 主闪电连接线 -->
                 <svg class="lightning-bolt" viewBox="0 0 100 100" xmlns="http://www.w3.org/2000/svg">
                   <path 
+                    id="bolt-path"
                     class="bolt-path"
                     d="M 20 50 L 35 30 L 30 50 L 50 50 L 65 70 L 70 50 L 80 50"
                     :stroke="intimacyColor"
@@ -49,14 +57,19 @@
                     stroke-linecap="round"
                     stroke-linejoin="round"
                   />
-                  <!-- 能量粒子 -->
-                  <circle class="energy-particle p1" r="3" :fill="intimacyColor">
+                  <!-- 能量流动光点 -->
+                  <circle class="energy-particle p1" r="4" :fill="intimacyColor">
                     <animateMotion dur="2s" repeatCount="indefinite">
                       <mpath href="#bolt-path"/>
                     </animateMotion>
                   </circle>
-                  <circle class="energy-particle p2" r="2" :fill="intimacyColor" opacity="0.6">
-                    <animateMotion dur="2s" begin="0.5s" repeatCount="indefinite">
+                  <circle class="energy-particle p2" r="3" :fill="intimacyColor" opacity="0.7">
+                    <animateMotion dur="2s" begin="0.4s" repeatCount="indefinite">
+                      <mpath href="#bolt-path"/>
+                    </animateMotion>
+                  </circle>
+                  <circle class="energy-particle p3" r="2.5" :fill="intimacyColor" opacity="0.5">
+                    <animateMotion dur="2s" begin="0.8s" repeatCount="indefinite">
                       <mpath href="#bolt-path"/>
                     </animateMotion>
                   </circle>
@@ -65,7 +78,6 @@
                 <!-- 中心爱心 -->
                 <div class="center-heart" :style="{ color: intimacyColor }">
                   <font-awesome-icon icon="heart" />
-                  <div class="heart-pulse" :style="{ borderColor: intimacyColor }"></div>
                 </div>
 
                 <!-- 连接线光效 -->
@@ -175,6 +187,33 @@ const getParticleStyle = (index: number) => {
   }
 }
 
+// 生成星光样式
+const getStarStyle = (index: number) => {
+  const positions = [
+    { left: '15%', top: '20%' },
+    { left: '25%', top: '70%' },
+    { left: '75%', top: '25%' },
+    { left: '80%', top: '65%' },
+    { left: '50%', top: '15%' },
+    { left: '50%', top: '85%' },
+    { left: '20%', top: '45%' },
+    { left: '85%', top: '45%' }
+  ]
+  
+  const pos = positions[index - 1]
+  const size = 3 + Math.random() * 3
+  const duration = 3 + Math.random() * 4
+  const delay = Math.random() * 3
+  
+  return {
+    left: pos.left,
+    top: pos.top,
+    width: `${size}px`,
+    height: `${size}px`,
+    animation: `starTwinkle ${duration}s ${delay}s ease-in-out infinite`
+  }
+}
+
 const handleClose = () => {
   emit('close')
 }
@@ -227,44 +266,51 @@ const handleClose = () => {
   width: 320px;
   height: 320px;
   border-radius: 50%;
-  /* 亮色模式：更明亮的玻璃效果 */
+  /* 亮色模式：清爽的玻璃效果 */
   background: 
-    radial-gradient(circle at 30% 30%, rgba(255, 255, 255, 0.6) 0%, transparent 50%),
-    radial-gradient(circle at 70% 70%, rgba(0, 0, 0, 0.1) 0%, transparent 50%),
+    radial-gradient(circle at 30% 30%, rgba(255, 255, 255, 0.5) 0%, transparent 50%),
+    radial-gradient(circle at 70% 70%, rgba(0, 0, 0, 0.05) 0%, transparent 50%),
     linear-gradient(135deg, 
-      rgba(255, 255, 255, 0.5) 0%,
-      rgba(255, 255, 255, 0.3) 50%,
-      rgba(255, 255, 255, 0.2) 100%
+      rgba(255, 255, 255, 0.4) 0%,
+      rgba(255, 255, 255, 0.25) 50%,
+      rgba(255, 255, 255, 0.15) 100%
     );
   backdrop-filter: blur(20px);
-  border: 2px solid rgba(255, 255, 255, 0.5);
+  border: 2px solid rgba(255, 255, 255, 0.6);
   box-shadow: 
-    0 20px 60px rgba(0, 0, 0, 0.3),
-    inset 0 0 80px rgba(255, 255, 255, 0.3),
-    inset -15px -15px 40px rgba(0, 0, 0, 0.08),
-    inset 15px 15px 40px rgba(255, 255, 255, 0.4),
-    0 0 100px rgba(236, 72, 153, 0.3);
-  animation: orbFloat 6s ease-in-out infinite;
+    0 15px 40px rgba(0, 0, 0, 0.15),
+    inset 0 0 60px rgba(255, 255, 255, 0.2),
+    inset -10px -10px 30px rgba(0, 0, 0, 0.05),
+    inset 10px 10px 30px rgba(255, 255, 255, 0.3);
+  animation: orbFloat 6s ease-in-out infinite, orbRotate 30s linear infinite;
   overflow: hidden;
+}
+
+@keyframes orbRotate {
+  from {
+    transform: rotate(0deg);
+  }
+  to {
+    transform: rotate(360deg);
+  }
 }
 
 /* 暗色模式：更深邃的玻璃效果 */
 :global(.dark-mode) .glass-orb {
   background: 
-    radial-gradient(circle at 30% 30%, rgba(255, 255, 255, 0.25) 0%, transparent 50%),
-    radial-gradient(circle at 70% 70%, rgba(0, 0, 0, 0.3) 0%, transparent 50%),
+    radial-gradient(circle at 30% 30%, rgba(255, 255, 255, 0.2) 0%, transparent 50%),
+    radial-gradient(circle at 70% 70%, rgba(0, 0, 0, 0.25) 0%, transparent 50%),
     linear-gradient(135deg, 
-      rgba(255, 255, 255, 0.2) 0%,
-      rgba(255, 255, 255, 0.12) 50%,
-      rgba(255, 255, 255, 0.08) 100%
+      rgba(255, 255, 255, 0.15) 0%,
+      rgba(255, 255, 255, 0.1) 50%,
+      rgba(255, 255, 255, 0.05) 100%
     );
-  border: 2px solid rgba(255, 255, 255, 0.25);
+  border: 2px solid rgba(255, 255, 255, 0.2);
   box-shadow: 
-    0 20px 60px rgba(0, 0, 0, 0.6),
-    inset 0 0 80px rgba(255, 255, 255, 0.15),
-    inset -15px -15px 40px rgba(0, 0, 0, 0.4),
-    inset 15px 15px 40px rgba(255, 255, 255, 0.15),
-    0 0 100px rgba(236, 72, 153, 0.4);
+    0 15px 40px rgba(0, 0, 0, 0.4),
+    inset 0 0 60px rgba(255, 255, 255, 0.1),
+    inset -10px -10px 30px rgba(0, 0, 0, 0.3),
+    inset 10px 10px 30px rgba(255, 255, 255, 0.1);
 }
 
 @keyframes orbFloat {
@@ -273,6 +319,66 @@ const handleClose = () => {
   }
   50% {
     transform: translateY(-20px) rotate(5deg);
+  }
+}
+
+/* ==================== 玻璃球内部星光 ==================== */
+.inner-stars {
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  z-index: 2;
+}
+
+.star {
+  position: absolute;
+  width: 4px;
+  height: 4px;
+  background: white;
+  border-radius: 50%;
+  box-shadow: 0 0 8px rgba(255, 255, 255, 0.8);
+  
+  &::before,
+  &::after {
+    content: '';
+    position: absolute;
+    background: white;
+    border-radius: 50%;
+  }
+  
+  &::before {
+    width: 1px;
+    height: 8px;
+    top: -2px;
+    left: 1.5px;
+    box-shadow: 0 0 4px rgba(255, 255, 255, 0.6);
+  }
+  
+  &::after {
+    width: 8px;
+    height: 1px;
+    top: 1.5px;
+    left: -2px;
+    box-shadow: 0 0 4px rgba(255, 255, 255, 0.6);
+  }
+}
+
+.star-glow {
+  position: absolute;
+  inset: -4px;
+  border-radius: 50%;
+  opacity: 0.3;
+  filter: blur(4px);
+}
+
+@keyframes starTwinkle {
+  0%, 100% {
+    opacity: 0.3;
+    transform: scale(0.8);
+  }
+  50% {
+    opacity: 1;
+    transform: scale(1.2);
   }
 }
 
@@ -442,6 +548,17 @@ const handleClose = () => {
   justify-content: space-between;
   padding: 40px;
   z-index: 2;
+  /* 反向旋转抵消玻璃球的旋转，保持内容固定 */
+  animation: orbContentCounterRotate 30s linear infinite;
+}
+
+@keyframes orbContentCounterRotate {
+  from {
+    transform: rotate(0deg);
+  }
+  to {
+    transform: rotate(-360deg);
+  }
 }
 
 /* ==================== 用户头像 ==================== */
@@ -566,10 +683,35 @@ const handleClose = () => {
 
 @keyframes boltGlow {
   0%, 100% {
-    filter: drop-shadow(0 0 2px currentColor);
+    opacity: 0.9;
   }
   50% {
-    filter: drop-shadow(0 0 8px currentColor) drop-shadow(0 0 12px currentColor);
+    opacity: 1;
+  }
+}
+
+.energy-particle {
+  &.p1 {
+    animation: particlePulse 1s ease-in-out infinite;
+  }
+  
+  &.p2 {
+    animation: particlePulse 1s ease-in-out 0.3s infinite;
+  }
+  
+  &.p3 {
+    animation: particlePulse 1s ease-in-out 0.6s infinite;
+  }
+}
+
+@keyframes particlePulse {
+  0%, 100% {
+    opacity: 0.7;
+    transform: scale(1);
+  }
+  50% {
+    opacity: 1;
+    transform: scale(1.2);
   }
 }
 
@@ -601,7 +743,6 @@ const handleClose = () => {
   font-size: 32px;
   z-index: 2;
   animation: heartBeat 1.5s ease-in-out infinite;
-  filter: drop-shadow(0 0 10px currentColor);
 }
 
 @keyframes heartBeat {
@@ -622,25 +763,6 @@ const handleClose = () => {
   }
   50% {
     transform: scale(1);
-  }
-}
-
-.heart-pulse {
-  position: absolute;
-  inset: -20px;
-  border: 2px solid;
-  border-radius: 50%;
-  animation: pulsate 2s ease-out infinite;
-}
-
-@keyframes pulsate {
-  0% {
-    transform: scale(0.8);
-    opacity: 1;
-  }
-  100% {
-    transform: scale(2);
-    opacity: 0;
   }
 }
 
