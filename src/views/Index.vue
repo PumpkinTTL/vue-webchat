@@ -1198,24 +1198,25 @@ const handleSendImage = async (file: File) => {
           // 不更新ID，保持临时ID，避免Vue重新渲染导致跳动
           msg.imageUrl = fullImageUrl // 更新为服务器URL
           msg.status = 'sent' // 更新状态
-          if (result.data.intimacy) {
-            msg.intimacy = {
-              currentExp: result.data.intimacy.current_exp,
-              currentLevel: result.data.intimacy.current_level
-            }
-          }
           msg.isNew = false; // 取消新消息标记
           // 保存真实ID到自定义属性，用于后续操作
           (msg as any).realId = Number(result.data.id);
         }
 
-        // 广播消息（携带图片路径）
+        // 私密房间：处理亲密度信息
+        if (currentRoom.value?.isPrivate && result.intimacy && result.intimacy.code === 0) {
+          console.log('[亲密度] 图片消息收到更新:', result.intimacy)
+          intimacyStore.updateIntimacyFromMessage(result.intimacy.data)
+          triggerFloatingHearts()
+        }
+
+        // 广播消息（携带图片路径和亲密度信息）
         console.log('[图片上传] 广播消息, content:', imageUrl)
         broadcastMessage({
           message_id: Number(result.data.id),
           message_type: 'image',
           content: imageUrl,
-          intimacy: result.data.intimacy
+          intimacy: result.intimacy?.data
         })
       }, 300)
     } else {
@@ -1359,17 +1360,18 @@ const handleSendVideo = async (file: File) => {
           msg.videoThumbnail = fullThumbnailUrl || undefined
           msg.videoDuration = videoDuration || 0
           msg.status = 'sent' // 更新状态
-          if (result.data.intimacy) {
-            msg.intimacy = {
-              currentExp: result.data.intimacy.current_exp,
-              currentLevel: result.data.intimacy.current_level
-            }
-          }
           // 保存真实ID到自定义属性，用于后续操作
           (msg as any).realId = Number(result.data.id)
         }
 
-        // 广播消息（携带视频路径）
+        // 私密房间：处理亲密度信息
+        if (currentRoom.value?.isPrivate && result.intimacy && result.intimacy.code === 0) {
+          console.log('[亲密度] 视频消息收到更新:', result.intimacy)
+          intimacyStore.updateIntimacyFromMessage(result.intimacy.data)
+          triggerFloatingHearts()
+        }
+
+        // 广播消息（携带视频路径和亲密度信息）
         console.log('[视频上传] 广播消息, videoUrl:', videoUrl, 'thumbnail:', videoThumbnail, 'duration:', videoDuration)
         broadcastMessage({
           message_id: Number(result.data.id),
@@ -1378,7 +1380,7 @@ const handleSendVideo = async (file: File) => {
           video_url: videoUrl,
           video_thumbnail: videoThumbnail || undefined,
           video_duration: videoDuration || undefined,
-          intimacy: result.data.intimacy
+          intimacy: result.intimacy?.data
         })
       }, 300)
     } else {
@@ -1424,13 +1426,20 @@ const handleSendFile = async (file: File) => {
   try {
     const result = await sendFileMessage(currentRoom.value.id, file)
     if (result.code === 0 && result.data) {
+      // 私密房间：处理亲密度信息
+      if (currentRoom.value?.isPrivate && result.intimacy && result.intimacy.code === 0) {
+        console.log('[亲密度] 文件消息收到更新:', result.intimacy)
+        intimacyStore.updateIntimacyFromMessage(result.intimacy.data)
+        triggerFloatingHearts()
+      }
+
       broadcastMessage({
         message_id: Number(result.data.id),
         message_type: 'file',
         content: '',
         file_name: file.name,
         file_size: file.size,
-        intimacy: result.data.intimacy
+        intimacy: result.intimacy?.data
       })
       message.success('文件发送成功')
     } else {

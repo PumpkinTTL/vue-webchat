@@ -128,15 +128,12 @@ export const useIntimacyStore = defineStore('intimacy', () => {
 
     const oldLevel = currentIntimacy.value.current_level
     
-    // 增量更新经验值（如果有exp_gain，则累加）
+    // 直接使用后端返回的current_exp（后端已经计算好了）
+    currentIntimacy.value.current_exp = data.current_exp
+    
+    // 显示经验提示（如果有exp_gain）
     if (data.exp_gain) {
-      currentIntimacy.value.current_exp = (currentIntimacy.value.current_exp || 0) + data.exp_gain
-      
-      // 显示经验提示
       addExpTip(data.exp_gain, 'message')
-    } else {
-      // 否则直接使用返回的current_exp
-      currentIntimacy.value.current_exp = data.current_exp
     }
     
     // 更新等级
@@ -160,7 +157,7 @@ export const useIntimacyStore = defineStore('intimacy', () => {
     if (currentLevelConfig && nextLevelConfig) {
       const expInCurrentLevel = currentIntimacy.value.current_exp - currentLevelConfig.required_exp
       const expNeededForNext = nextLevelConfig.required_exp - currentLevelConfig.required_exp
-      currentIntimacy.value.progress_percent = Math.min(100, Math.max(0, (expInCurrentLevel / expNeededForNext) * 100))
+      currentIntimacy.value.progress_percent = Math.min(100, Math.max(0, parseFloat(((expInCurrentLevel / expNeededForNext) * 100).toFixed(2))))
       currentIntimacy.value.next_level_exp = nextLevelConfig.required_exp
       
       // 如果没有 level_name，使用配置中的名称

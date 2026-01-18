@@ -28,6 +28,7 @@ import {
   faArrowLeft,
   faArrowRight,
   faComments,
+  faCommentDots,
   faShieldAlt,
   faSignOutAlt,
   faRightFromBracket,
@@ -36,7 +37,11 @@ import {
   faClock,
   faGift,
   faBell,
-  faSpinner
+  faSpinner,
+  faImage,
+  faVideo,
+  faFileAlt,
+  faStar
 } from '@fortawesome/free-solid-svg-icons'
 
 /**
@@ -66,6 +71,7 @@ export default {
       faArrowLeft,
       faArrowRight,
       faComments,
+      faCommentDots,
       faShieldAlt,
       faSignOutAlt,
       faRightFromBracket,
@@ -74,7 +80,11 @@ export default {
       faClock,
       faGift,
       faBell,
-      faSpinner
+      faSpinner,
+      faImage,
+      faVideo,
+      faFileAlt,
+      faStar
     )
 
     // 注册全局组件
