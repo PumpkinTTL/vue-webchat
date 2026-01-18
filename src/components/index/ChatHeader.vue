@@ -49,6 +49,14 @@
               @click.stop="$emit('toggle-intimacy-panel')"
               :title="intimacyInfo ? `Lv.${intimacyInfo.current_level} ${intimacyInfo.level_name}` : '私密房间'"
             >
+              <!-- 脉冲波纹 -->
+              <div v-if="isPrivateBadgeLit" class="pulse-ring"></div>
+              
+              <!-- 闪烁星光 -->
+              <div v-if="isPrivateBadgeLit" class="sparkle s1"></div>
+              <div v-if="isPrivateBadgeLit" class="sparkle s2"></div>
+              <div v-if="isPrivateBadgeLit" class="sparkle s3"></div>
+              
               <svg viewBox="0 0 24 24" fill="currentColor">
                 <path d="M20.84 4.61a5.5 5.5 0 00-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 00-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 000-7.78z"/>
               </svg>
@@ -320,10 +328,17 @@ const isPrivateBadgeLit = computed(() => {
   transition: all 0.3s;
   cursor: pointer;
   position: relative;
-  overflow: visible;
+  overflow: hidden;
 
   svg {
     transition: all 0.3s;
+    position: relative;
+    z-index: 2;
+  }
+  
+  span {
+    position: relative;
+    z-index: 2;
   }
   
   &:hover {
@@ -337,7 +352,6 @@ const isPrivateBadgeLit = computed(() => {
   }
   
   &.has-intimacy {
-    // 有亲密度信息时的额外样式
     font-weight: 600;
   }
   
@@ -356,7 +370,7 @@ const isPrivateBadgeLit = computed(() => {
       border-color: color-mix(in srgb, var(--badge-color, #ec4899) 40%, transparent);
     }
     
-    // 边框运动动画
+    // 1. 边框运动动画
     &::before {
       content: '';
       position: absolute;
@@ -379,16 +393,134 @@ const isPrivateBadgeLit = computed(() => {
       mask-composite: exclude;
       animation: border-snake 2s linear infinite;
       pointer-events: none;
+      z-index: 1;
+    }
+    
+    // 2. 渐变背景流动
+    &::after {
+      content: '';
+      position: absolute;
+      inset: 0;
+      border-radius: $border-radius-base;
+      background: linear-gradient(
+        45deg,
+        transparent 30%,
+        color-mix(in srgb, var(--badge-color, #ec4899) 20%, transparent) 50%,
+        transparent 70%
+      );
+      background-size: 200% 200%;
+      animation: gradient-flow 3s ease-in-out infinite;
+      pointer-events: none;
+      z-index: 0;
     }
   }
 }
 
+// 脉冲波纹容器
+.badge-private.lit {
+  // 3. 脉冲波纹效果
+  .pulse-ring {
+    position: absolute;
+    inset: -4px;
+    border-radius: $border-radius-base;
+    border: 2px solid var(--badge-color, #ec4899);
+    opacity: 0;
+    animation: pulse-ring 2s cubic-bezier(0.4, 0, 0.6, 1) infinite;
+    pointer-events: none;
+    z-index: 0;
+  }
+  
+  // 4. 闪烁星光
+  .sparkle {
+    position: absolute;
+    width: 3px;
+    height: 3px;
+    background: var(--badge-color, #ec4899);
+    border-radius: 50%;
+    opacity: 0;
+    pointer-events: none;
+    z-index: 3;
+    
+    &::before,
+    &::after {
+      content: '';
+      position: absolute;
+      background: var(--badge-color, #ec4899);
+      border-radius: 50%;
+    }
+    
+    &::before {
+      width: 1px;
+      height: 6px;
+      top: -1.5px;
+      left: 1px;
+    }
+    
+    &::after {
+      width: 6px;
+      height: 1px;
+      top: 1px;
+      left: -1.5px;
+    }
+    
+    &.s1 {
+      top: 20%;
+      left: 15%;
+      animation: sparkle 2s ease-in-out infinite;
+    }
+    
+    &.s2 {
+      top: 60%;
+      right: 20%;
+      animation: sparkle 2s ease-in-out 0.7s infinite;
+    }
+    
+    &.s3 {
+      top: 40%;
+      right: 10%;
+      animation: sparkle 2s ease-in-out 1.4s infinite;
+    }
+  }
+}
+
+// 动画定义
 @keyframes border-snake {
   0% {
     background-position: 200% 0;
   }
   100% {
     background-position: -200% 0;
+  }
+}
+
+@keyframes gradient-flow {
+  0%, 100% {
+    background-position: 0% 50%;
+  }
+  50% {
+    background-position: 100% 50%;
+  }
+}
+
+@keyframes pulse-ring {
+  0% {
+    transform: scale(1);
+    opacity: 0.6;
+  }
+  100% {
+    transform: scale(1.3);
+    opacity: 0;
+  }
+}
+
+@keyframes sparkle {
+  0%, 100% {
+    opacity: 0;
+    transform: scale(0) rotate(0deg);
+  }
+  50% {
+    opacity: 1;
+    transform: scale(1) rotate(180deg);
   }
 }
 
