@@ -63,12 +63,14 @@
         <div class="version-features">
           <h4>🎉 首次发布</h4>
           <ul>
-            <li>基于 ThinkPHP 6 的实时聊天系统</li>
-            <li>支持文本、图片、视频、文件消息</li>
-            <li>房间创建、加入和管理功能</li>
-            <li>消息引用和已读状态显示</li>
-            <li>正在输入提示功能</li>
-            <li>WebSocket 实时通信</li>
+            <li><strong>实时通信</strong> - 基于 WebSocket 的实时聊天系统，消息即时送达</li>
+            <li><strong>多媒体消息</strong> - 支持文本、图片、视频、文件等多种消息类型</li>
+            <li><strong>房间系统</strong> - 创建公开/私密房间，支持密码保护</li>
+            <li><strong>消息引用</strong> - 引用回复功能，保持对话上下文</li>
+            <li><strong>消息焚毁</strong> - 支持永久删除消息，保护隐私</li>
+            <li><strong>已读状态</strong> - 实时显示消息已读人数和状态</li>
+            <li><strong>输入提示</strong> - 显示正在输入的用户，增强互动感</li>
+            <li><strong>用户系统</strong> - 完整的注册、登录、个人资料管理</li>
           </ul>
         </div>
       </div>
