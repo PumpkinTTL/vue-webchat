@@ -88,7 +88,7 @@
               <span class="title-line"></span>
             </div>
             <div class="title-main" :style="{ color: intimacyColor }">
-              <font-awesome-icon icon="link" />
+              <font-awesome-icon icon="star" />
               <span>{{ currentUser?.nick_name }} ♥ {{ partner?.name }}</span>
             </div>
           </div>

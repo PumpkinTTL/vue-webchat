@@ -207,6 +207,8 @@ const heartsAnimationKey = ref(0)
 // 羁绊上线提醒状态
 const showBondNotification = ref(false)
 let bondNotificationTimer: ReturnType<typeof setTimeout> | null = null
+// 记录已显示过羁绊连接通知的房间（会话级别，刷新清空）
+const shownBondNotificationRooms = new Set<number>()
 
 // 触发爱心飘出动画（只在两人都在线时触发）
 const triggerFloatingHearts = () => {
@@ -399,15 +401,40 @@ watch(() => chatStore.currentRoom?.isLocked, (isLocked) => {
 
 // 监听房间在线人数变化
 watch(() => wsStore.onlineCount, (count, oldCount) => {
-  console.log('[房间] WebSocket在线人数变化:', count)
+  console.log('[房间] WebSocket在线人数变化:', count, '(旧值:', oldCount, ')')
   if (currentRoom.value) {
-    const wasLit = currentRoom.value.totalUsers === 2 && currentRoom.value.onlineUsers === 2
+    const previousOnline = currentRoom.value.onlineUsers
     currentRoom.value.onlineUsers = count
-    const isNowLit = currentRoom.value.totalUsers === 2 && count === 2
+    
+    console.log('[羁绊通知] 检查条件:', {
+      isPrivate: currentRoom.value.isPrivate,
+      hasIntimacy: !!intimacyStore.currentIntimacy,
+      totalUsers: currentRoom.value.totalUsers,
+      previousOnline,
+      currentOnline: count,
+      alreadyShown: shownBondNotificationRooms.has(currentRoom.value.id),
+      roomId: currentRoom.value.id
+    })
+    
+    // 如果对方离线（从2变成1），清除通知记录，以便对方再次上线时可以显示通知
+    if (currentRoom.value.isPrivate && 
+        currentRoom.value.totalUsers === 2 &&
+        previousOnline === 2 && 
+        count === 1) {
+      shownBondNotificationRooms.delete(currentRoom.value.id)
+      console.log('[羁绊通知] 对方离线，清除通知记录')
+    }
     
     // 检查是否应该显示羁绊上线提醒
-    if (!wasLit && isNowLit && currentRoom.value.isPrivate && intimacyStore.currentIntimacy) {
-      // 从未点亮变为点亮，显示羁绊上线提醒
+    // 条件：私密房间 + 有亲密度 + 从1人变成2人（对方刚上线）+ 未显示过
+    if (currentRoom.value.isPrivate && 
+        intimacyStore.currentIntimacy && 
+        currentRoom.value.totalUsers === 2 &&
+        previousOnline === 1 && 
+        count === 2 &&
+        !shownBondNotificationRooms.has(currentRoom.value.id)) {
+      
+      console.log('[羁绊通知] 满足条件，准备显示通知')
       const showBondEffect = localStorage.getItem('intimacy_show_bond_effect')
       if (showBondEffect !== '0') {
         // 清除之前的定时器
@@ -416,8 +443,13 @@ watch(() => wsStore.onlineCount, (count, oldCount) => {
         }
         // 延迟500ms显示，让爱心点亮动画先完成
         bondNotificationTimer = setTimeout(() => {
+          console.log('[羁绊通知] 显示通知')
           showBondNotification.value = true
+          // 标记这个房间已显示过通知
+          shownBondNotificationRooms.add(currentRoom.value!.id)
         }, 500)
+      } else {
+        console.log('[羁绊通知] 用户已关闭羁绊特效')
       }
     }
   }
@@ -831,15 +863,19 @@ const handleSelectRoom = async (room: any) => {
 
   const roomId = typeof room.id === 'string' ? parseInt(room.id) : room.id
 
-  // 先保留旧的人数，避免显示0
-  const oldTotalUsers = currentRoom.value?.totalUsers || 0
-  const oldOnlineUsers = currentRoom.value?.onlineUsers || 0
+  // 切换房间时，从已显示通知的记录中移除当前房间
+  // 这样切回来时可以再次显示通知
+  if (currentRoom.value?.id) {
+    shownBondNotificationRooms.delete(currentRoom.value.id)
+    console.log('[羁绊通知] 离开房间，清除通知记录:', currentRoom.value.id)
+  }
 
+  // 切换房间时重置人数为0，等待WebSocket更新
   currentRoom.value = {
     ...room,
     id: roomId,
-    totalUsers: oldTotalUsers,
-    onlineUsers: oldOnlineUsers,
+    totalUsers: 0,
+    onlineUsers: 0,
     isPrivate: room.private === 1
   }
 
