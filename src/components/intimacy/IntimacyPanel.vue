@@ -79,13 +79,13 @@
 
         <!-- 互动条 -->
         <IntimacyInteraction
-          v-if="interaction.active"
+          v-show="interaction.active"
+          key="intimacy-interaction-stable"
           :intimacy-color="intimacyInfo.level_color"
           :time-left="interaction.timeLeft"
           :can-collect="interaction.canCollect"
           :current-user="currentUser"
           :partner="partner"
-          @collect="emit('collect-reward')"
         />
 
         <!-- 底部：统计和开关 -->
@@ -160,7 +160,6 @@ interface Props {
 defineProps<Props>()
 const emit = defineEmits<{ 
   close: []
-  'collect-reward': []
   'toggle-exp-toast': [value: boolean]
   'toggle-bond-effect': [value: boolean]
 }>()

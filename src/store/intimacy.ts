@@ -269,10 +269,8 @@ export const useIntimacyStore = defineStore('intimacy', () => {
       const elapsed = Math.floor((Date.now() - interaction.value.startTime) / 1000)
       interaction.value.timeLeft = Math.max(0, 60 - elapsed)
 
-      if (interaction.value.timeLeft === 0) {
-        stopCountdown()
-        interaction.value.canCollect = true
-      }
+      // 前端倒计时仅用于显示，不触发任何操作
+      // 服务器端会在60秒后自动处理
     }, 100) // 100ms 更新一次，更流畅
   }
 
@@ -296,9 +294,21 @@ export const useIntimacyStore = defineStore('intimacy', () => {
   }
 
   /**
-   * 重置互动
+   * 重置互动（不改变active状态，只重置倒计时）
    */
   function resetInteraction() {
+    stopCountdown()
+    // 不设置 active = false，保持组件显示
+    interaction.value.startTime = null
+    interaction.value.timeLeft = 60
+    interaction.value.canCollect = false
+    interaction.value.collecting = false
+  }
+  
+  /**
+   * 完全停止互动（用于离开房间等场景）
+   */
+  function stopInteraction() {
     stopCountdown()
     interaction.value.active = false
     interaction.value.startTime = null
@@ -308,55 +318,23 @@ export const useIntimacyStore = defineStore('intimacy', () => {
   }
 
   /**
-   * 领取互动奖励
+   * 从服务器更新亲密度信息（WebSocket广播）
    */
-  async function collectReward(roomId: number) {
-    if (!interaction.value.canCollect) {
-      return { success: false, message: '还不能领取' }
-    }
-
-    if (interaction.value.collecting) {
-      return { success: false, message: '正在领取中...' }
-    }
-
-    interaction.value.collecting = true
-
-    try {
-      const result = await collectInteractionExp(roomId)
-      if (result.code === 0) {
-        // 更新亲密度信息
-        if (result.data.intimacy && result.data.intimacy.data) {
-          currentIntimacy.value = result.data.intimacy.data
-        }
-
-        // 显示经验提示
-        addExpTip(result.data.exp_gain, 'interaction')
-
-        // 检查是否升级
-        if (result.data.level_up) {
-          const levelConfig = levels.value.find(l => l.level === result.data.current_level)
-          if (levelConfig) {
-            showLevelUp({
-              newLevel: result.data.current_level,
-              levelName: result.data.level_name,
-              levelColor: levelConfig.color
-            })
-          }
-        }
-
-        // 重置互动状态
-        resetInteraction()
-
-        return { success: true, message: '领取成功' }
-      } else {
-        return { success: false, message: result.msg || '领取失败' }
-      }
-    } catch (error: any) {
-      console.error('[亲密度] 领取奖励失败:', error)
-      return { success: false, message: error.message || '领取失败' }
-    } finally {
-      interaction.value.collecting = false
-    }
+  function updateIntimacyFromServer(intimacyData: any, expGain: number) {
+    if (!currentIntimacy.value) return
+    
+    // 直接使用服务器返回的数据
+    currentIntimacy.value.current_exp = intimacyData.current_exp
+    currentIntimacy.value.current_level = intimacyData.current_level
+    currentIntimacy.value.level_name = intimacyData.level_name
+    currentIntimacy.value.level_color = intimacyData.level_color
+    currentIntimacy.value.level_icon = intimacyData.level_icon
+    currentIntimacy.value.total_messages = intimacyData.total_messages
+    currentIntimacy.value.next_level_exp = intimacyData.next_level_exp
+    currentIntimacy.value.progress_percent = intimacyData.progress_percent
+    
+    // 显示经验提示
+    addExpTip(expGain, 'interaction')
   }
 
   /**
@@ -365,7 +343,7 @@ export const useIntimacyStore = defineStore('intimacy', () => {
   function clearIntimacy() {
     currentIntimacy.value = null
     partnerUser.value = null
-    resetInteraction()
+    stopInteraction()
   }
 
   return {
@@ -387,6 +365,7 @@ export const useIntimacyStore = defineStore('intimacy', () => {
     loadLevels,
     loadIntimacyInfo,
     updateIntimacyFromMessage,
+    updateIntimacyFromServer,
     addExpTip,
     removeExpTip,
     showLevelUp,
@@ -394,7 +373,7 @@ export const useIntimacyStore = defineStore('intimacy', () => {
     startInteraction,
     completeInteraction,
     resetInteraction,
-    collectReward,
+    stopInteraction,
     clearIntimacy
   }
 })

@@ -30,7 +30,7 @@
         <!-- 亲密度面板 -->
         <IntimacyPanel :visible="showIntimacyPanel" :intimacy-info="intimacyStore.currentIntimacy"
           :levels="intimacyStore.levels" :interaction="intimacyStore.interaction" :current-user="userStore.userInfo"
-          :partner="intimacyPartner" @close="handleCloseIntimacyPanel" @collect-reward="handleCollectIntimacyReward"
+          :partner="intimacyPartner" @close="handleCloseIntimacyPanel"
           @toggle-exp-toast="handleToggleExpToast" @toggle-bond-effect="handleToggleBondEffect" />
       </header>
 
@@ -192,9 +192,12 @@ const showIntimacyPanel = ref(false)
 const showFloatingHearts = ref(false)
 const heartsAnimationKey = ref(0)
 
-// 触发爱心飘出动画
+// 触发爱心飘出动画（只在两人都在线时触发）
 const triggerFloatingHearts = () => {
   if (!currentRoom.value?.isPrivate || !intimacyStore.currentIntimacy) return
+  
+  // 只有两人都在线时才触发动画
+  if (currentRoom.value.totalUsers !== 2 || currentRoom.value.onlineUsers !== 2) return
   
   showFloatingHearts.value = true
   heartsAnimationKey.value++
@@ -303,14 +306,32 @@ onMounted(async () => {
     intimacyStore.startInteraction()
   })
 
-  wsStore.setOnIntimacyComplete(() => {
-    console.log('[亲密度] 互动完成')
+  wsStore.setOnIntimacyComplete((data) => {
+    console.log('[亲密度] 互动完成，服务器已增加经验')
+    // 服务器已经增加了经验，直接更新本地状态
     intimacyStore.completeInteraction()
+    
+    // 如果服务器返回了经验信息，更新本地亲密度
+    if (data.exp_gain && data.intimacy) {
+      console.log('[亲密度] 收到服务器经验数据:', data.exp_gain, data.intimacy)
+      intimacyStore.updateIntimacyFromServer(data.intimacy, data.exp_gain)
+    }
+    
+    // 自动通知服务器重启计时
+    if (currentRoom.value?.id) {
+      console.log('[亲密度] 通知服务器重启计时')
+      wsStore.restartIntimacy(currentRoom.value.id)
+    }
   })
 
   wsStore.setOnIntimacyReset(() => {
-    console.log('[亲密度] 互动重置')
+    console.log('[亲密度] 收到服务器重置信号，自动重启计时')
+    // 重置倒计时状态（不隐藏组件）
     intimacyStore.resetInteraction()
+    // 自动重启计时（如果是私密房间且两人在线）
+    if (currentRoom.value?.isPrivate && currentRoom.value?.onlineUsers >= 2) {
+      intimacyStore.startInteraction()
+    }
   })
 
   // 监听WebSocket消息，更新亲密度信息
@@ -1592,20 +1613,6 @@ const submitEditMessage = async () => {
 }
 
 // ==================== 亲密度互动 ====================
-
-const handleCollectIntimacyReward = async () => {
-  if (!currentRoom.value?.id) {
-    message.warning('请先选择房间')
-    return
-  }
-
-  const result = await intimacyStore.collectReward(currentRoom.value.id)
-  if (result.success) {
-    message.success(result.message)
-  } else {
-    message.error(result.message)
-  }
-}
 
 // 处理经验提示开关
 const handleToggleExpToast = (value: boolean) => {

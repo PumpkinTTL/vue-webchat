@@ -31,38 +31,28 @@
               <div class="intimacy-progress-fill-left" :style="{ width: (progress / 2) + '%' }"></div>
               <div class="intimacy-progress-fill-right" :style="{ width: (progress / 2) + '%' }"></div>
             </div>
-            <div class="intimacy-center-heart">
+            <div class="intimacy-center-heart" :class="{ 'collision': showCollisionRipple }">
               <font-awesome-icon icon="heart" />
+              <!-- 碰撞波纹 -->
+              <div v-if="showCollisionRipple" class="collision-ripple"></div>
+              <div v-if="showCollisionRipple" class="collision-ripple ripple-2"></div>
+              <div v-if="showCollisionRipple" class="collision-ripple ripple-3"></div>
             </div>
           </div>
         </div>
 
-        <!-- 第三行：倒计时 -->
+        <!-- 第三行：动态情话文案 -->
         <div class="intimacy-countdown-row" :class="{ 'urgent': timeLeft <= 10 }">
           <font-awesome-icon icon="clock" />
-          <span class="intimacy-countdown-value">{{ Math.floor(timeLeft) }}</span>
-          <span class="intimacy-countdown-text">{{ canCollect ? '可领取' : '秒后可领取' }}</span>
+          <span class="intimacy-love-message">{{ currentLoveMessage }}</span>
         </div>
-
-        <!-- 领取按钮 -->
-        <button
-          v-if="canCollect"
-          class="intimacy-collect-btn"
-          :class="{ 'collected': collecting }"
-          @click="handleCollect"
-          :disabled="collecting"
-        >
-          <font-awesome-icon v-if="!collecting" icon="gift" />
-          <font-awesome-icon v-else icon="spinner" spin />
-          <span>{{ collecting ? '领取中...' : '领取奖励' }}</span>
-        </button>
       </div>
     </div>
   </Transition>
 </template>
 
 <script setup lang="ts">
-import { computed, ref } from 'vue'
+import { computed, ref, watch } from 'vue'
 
 interface User {
   nick_name: string
@@ -81,9 +71,6 @@ interface Props {
 }
 
 const props = defineProps<Props>()
-const emit = defineEmits<{ collect: [] }>()
-
-const collecting = ref(false)
 
 // 服务器URL
 const serverUrl = import.meta.env.VITE_SERVER_URL || ''
@@ -109,16 +96,43 @@ const progress = computed(() => {
   return Math.min((elapsed / 60) * 100, 100)
 })
 
-async function handleCollect() {
-  if (collecting.value || !props.canCollect) return
-  
-  collecting.value = true
-  emit('collect')
-  
-  setTimeout(() => {
-    collecting.value = false
-  }, 2000)
-}
+// 碰撞波纹动画状态
+const showCollisionRipple = ref(false)
+
+// 监听canCollect变化，触发碰撞动画
+watch(() => props.canCollect, (newVal, oldVal) => {
+  if (newVal && !oldVal) {
+    // 从不可领取变为可领取，触发碰撞动画
+    showCollisionRipple.value = true
+    setTimeout(() => {
+      showCollisionRipple.value = false
+    }, 1000)
+  }
+})
+
+// 情话文案列表
+const loveMessages = [
+  { range: [55, 60], text: '我们就要相遇了，还有 {time} 秒哦' },
+  { range: [50, 54], text: '准备好拥抱了吗？还有 {time} 秒' },
+  { range: [45, 49], text: '心跳加速中...{time} 秒后见' },
+  { range: [40, 44], text: '期待与你的每一秒，还有 {time} 秒' },
+  { range: [35, 39], text: '时光正好，{time} 秒后相遇' },
+  { range: [30, 34], text: '想你的心情，{time} 秒后释放' },
+  { range: [25, 29], text: '倒计时 {time} 秒，爱意满满' },
+  { range: [20, 24], text: '还有 {time} 秒，就能感受你的温度' },
+  { range: [15, 19], text: '{time} 秒后，让爱升温' },
+  { range: [10, 14], text: '马上就好，{time} 秒见' },
+  { range: [5, 9], text: '快了快了，{time} 秒！' },
+  { range: [1, 4], text: '就差 {time} 秒啦！' },
+  { range: [0, 0], text: '相遇时刻到了！' }
+]
+
+// 根据剩余时间获取情话文案
+const currentLoveMessage = computed(() => {
+  const time = Math.floor(props.timeLeft)
+  const message = loveMessages.find(msg => time >= msg.range[0] && time <= msg.range[1])
+  return message ? message.text.replace('{time}', String(time)) : `${time} 秒`
+})
 </script>
 
 <style lang="scss" scoped>
@@ -384,76 +398,114 @@ async function handleCollect() {
   }
 }
 
-/* 第三行：倒计时 */
+/* ==================== 碰撞波纹动画 ==================== */
+.intimacy-center-heart.collision {
+  animation: collisionShake 0.5s ease-out;
+}
+
+@keyframes collisionShake {
+  0%, 100% {
+    transform: translate(-50%, -50%) scale(1.2);
+  }
+  25% {
+    transform: translate(-50%, -50%) scale(1.3) rotate(-5deg);
+  }
+  50% {
+    transform: translate(-50%, -50%) scale(1.4) rotate(5deg);
+  }
+  75% {
+    transform: translate(-50%, -50%) scale(1.3) rotate(-3deg);
+  }
+}
+
+.collision-ripple {
+  position: absolute;
+  left: 50%;
+  top: 50%;
+  transform: translate(-50%, -50%);
+  width: 100%;
+  height: 100%;
+  border-radius: 50%;
+  border: 2px solid var(--intimacy-color, #ec4899);
+  opacity: 0.8;
+  animation: collisionRippleExpand 1s ease-out;
+  pointer-events: none;
+}
+
+.collision-ripple.ripple-2 {
+  animation-delay: 0.15s;
+}
+
+.collision-ripple.ripple-3 {
+  animation-delay: 0.3s;
+}
+
+@keyframes collisionRippleExpand {
+  0% {
+    width: 100%;
+    height: 100%;
+    opacity: 0.8;
+  }
+  100% {
+    width: 250%;
+    height: 250%;
+    opacity: 0;
+  }
+}
+
+/* 第三行：动态情话文案 */
+/* 第三行：动态情话文案 */
 .intimacy-countdown-row {
   display: flex;
   align-items: center;
   justify-content: center;
-  gap: 4px;
+  gap: 6px;
   font-size: 11px;
   font-weight: 600;
   color: var(--intimacy-countdown-text, #64748b);
   width: 100%;
+  min-height: 20px;
 }
 
 .intimacy-countdown-row i,
 .intimacy-countdown-row svg {
   font-size: 10px;
   color: var(--intimacy-color, #ec4899);
+  flex-shrink: 0;
 }
 
-.intimacy-countdown-value {
+.intimacy-love-message {
   color: var(--intimacy-color, #ec4899);
-  font-variant-numeric: tabular-nums;
-  font-size: 13px;
+  font-size: 12px;
+  text-align: center;
+  animation: loveMessageFadeIn 0.5s ease-out;
 }
 
-.intimacy-countdown-row.urgent .intimacy-countdown-value {
+@keyframes loveMessageFadeIn {
+  from {
+    opacity: 0;
+    transform: translateY(-5px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.intimacy-countdown-row.urgent .intimacy-love-message {
   color: #ef4444;
-  animation: countdownPulse 0.5s ease-in-out infinite;
+  animation: urgentPulse 0.5s ease-in-out infinite;
 }
 
-@keyframes countdownPulse {
-  0%, 100% { opacity: 1; }
-  50% { opacity: 0.6; }
-}
-
-/* ==================== 领取按钮 ==================== */
-.intimacy-collect-btn {
-  width: 100%;
-  padding: 10px 16px;
-  border-radius: 10px;
-  background: linear-gradient(135deg, var(--intimacy-color, #ec4899), color-mix(in srgb, var(--intimacy-color, #ec4899) 85%, white));
-  border: none;
-  color: white;
-  cursor: pointer;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  gap: 8px;
-  font-size: 13px;
-  font-weight: 600;
-  transition: all 0.2s ease;
-  box-shadow: 0 4px 12px rgba(236, 72, 153, 0.3);
-}
-
-.intimacy-collect-btn:hover:not(:disabled) {
-  transform: translateY(-2px);
-  box-shadow: 0 6px 16px rgba(236, 72, 153, 0.4);
-}
-
-.intimacy-collect-btn:active:not(:disabled) {
-  transform: translateY(0);
-}
-
-.intimacy-collect-btn:disabled {
-  opacity: 0.7;
-  cursor: not-allowed;
-}
-
-.intimacy-collect-btn i,
-.intimacy-collect-btn svg {
-  font-size: 14px;
+@keyframes urgentPulse {
+  0%, 100% { 
+    opacity: 1;
+    transform: scale(1);
+  }
+  50% { 
+    opacity: 0.7;
+    transform: scale(1.05);
+  }
 }
 
 /* ==================== 过渡动画 ==================== */
@@ -555,15 +607,6 @@ async function handleCollect() {
 
   .intimacy-countdown-row {
     font-size: 10px;
-  }
-
-  .intimacy-collect-btn {
-    padding: 9px 14px;
-    font-size: 12px;
-  }
-
-  .intimacy-collect-btn i {
-    font-size: 13px;
   }
 }
 

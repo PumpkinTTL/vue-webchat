@@ -238,6 +238,17 @@ export interface IntimacyStartResponse {
 export interface IntimacyCompleteResponse {
   type: 'intimacy_complete'
   room_id: number
+  exp_gain?: number
+  intimacy?: {
+    current_exp: number
+    current_level: number
+    level_name: string
+    level_color: string
+    level_icon: string
+    total_messages: number
+    next_level_exp: number
+    progress_percent: number
+  }
 }
 
 export interface IntimacyResetResponse {
