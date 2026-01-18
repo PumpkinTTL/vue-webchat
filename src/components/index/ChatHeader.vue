@@ -1,5 +1,5 @@
 <template>
-  <div class="chat-header">
+  <div class="header-content">
     <div class="header-left">
       <h2 class="room-title animate__animated animate__fadeInLeft" style="--animate-duration: 0.4s">{{ roomName || '选择房间开始聊天' }}</h2>
       
@@ -153,7 +153,7 @@ const isPrivateBadgeLit = computed(() => {
 <style lang="scss" scoped>
 // 变量已通过 vite.config.ts 全局导入
 
-.chat-header {
+.header-content {
   display: flex;
   align-items: center;
   justify-content: space-between;
@@ -927,7 +927,7 @@ const isPrivateBadgeLit = computed(() => {
 
 // ==================== 移动端适配 ====================
 @media (max-width: 768px) {
-  .chat-header {
+  .header-content {
     padding: 0 $spacing-sm;
     gap: $spacing-xs;
   }
