@@ -1,7 +1,7 @@
 <template>
   <Teleport to="body">
     <Transition name="bond-notification">
-      <div v-if="visible" class="bond-notification-overlay" @click="handleClose">
+      <div v-if="visible" class="bond-notification-overlay" :class="{ 'dark-mode': isDarkMode }" @click="handleClose">
         <div class="bond-notification-container" @click.stop>
           <!-- 发光容器 -->
           <div class="orb-glow-wrapper">
@@ -140,6 +140,12 @@ interface Props {
 const props = defineProps<Props>()
 const emit = defineEmits<{ close: [] }>()
 
+// 检测深色模式
+const isDarkMode = computed(() => {
+  if (typeof window === 'undefined') return false
+  return localStorage.getItem('darkMode') === 'true'
+})
+
 // 服务器URL
 const serverUrl = import.meta.env.VITE_SERVER_URL || ''
 
@@ -214,8 +220,9 @@ const handleClose = () => {
 }
 
 /* 暗色模式：稍微深一点 */
-:global(.dark-mode) .bond-notification-overlay {
-  background: rgba(0, 0, 0, 0.25);
+.bond-notification-overlay.dark-mode {
+  background: rgba(0, 0, 0, 0.4);
+  backdrop-filter: blur(12px);
 }
 
 .bond-notification-container {
@@ -872,6 +879,104 @@ const handleClose = () => {
   &:hover {
     background: rgba(60, 60, 60, 1);
     color: #fff;
+  }
+}
+
+/* ==================== 完整深色模式适配 ==================== */
+.bond-notification-overlay.dark-mode {
+  /* 装饰元素 */
+  .floating-hearts .heart {
+    filter: brightness(1.2);
+  }
+
+  .twinkling-stars .star {
+    filter: brightness(1.2);
+  }
+
+  /* 玻璃球内容 */
+  .user-avatar img,
+  .avatar-placeholder {
+    border: 3px solid rgba(255, 255, 255, 0.2);
+  }
+
+  .avatar-placeholder {
+    background: linear-gradient(135deg, rgba(236, 72, 153, 0.9), rgba(219, 39, 119, 0.9));
+    border: 3px solid rgba(255, 255, 255, 0.3);
+  }
+
+  /* 圆环装饰 */
+  .orb-ring {
+    border-color: rgba(255, 255, 255, 0.2);
+  }
+
+  .ring-2 {
+    border-color: rgba(255, 255, 255, 0.15);
+  }
+
+  .ring-3 {
+    border-color: rgba(255, 255, 255, 0.25);
+  }
+
+  /* 玻璃球光泽效果在深色模式下更柔和 */
+  .orb-shine {
+    background: radial-gradient(circle at 30% 30%, 
+      rgba(255, 255, 255, 0.3) 0%,
+      rgba(255, 255, 255, 0.1) 40%,
+      transparent 70%
+    );
+    opacity: 0.6;
+  }
+
+  .orb-highlight {
+    background: radial-gradient(circle, 
+      rgba(255, 255, 255, 0.2) 0%,
+      transparent 60%
+    );
+    opacity: 0.5;
+  }
+
+  /* 内发光层 */
+  .inner-glow {
+    filter: blur(50px);
+    opacity: 0.4;
+  }
+
+  /* 标题文字 */
+  .title-glow {
+    color: rgba(255, 255, 255, 0.9) !important;
+  }
+
+  .title-main {
+    filter: brightness(1.1);
+    
+    &::before {
+      opacity: 0.08;
+    }
+  }
+
+  /* 等级徽章 */
+  .level-badge {
+    border: 2px solid rgba(255, 255, 255, 0.2);
+    box-shadow: 
+      inset 0 1px 0 rgba(255, 255, 255, 0.2),
+      0 4px 20px rgba(0, 0, 0, 0.3);
+    
+    &::after {
+      border-color: rgba(255, 255, 255, 0.1);
+    }
+  }
+
+  .level-name {
+    filter: brightness(1.1);
+  }
+
+  /* 闪电连接线 */
+  .lightning-bolt .bolt-path {
+    filter: brightness(1.2) drop-shadow(0 0 4px currentColor);
+  }
+
+  .energy-particle {
+    filter: brightness(1.2);
   }
 }
 

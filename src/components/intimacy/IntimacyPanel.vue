@@ -1,6 +1,6 @@
 <template>
   <Transition name="intimacy-slide">
-    <div v-if="visible" class="intimacy-card-expanded" @click.stop :style="{ '--intimacy-color': intimacyInfo?.level_color || '#ec4899' }">
+    <div v-if="visible" class="intimacy-card-expanded" :class="{ 'dark-mode': isDarkMode }" @click.stop :style="{ '--intimacy-color': intimacyInfo?.level_color || '#ec4899' }">
       <!-- 背景装饰 -->
       <div class="bg-decoration">
         <div class="sparkle-particle p1"></div>
@@ -163,6 +163,12 @@ const emit = defineEmits<{
   'toggle-exp-toast': [value: boolean]
   'toggle-bond-effect': [value: boolean]
 }>()
+
+// 检测深色模式
+const isDarkMode = computed(() => {
+  if (typeof window === 'undefined') return false
+  return localStorage.getItem('darkMode') === 'true'
+})
 
 // 从localStorage读取初始值
 const showExpToast = ref(localStorage.getItem('intimacy_show_exp_toast') !== '0')
@@ -865,50 +871,21 @@ const showBondEffect = ref(localStorage.getItem('intimacy_show_bond_effect') !==
 }
 
 /* ==================== 暗色模式 ==================== */
-:global(.dark-mode) {
-  .intimacy-card-expanded {
-    background: #0f172a;
-    border-color: #1e293b;
-    box-shadow: 0 4px 16px rgba(0, 0, 0, 0.4);
-  }
+.intimacy-card-expanded.dark-mode {
+  background: #0f172a;
+  border-color: #1e293b;
+  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.4);
 
   .intimacy-close {
     background: color-mix(in srgb, var(--intimacy-color, #ec4899) 15%, transparent);
+
+    &:hover {
+      background: color-mix(in srgb, var(--intimacy-color, #ec4899) 25%, transparent);
+    }
   }
 
-  .intimacy-close:hover {
-    background: color-mix(in srgb, var(--intimacy-color, #ec4899) 25%, transparent);
-  }
-
-  .intimacy-progress-bar {
-    background: color-mix(in srgb, var(--intimacy-color, #ec4899) 12%, transparent);
-  }
-
-  .intimacy-message-count {
-    background: color-mix(in srgb, var(--intimacy-color, #ec4899) 10%, transparent);
-  }
-
-  .intimacy-message-count:hover {
-    background: color-mix(in srgb, var(--intimacy-color, #ec4899) 15%, transparent);
-  }
-
-  .message-icon-wrapper {
-    background: color-mix(in srgb, var(--intimacy-color, #ec4899) 20%, transparent);
-  }
-
-  .intimacy-divider {
-    background: linear-gradient(90deg, transparent, color-mix(in srgb, var(--intimacy-color, #ec4899) 20%, transparent), transparent);
-  }
-
-  .intimacy-slider {
-    background: rgba(255, 255, 255, 0.1);
-  }
-
-  .intimacy-slider:before {
-    background-color: rgba(255, 255, 255, 0.95);
-  }
-
-  .settings-label {
+  /* 顶部区域 */
+  .intimacy-level-text {
     color: #f1f5f9;
   }
 
@@ -925,20 +902,105 @@ const showBondEffect = ref(localStorage.getItem('intimacy_show_bond_effect') !==
     color: #94a3b8;
   }
 
+  /* 进度条区域 */
   .progress-label {
     color: #94a3b8;
+
+    i,
+    svg {
+      color: #94a3b8;
+    }
+  }
+
+  .intimacy-progress-bar {
+    background: color-mix(in srgb, var(--intimacy-color, #ec4899) 12%, #1e293b);
+    box-shadow: inset 0 1px 2px rgba(0, 0, 0, 0.3);
+  }
+
+  /* 底部区域 */
+  .intimacy-message-count {
+    background: color-mix(in srgb, var(--intimacy-color, #ec4899) 8%, #1e293b);
+    border: 1px solid color-mix(in srgb, var(--intimacy-color, #ec4899) 15%, transparent);
+
+    &::before {
+      background: linear-gradient(45deg, transparent 30%, color-mix(in srgb, var(--intimacy-color, #ec4899) 15%, transparent) 50%, transparent 70%);
+    }
+
+    &:hover {
+      background: color-mix(in srgb, var(--intimacy-color, #ec4899) 12%, #1e293b);
+    }
+  }
+
+  .message-icon-wrapper {
+    background: color-mix(in srgb, var(--intimacy-color, #ec4899) 20%, #334155);
   }
 
   .message-label {
     color: #94a3b8;
   }
 
+  .intimacy-divider {
+    background: linear-gradient(90deg, transparent, color-mix(in srgb, var(--intimacy-color, #ec4899) 20%, #334155), transparent);
+  }
+
+  /* 开关设置 */
+  .settings-label {
+    color: #f1f5f9;
+  }
+
+  .intimacy-slider {
+    background: rgba(255, 255, 255, 0.1);
+    border: 1px solid rgba(255, 255, 255, 0.1);
+
+    &:before {
+      background-color: #f8fafc;
+      box-shadow: 0 2px 6px rgba(0, 0, 0, 0.4);
+    }
+  }
+
+  /* 装饰元素 */
+  .bg-decoration {
+    opacity: 0.6;
+  }
+
+  .sparkle-particle,
+  .sparkle-particle::before,
+  .sparkle-particle::after {
+    background: var(--intimacy-color, #ec4899);
+    filter: brightness(1.1);
+  }
+
+  .wave-line {
+    background: linear-gradient(90deg, 
+      transparent,
+      color-mix(in srgb, var(--intimacy-color, #ec4899) 80%, transparent),
+      transparent
+    );
+  }
+
+  /* 加载状态 */
   .spinner {
     border-color: #334155;
+    border-top-color: var(--intimacy-color, #ec4899);
   }
 
   .loading-state p {
     color: #94a3b8;
+  }
+
+  /* 心形图标包装器 */
+  .heart-glow {
+    filter: brightness(1.2);
+  }
+
+  .heart-ring {
+    opacity: 0.6;
+  }
+
+  /* 互动条区域的背景调整 */
+  .intimacy-interaction-wrapper {
+    border-radius: 12px;
+    background: color-mix(in srgb, var(--intimacy-color, #ec4899) 5%, #0f172a);
   }
 }
 

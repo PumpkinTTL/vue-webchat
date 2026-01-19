@@ -1,7 +1,7 @@
 <template>
   <Teleport to="body">
     <Transition name="modal-fade">
-      <div v-if="visible" class="level-up-overlay" @click="handleClose">
+      <div v-if="visible" class="level-up-overlay" :class="{ 'dark-mode': isDarkMode }" @click="handleClose">
         <div class="level-up-modal" @click.stop>
           <!-- 装饰元素 -->
           <div class="deco-circle deco-circle-1"></div>
@@ -78,6 +78,12 @@ const props = defineProps<Props>()
 const emit = defineEmits<{
   close: []
 }>()
+
+// 检测深色模式
+const isDarkMode = computed(() => {
+  if (typeof window === 'undefined') return false
+  return localStorage.getItem('darkMode') === 'true'
+})
 
 const levelGradient = computed(() => {
   if (!props.levelUpData?.levelColor) {
@@ -245,7 +251,7 @@ function handleClose() {
 
 .level-up-subtitle {
   font-size: 16px;
-  color: $text-secondary;
+  color: #64748b;
   margin-bottom: 28px;
 }
 
@@ -310,13 +316,61 @@ function handleClose() {
 }
 
 // 深色模式
-.dark-mode {
+.level-up-overlay.dark-mode {
+  background: rgba(0, 0, 0, 0.8);
+  backdrop-filter: blur(12px);
+
   .level-up-modal {
-    background: rgba(30, 41, 59, 0.95);
+    background: rgba(15, 23, 42, 0.95);
+    backdrop-filter: blur(24px);
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    box-shadow: 
+      0 20px 60px rgba(0, 0, 0, 0.6),
+      0 0 0 1px rgba(255, 255, 255, 0.05);
+  }
+  
+  .level-up-title {
+    background-clip: text;
+    filter: brightness(1.1);
   }
   
   .level-up-subtitle {
-    color: $text-secondary-dark;
+    color: #cbd5e1;
+  }
+
+  .level-highlight {
+    filter: brightness(1.1);
+  }
+
+  /* 装饰元素 */
+  .deco-circle {
+    border-color: rgba(236, 72, 153, 0.3);
+  }
+
+  .deco-star {
+    color: #fbbf24;
+    filter: brightness(1.1);
+  }
+
+  .heart-particle {
+    color: #f472b6;
+    filter: brightness(1.1);
+  }
+
+  /* 图标 */
+  .level-up-icon {
+    box-shadow: 0 10px 40px rgba(236, 72, 153, 0.6);
+    filter: brightness(1.1);
+  }
+
+  /* 按钮 */
+  .level-up-btn {
+    box-shadow: 0 4px 15px rgba(236, 72, 153, 0.5);
+    
+    &:hover {
+      box-shadow: 0 8px 25px rgba(236, 72, 153, 0.6);
+      transform: translateY(-2px);
+    }
   }
 }
 

@@ -5,6 +5,7 @@
         v-for="tip in tips"
         :key="tip.id"
         class="exp-tip"
+        :class="{ 'dark-mode': isDarkMode }"
         :style="{ 
           '--random-x': `${getRandomOffset(tip)}px`,
           transform: `translateX(${getRandomOffset(tip)}px)`
@@ -28,6 +29,7 @@
 </template>
 
 <script setup lang="ts">
+import { computed } from 'vue'
 import type { ExpTip } from '@/types/intimacy'
 
 interface Props {
@@ -35,6 +37,12 @@ interface Props {
 }
 
 defineProps<Props>()
+
+// 检测深色模式
+const isDarkMode = computed(() => {
+  if (typeof window === 'undefined') return false
+  return localStorage.getItem('darkMode') === 'true'
+})
 
 // 为每个tip生成随机的水平偏移
 const offsetCache = new Map<string, number>()
@@ -102,6 +110,7 @@ function getTypeText(type: string): string {
   border-radius: 18px;
   border: 1px solid rgba(139, 92, 246, 0.15);
   white-space: nowrap;
+  position: relative;
 }
 
 .exp-icon {
@@ -179,17 +188,52 @@ function getTypeText(type: string): string {
 }
 
 // 深色模式
-:global(.dark-mode) {
+.exp-tip.dark-mode {
   .exp-tip-inner {
     background: linear-gradient(135deg, 
-      rgba(30, 41, 59, 0.95) 0%, 
+      rgba(15, 23, 42, 0.95) 0%, 
       rgba(30, 41, 59, 0.9) 100%
     );
-    border-color: rgba(139, 92, 246, 0.25);
+    border: 1px solid rgba(139, 92, 246, 0.3);
+    backdrop-filter: blur(12px) saturate(180%);
+    box-shadow: 
+      0 4px 16px rgba(0, 0, 0, 0.3),
+      0 0 0 1px rgba(255, 255, 255, 0.05);
+  }
+
+  .exp-icon {
+    background: linear-gradient(135deg, #8B5CF6 0%, #EC4899 100%);
+    box-shadow: 0 2px 8px rgba(139, 92, 246, 0.4);
+  }
+
+  .exp-value {
+    background: linear-gradient(135deg, #A855F7 0%, #F472B6 100%);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    background-clip: text;
+    filter: brightness(1.1);
   }
 
   .exp-label {
-    color: #94A3B8;
+    color: #CBD5E1;
+  }
+
+  /* 增强动画效果 */
+  .exp-tip-inner::before {
+    content: '';
+    position: absolute;
+    inset: 0;
+    background: linear-gradient(135deg, 
+      rgba(139, 92, 246, 0.1) 0%, 
+      rgba(236, 72, 153, 0.1) 100%
+    );
+    border-radius: 18px;
+    opacity: 0;
+    transition: opacity 0.3s ease;
+  }
+
+  .exp-tip:hover .exp-tip-inner::before {
+    opacity: 1;
   }
 }
 

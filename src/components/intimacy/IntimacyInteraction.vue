@@ -541,15 +541,81 @@ const currentLoveMessage = computed(() => {
 
 /* ==================== 暗色模式 ==================== */
 :global(.dark-mode) {
+  .intimacy-interaction-wrapper {
+    background: color-mix(in srgb, var(--intimacy-color, #ec4899) 6%, #0f172a);
+    border: 1px solid color-mix(in srgb, var(--intimacy-color, #ec4899) 15%, transparent);
+  }
+
   .intimacy-interaction-bar {
     --intimacy-bar-bg: rgba(15, 23, 42, 0.85);
     --intimacy-track-bg: rgba(236, 72, 153, 0.2);
     --intimacy-text: #f1f5f9;
     --intimacy-countdown-text: #94a3b8;
+    background: color-mix(in srgb, var(--intimacy-color, #ec4899) 8%, #1e293b);
+    border: 1px solid color-mix(in srgb, var(--intimacy-color, #ec4899) 12%, transparent);
   }
 
+  /* 用户头像区域 */
+  .intimacy-user-name {
+    color: #f1f5f9;
+  }
+
+  .intimacy-user-avatar-wrapper {
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.3);
+    border: 2px solid color-mix(in srgb, var(--intimacy-color, #ec4899) 25%, transparent);
+  }
+
+  .intimacy-user-avatar-placeholder {
+    background: color-mix(in srgb, var(--intimacy-color, #ec4899) 20%, #334155);
+    color: #f1f5f9;
+  }
+
+  /* 进度条区域 */
+  .intimacy-progress-track {
+    background: color-mix(in srgb, var(--intimacy-color, #ec4899) 12%, #1e293b);
+    border: 1px solid color-mix(in srgb, var(--intimacy-color, #ec4899) 15%, transparent);
+  }
+
+  .intimacy-progress-fill-left,
+  .intimacy-progress-fill-right {
+    filter: brightness(1.1);
+    box-shadow: 0 0 15px var(--intimacy-color, #ec4899);
+  }
+
+  /* 中心爱心图标 */
   .intimacy-center-heart {
-    background: rgba(15, 23, 42, 0.95);
+    background: #0f172a;
+    border: 2px solid var(--intimacy-color, #ec4899);
+    box-shadow:
+      0 2px 12px rgba(236, 72, 153, 0.4),
+      0 0 0 4px rgba(15, 23, 42, 0.9);
+  }
+
+  .intimacy-progress-section.completed .intimacy-center-heart {
+    box-shadow:
+      0 4px 20px rgba(236, 72, 153, 0.6),
+      0 0 0 6px rgba(15, 23, 42, 0.9);
+  }
+
+  /* 碰撞波纹 */
+  .collision-ripple {
+    border-color: var(--intimacy-color, #ec4899);
+    filter: brightness(1.2);
+  }
+
+  /* 倒计时文案 */
+  .intimacy-countdown-row {
+    color: #94a3b8;
+  }
+
+  .intimacy-love-message {
+    color: var(--intimacy-color, #ec4899);
+    text-shadow: 0 0 10px color-mix(in srgb, var(--intimacy-color, #ec4899) 30%, transparent);
+  }
+
+  .intimacy-countdown-row.urgent .intimacy-love-message {
+    color: #f87171;
+    text-shadow: 0 0 8px rgba(248, 113, 113, 0.4);
   }
 }
 
