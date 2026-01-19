@@ -335,7 +335,7 @@
 </template>
 
 <script setup lang="ts">
-import { ref, computed, nextTick } from 'vue'
+import { ref, computed } from 'vue'
 import { message as antMessage, Modal } from 'ant-design-vue'
 import { formatDuration } from '@/utils/video'
 import { hasUrl, separateTextAndUrls } from '@/utils/linkParser'
