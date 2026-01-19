@@ -47,7 +47,6 @@
       <MessageItem 
         v-for="message in messages" 
         :key="message.animationKey || message.id" 
-        :ref="(el) => setMessageRef(message.id, el)"
         :message="message"
         :upload-progress="uploadProgress?.[message.id]"
         @reply="handleReply"
@@ -143,20 +142,8 @@ const historyOffset = ref<number>(0) // 消息顶部相对于容器顶部的偏�
 const showBackToHistory = ref(false)
 const isAutoScrolling = ref(false)
 
-// 消息元素引用映射
-const messageRefs = ref<Map<string | number, InstanceType<typeof MessageItem>>>(new Map())
-
 // 已读状态管理
 const { initObserver, observeMessageElement, observeAllUnreadMessages, cleanup } = useReadStatus()
-
-// 设置消息引用
-const setMessageRef = (id: string | number, el: any) => {
-  if (el) {
-    messageRefs.value.set(id, el)
-  } else {
-    messageRefs.value.delete(id)
-  }
-}
 
 const scrollToBottom = (smooth = true) => {
   if (!messageContainer.value) return
@@ -308,41 +295,74 @@ const handleEdit = (messageId: string | number, content: string) => {
   emit('edit', messageId, content)
 }
 
-// 滚动到指定消息
+// 滚动到指定消息 - 完全重构，不依赖ref
 const handleScrollToMessage = (messageId: number) => {
   if (!messageContainer.value) return
   
-  // 查找目标消息元素
-  const targetEl = messageContainer.value.querySelector(`[data-msg-id="${messageId}"]`) as HTMLElement
-  if (!targetEl) {
-    antMessage.info('原消息不在当前视图中')
-    return
+  console.log('[MessageList] 开始跳转到消息:', messageId)
+  
+  // 使用递归重试机制，确保DOM完全渲染
+  const attemptScroll = (attempt: number = 0): void => {
+    if (!messageContainer.value) {
+      console.log('[MessageList] 容器不存在，取消跳转')
+      return
+    }
+    
+    // 直接通过DOM查找目标元素
+    const targetEl = messageContainer.value.querySelector(`[data-msg-id="${messageId}"]`) as HTMLElement
+    
+    if (!targetEl) {
+      if (attempt < 10) {
+        // 最多重试10次，每次间隔50ms
+        console.log(`[MessageList] 第${attempt + 1}次未找到目标元素，50ms后重试`)
+        setTimeout(() => attemptScroll(attempt + 1), 50)
+      } else {
+        console.log('[MessageList] 重试次数用尽，目标消息不在视图中')
+        antMessage.info('原消息不在当前视图中')
+      }
+      return
+    }
+    
+    console.log('[MessageList] 找到目标元素，开始滚动')
+    
+    // 计算滚动位置，让目标消息居中
+    const containerRect = messageContainer.value.getBoundingClientRect()
+    const targetRect = targetEl.getBoundingClientRect()
+    const scrollTop = messageContainer.value.scrollTop
+    const targetOffsetTop = targetRect.top - containerRect.top + scrollTop
+    const centerOffset = (containerRect.height - targetRect.height) / 2
+    const scrollTo = Math.max(0, targetOffsetTop - centerOffset)
+    
+    // 计算滚动距离和时间
+    const scrollDistance = Math.abs(scrollTo - scrollTop)
+    const scrollDuration = Math.min(500, scrollDistance * 0.5)
+    
+    // 执行滚动
+    messageContainer.value.scrollTo({
+      top: scrollTo,
+      behavior: 'smooth'
+    })
+    
+    console.log('[MessageList] 滚动完成，准备触发高亮')
+    
+    // 滚动完成后直接操作DOM添加高亮class，不依赖ref
+    setTimeout(() => {
+      if (!targetEl) return
+      
+      // 添加高亮class
+      targetEl.classList.add('highlight-message')
+      console.log('[MessageList] 已添加高亮class')
+      
+      // 2秒后移除高亮
+      setTimeout(() => {
+        targetEl.classList.remove('highlight-message')
+        console.log('[MessageList] 已移除高亮class')
+      }, 2000)
+    }, scrollDuration + 100)
   }
   
-  // 计算滚动位置，让目标消息居中
-  const containerRect = messageContainer.value.getBoundingClientRect()
-  const targetRect = targetEl.getBoundingClientRect()
-  const scrollTop = messageContainer.value.scrollTop
-  const targetOffsetTop = targetRect.top - containerRect.top + scrollTop
-  const centerOffset = (containerRect.height - targetRect.height) / 2
-  const scrollTo = Math.max(0, targetOffsetTop - centerOffset)
-  
-  // 计算滚动距离和时间
-  const scrollDistance = Math.abs(scrollTo - scrollTop)
-  const scrollDuration = Math.min(500, scrollDistance * 0.5) // 最多500ms
-  
-  messageContainer.value.scrollTo({
-    top: scrollTo,
-    behavior: 'smooth'
-  })
-  
-  // 等待滚动完成后再触发高亮动画
-  setTimeout(() => {
-    const messageRef = messageRefs.value.get(messageId)
-    if (messageRef?.highlight) {
-      messageRef.highlight()
-    }
-  }, scrollDuration + 100) // 滚动时间 + 100ms 缓冲
+  // 立即开始第一次尝试
+  attemptScroll(0)
 }
 
 // 滚动到指定消息（供外部调用）

@@ -491,14 +491,14 @@ watch(() => chatStore.messages.length, (newLength, oldLength) => {
       }
     }
 
-    // 对于别人的新消息，触发已读检测
-    nextTick(() => {
+    // 对于别人的新消息，延迟触发已读检测，确保DOM完全渲染
+    setTimeout(() => {
       newMessages.forEach(msg => {
         if (!msg.isOwn && msg.type !== 'system' && msg.id) {
           messageListRef.value?.observeNewMessage(Number(msg.id))
         }
       })
-    })
+    }, 100)
   }
 })
 

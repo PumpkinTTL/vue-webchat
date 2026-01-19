@@ -335,7 +335,7 @@
 </template>
 
 <script setup lang="ts">
-import { ref, computed } from 'vue'
+import { ref, computed, nextTick } from 'vue'
 import { message as antMessage, Modal } from 'ant-design-vue'
 import { formatDuration } from '@/utils/video'
 import { hasUrl, separateTextAndUrls } from '@/utils/linkParser'
@@ -566,9 +566,10 @@ const handleEdit = () => {
 
 // 跳转到引用消息
 const handleScrollToReply = () => {
-  if (props.message.replyTo?.message_id) {
-    emit('scrollToMessage', props.message.replyTo.message_id)
-  }
+  if (!props.message.replyTo?.message_id) return
+  
+  console.log('[MessageItem] 点击引用，跳转到消息:', props.message.replyTo.message_id)
+  emit('scrollToMessage', props.message.replyTo.message_id)
 }
 
 // 处理链接点击

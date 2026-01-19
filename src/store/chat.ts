@@ -140,6 +140,9 @@ export const useChatStore = defineStore('chat', () => {
     
     console.log('[Chat Store] 转换WebSocket消息:', data)
     
+    // 为WebSocket消息生成唯一的animationKey，确保动画正常播放
+    const animKey = `ws-${data.message_id}-${Date.now()}`
+    
     const message: ChatMessageItem = {
       id: data.message_id,
       type: data.message_type,
@@ -153,7 +156,8 @@ export const useChatStore = defineStore('chat', () => {
       },
       username: data.from_nickname,
       status: isOwn ? 'sent' : undefined,
-      isNew: true
+      isNew: true,
+      animationKey: animKey  // 添加动画key，确保Vue正确识别和渲染
     }
 
     // 图片消息 - 处理URL
@@ -225,9 +229,17 @@ export const useChatStore = defineStore('chat', () => {
       }
     }
 
-    // 引用回复
+    // 引用回复 - 确保数据结构完整
     if (data.reply_to) {
-      message.replyTo = data.reply_to
+      console.log('[Chat Store] 处理引用消息:', data.reply_to)
+      message.replyTo = {
+        message_id: data.reply_to.message_id,
+        content: data.reply_to.content || '',
+        user_id: data.reply_to.user_id,
+        nickname: data.reply_to.nickname || '用户',
+        message_type: data.reply_to.message_type,
+        deleted: data.reply_to.deleted || false
+      }
     }
 
     // 好感度信息
