@@ -42,7 +42,14 @@ import {
   faVideo,
   faFileAlt,
   faStar,
-  faCrown
+  faCrown,
+  faCheckCircle,
+  faSyncAlt,
+  faPlusCircle,
+  faMagic,
+  faWrench,
+  faRocket,
+  faCircle
 } from '@fortawesome/free-solid-svg-icons'
 
 /**
@@ -86,7 +93,14 @@ export default {
       faVideo,
       faFileAlt,
       faStar,
-      faCrown
+      faCrown,
+      faCheckCircle,
+      faSyncAlt,
+      faPlusCircle,
+      faMagic,
+      faWrench,
+      faRocket,
+      faCircle
     )
 
     // 注册全局组件

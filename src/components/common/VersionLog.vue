@@ -4,25 +4,37 @@
     title="版本日志"
     :footer="null"
     :width="720"
-    class="version-log-modal"
     @cancel="handleClose"
   >
     <div class="version-log-content">
       <div
-        v-for="(version, index) in versionLogs"
+        v-for="version in versionLogs"
         :key="version.version"
-        :class="['version-section', { 'current-version': version.isCurrent }]"
+        class="version-block"
       >
         <div class="version-header">
-          <span class="version-tag">v{{ version.version }}</span>
+          <span class="version-number">v{{ version.version }}</span>
           <span class="version-date">{{ version.date }}</span>
-          <span v-if="version.isCurrent" class="current-badge">当前版本</span>
+          <span v-if="version.isCurrent" class="current-badge">
+            <font-awesome-icon :icon="['fas', 'check-circle']" />
+            当前版本
+          </span>
         </div>
-        <div class="version-features">
-          <div v-for="(items, type) in version.features" :key="type">
-            <h4>{{ type }}</h4>
-            <ul>
-              <li v-for="(item, idx) in items" :key="idx" v-html="item"></li>
+
+        <div class="changes-list">
+          <div
+            v-for="(items, category) in version.features"
+            :key="category"
+            class="change-group"
+          >
+            <div class="group-title">
+              <font-awesome-icon :icon="['fas', getCategoryIcon(category)]" class="icon" />
+              <span>{{ category }}</span>
+            </div>
+            <ul class="items">
+              <li v-for="(item, idx) in items" :key="idx">
+                <span v-html="item"></span>
+              </li>
             </ul>
           </div>
         </div>
@@ -50,7 +62,6 @@ const props = withDefaults(defineProps<Props>(), {
 const emit = defineEmits<Emits>()
 
 const visible = ref(props.open)
-
 const versionLogs = ref(versionLogsData.versions)
 
 watch(() => props.open, (newVal) => {
@@ -64,158 +75,29 @@ watch(visible, (newVal) => {
 const handleClose = () => {
   visible.value = false
 }
+
+const getCategoryIcon = (category: string): string => {
+  if (category.includes('重构')) return 'sync-alt'
+  if (category.includes('新增')) return 'plus-circle'
+  if (category.includes('优化')) return 'magic'
+  if (category.includes('修复')) return 'wrench'
+  if (category.includes('发布')) return 'rocket'
+  return 'star'
+}
 </script>
 
 <style lang="scss" scoped>
-// 变量已通过 vite.config.ts 全局导入
-
 .version-log-content {
   max-height: 600px;
   overflow-y: auto;
   padding: 4px;
-}
-
-.version-section {
-  margin-bottom: 32px;
-  padding-bottom: 32px;
-  border-bottom: 2px solid $border-base;
-  transition: border-color $transition-base;
   
-  &:last-child {
-    margin-bottom: 0;
-    padding-bottom: 0;
-    border-bottom: none;
-  }
-  
-  &.current-version {
-    .version-tag {
-      background: $primary-color;
-      color: white;
-      font-weight: $font-weight-semibold;
-    }
-  }
-}
-
-:global(.dark-mode) .version-section {
-  border-color: $border-base-dark;
-}
-
-.version-header {
-  display: flex;
-  align-items: center;
-  gap: 12px;
-  margin-bottom: 16px;
-}
-
-:global(.dark-mode) .version-header {
-  /* 移除了border-color，因为border已经移到version-section */
-}
-
-.version-tag {
-  display: inline-flex;
-  align-items: center;
-  padding: 4px 12px;
-  background: $bg-color;
-  color: $text-secondary;
-  border-radius: $border-radius-base;
-  font-size: $font-size-sm;
-  font-weight: $font-weight-medium;
-  font-family: 'Consolas', 'Monaco', monospace;
-  transition: all $transition-base;
-}
-
-:global(.dark-mode) .version-tag {
-  background: $bg-color-dark;
-  color: $text-secondary-dark;
-}
-
-.version-date {
-  color: $text-tertiary;
-  font-size: $font-size-sm;
-  transition: color $transition-base;
-}
-
-:global(.dark-mode) .version-date {
-  color: $text-tertiary-dark;
-}
-
-.current-badge {
-  padding: 3px 10px;
-  background: rgba($primary-color, 0.1);
-  color: $primary-color;
-  border: 1px solid rgba($primary-color, 0.2);
-  border-radius: $border-radius-base;
-  font-size: $font-size-xs;
-  font-weight: $font-weight-medium;
-  transition: all $transition-base;
-}
-
-:global(.dark-mode) .current-badge {
-  background: rgba($primary-color, 0.15);
-  border-color: rgba($primary-color, 0.3);
-}
-
-.version-features {
-  h4 {
-    font-family: $font-family-heading;
-    font-size: $font-size-base;
-    font-weight: $font-weight-semibold;
-    color: $text-primary;
-    margin: 20px 0 10px 0;
-    transition: color $transition-base;
-    
-    &:first-child {
-      margin-top: 0;
-    }
-  }
-  
-  ul {
-    margin: 0;
-    padding-left: 20px;
-    
-    li {
-      color: $text-secondary;
-      font-size: $font-size-sm;
-      line-height: 1.8;
-      margin-bottom: 8px;
-      transition: color $transition-base;
-      
-      strong {
-        color: $text-primary;
-        font-weight: $font-weight-semibold;
-        transition: color $transition-base;
-      }
-      
-      &:last-child {
-        margin-bottom: 0;
-      }
-    }
-  }
-}
-
-:global(.dark-mode) .version-features {
-  h4 {
-    color: $text-primary-dark;
-  }
-  
-  ul li {
-    color: $text-secondary-dark;
-    
-    strong {
-      color: $text-primary-dark;
-    }
-  }
-}
-
-// 滚动条样式
-.version-log-content {
   &::-webkit-scrollbar {
     width: 6px;
   }
   
   &::-webkit-scrollbar-track {
-    background: $bg-color;
-    border-radius: 3px;
+    background: transparent;
   }
   
   &::-webkit-scrollbar-thumb {
@@ -229,16 +111,193 @@ const handleClose = () => {
   }
 }
 
-:global(.dark-mode) .version-log-content {
-  &::-webkit-scrollbar-track {
-    background: $bg-color-dark;
+.version-block {
+  padding: $spacing-lg 0;
+  border-bottom: 1px solid $border-base;
+  transition: border-color $transition-base;
+  
+  &:first-child {
+    padding-top: 0;
   }
   
-  &::-webkit-scrollbar-thumb {
+  &:last-child {
+    border-bottom: none;
+    padding-bottom: 0;
+  }
+}
+
+.version-header {
+  display: flex;
+  align-items: center;
+  gap: $spacing-sm;
+  margin-bottom: $spacing-md;
+}
+
+.version-number {
+  font-family: 'SF Mono', 'Consolas', monospace;
+  font-size: $font-size-lg;
+  font-weight: $font-weight-semibold;
+  color: $text-primary;
+  transition: color $transition-base;
+}
+
+.version-date {
+  font-size: $font-size-sm;
+  color: $text-tertiary;
+  transition: color $transition-base;
+}
+
+.current-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  margin-left: auto;
+  padding: 4px 10px;
+  font-size: $font-size-xs;
+  font-weight: $font-weight-medium;
+  color: $primary-color;
+  background: rgba($primary-color, 0.1);
+  border-radius: $border-radius-sm;
+  transition: all $transition-base;
+  
+  svg {
+    font-size: 11px;
+  }
+}
+
+.changes-list {
+  display: flex;
+  flex-direction: column;
+  gap: $spacing-md;
+}
+
+.group-title {
+  display: flex;
+  align-items: center;
+  gap: $spacing-sm;
+  margin-bottom: $spacing-sm;
+  font-size: $font-size-base;
+  font-weight: $font-weight-semibold;
+  color: $text-primary;
+  transition: color $transition-base;
+  
+  .icon {
+    font-size: 14px;
+    color: $primary-color;
+    transition: color $transition-base;
+  }
+}
+
+.items {
+  margin: 0;
+  padding: 0;
+  list-style: none;
+  
+  li {
+    position: relative;
+    padding-left: 16px;
+    margin-bottom: 6px;
+    font-size: $font-size-sm;
+    line-height: 1.6;
+    color: $text-secondary;
+    transition: color $transition-base;
+    
+    &::before {
+      content: '•';
+      position: absolute;
+      left: 0;
+      color: $text-tertiary;
+      transition: color $transition-base;
+    }
+    
+    &:last-child {
+      margin-bottom: 0;
+    }
+  }
+  
+  :deep(strong) {
+    font-weight: $font-weight-semibold;
+    color: $text-primary;
+    transition: color $transition-base;
+  }
+}
+
+// 深色模式 - 参考MessageItem的写法
+:global(.dark-mode) {
+  .version-log-content::-webkit-scrollbar-thumb {
     background: $border-base-dark;
     
     &:hover {
       background: $text-tertiary-dark;
+    }
+  }
+  
+  .version-block {
+    border-color: $border-base-dark;
+  }
+  
+  .version-number {
+    color: $text-primary-dark;
+  }
+  
+  .version-date {
+    color: $text-tertiary-dark;
+  }
+  
+  .current-badge {
+    color: $primary-lighter;
+    background: rgba($primary-color, 0.15);
+  }
+  
+  .group-title {
+    color: $text-primary-dark;
+    
+    .icon {
+      color: $primary-lighter;
+    }
+  }
+  
+  .items li {
+    color: $text-regular-dark;
+    
+    &::before {
+      color: $text-tertiary-dark;
+    }
+  }
+  
+  .items :deep(strong) {
+    color: $text-primary-dark;
+  }
+}
+</style>
+
+<style lang="scss">
+// Ant Design Modal 深色模式适配
+:global(.dark-mode) {
+  .ant-modal-wrap {
+    .ant-modal-content {
+      background: $bg-color-elevated-dark;
+    }
+    
+    .ant-modal-header {
+      background: $bg-color-elevated-dark;
+      border-bottom-color: $border-base-dark;
+      
+      .ant-modal-title {
+        color: $text-primary-dark;
+      }
+    }
+    
+    .ant-modal-body {
+      background: $bg-color-elevated-dark;
+    }
+    
+    .ant-modal-close {
+      color: $text-tertiary-dark;
+      
+      &:hover {
+        color: $text-primary-dark;
+      }
     }
   }
 }

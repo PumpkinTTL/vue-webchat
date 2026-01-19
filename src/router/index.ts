@@ -20,6 +20,15 @@ const routes: RouteRecordRaw[] = [
       title: '聊天',
       requiresAuth: true
     }
+  },
+  {
+    path: '/test',
+    name: 'Test',
+    component: () => import('@/views/Test.vue'),
+    meta: {
+      title: '测试页面',
+      requiresAuth: false
+    }
   }
 ]
 
