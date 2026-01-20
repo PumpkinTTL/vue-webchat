@@ -361,7 +361,11 @@ const currentLoveMessage = computed(() => {
   );
   border-radius: 10px 0 0 10px;
   transition: width 0.3s ease-out;
-  box-shadow: 0 0 12px var(--intimacy-color, #ec4899);
+  box-shadow: 
+    0 0 8px var(--intimacy-color, #ec4899),
+    0 0 15px color-mix(in srgb, var(--intimacy-color, #ec4899) 60%, transparent),
+    inset 0 0 8px color-mix(in srgb, var(--intimacy-color, #ec4899) 40%, transparent);
+  animation: neon-pulse-progress 2s ease-in-out infinite;
 }
 
 /* 右侧进度条填充 */
@@ -378,7 +382,26 @@ const currentLoveMessage = computed(() => {
   );
   border-radius: 0 10px 10px 0;
   transition: width 0.3s ease-out;
-  box-shadow: 0 0 12px var(--intimacy-color, #ec4899);
+  box-shadow: 
+    0 0 8px var(--intimacy-color, #ec4899),
+    0 0 15px color-mix(in srgb, var(--intimacy-color, #ec4899) 60%, transparent),
+    inset 0 0 8px color-mix(in srgb, var(--intimacy-color, #ec4899) 40%, transparent);
+  animation: neon-pulse-progress 2s ease-in-out infinite;
+}
+
+@keyframes neon-pulse-progress {
+  0%, 100% {
+    box-shadow: 
+      0 0 8px var(--intimacy-color, #ec4899),
+      0 0 15px color-mix(in srgb, var(--intimacy-color, #ec4899) 60%, transparent),
+      inset 0 0 8px color-mix(in srgb, var(--intimacy-color, #ec4899) 40%, transparent);
+  }
+  50% {
+    box-shadow: 
+      0 0 12px var(--intimacy-color, #ec4899),
+      0 0 20px color-mix(in srgb, var(--intimacy-color, #ec4899) 70%, transparent),
+      inset 0 0 12px color-mix(in srgb, var(--intimacy-color, #ec4899) 50%, transparent);
+  }
 }
 
 /* ==================== 中心爱心图标 ==================== */
@@ -646,7 +669,32 @@ html.dark-mode {
   .intimacy-progress-fill-left,
   .intimacy-progress-fill-right {
     filter: brightness(1.1);
-    box-shadow: 0 0 15px var(--intimacy-color, #ec4899);
+    box-shadow: 
+      0 0 12px var(--intimacy-color, #ec4899),
+      0 0 20px color-mix(in srgb, var(--intimacy-color, #ec4899) 70%, transparent),
+      0 0 30px color-mix(in srgb, var(--intimacy-color, #ec4899) 50%, transparent),
+      inset 0 0 12px color-mix(in srgb, var(--intimacy-color, #ec4899) 50%, transparent),
+      inset 0 0 20px color-mix(in srgb, var(--intimacy-color, #ec4899) 30%, transparent);
+    animation: neon-pulse-progress-dark 2s ease-in-out infinite;
+  }
+  
+  @keyframes neon-pulse-progress-dark {
+    0%, 100% {
+      box-shadow: 
+        0 0 12px var(--intimacy-color, #ec4899),
+        0 0 20px color-mix(in srgb, var(--intimacy-color, #ec4899) 70%, transparent),
+        0 0 30px color-mix(in srgb, var(--intimacy-color, #ec4899) 50%, transparent),
+        inset 0 0 12px color-mix(in srgb, var(--intimacy-color, #ec4899) 50%, transparent),
+        inset 0 0 20px color-mix(in srgb, var(--intimacy-color, #ec4899) 30%, transparent);
+    }
+    50% {
+      box-shadow: 
+        0 0 15px var(--intimacy-color, #ec4899),
+        0 0 25px color-mix(in srgb, var(--intimacy-color, #ec4899) 80%, transparent),
+        0 0 35px color-mix(in srgb, var(--intimacy-color, #ec4899) 60%, transparent),
+        inset 0 0 15px color-mix(in srgb, var(--intimacy-color, #ec4899) 60%, transparent),
+        inset 0 0 25px color-mix(in srgb, var(--intimacy-color, #ec4899) 40%, transparent);
+    }
   }
 
   /* 中心爱心图标 */
