@@ -20,29 +20,74 @@
         <div class="intimacy-top-section">
           <div class="intimacy-level-display">
             <div class="intimacy-heart-wrapper">
-              <font-awesome-icon icon="heart" class="intimacy-heart-icon" :style="{ color: intimacyInfo.level_color }" />
+              <font-awesome-icon icon="heart" class="intimacy-heart-icon neon-glow" :style="{ color: intimacyInfo.level_color }" />
               <div class="heart-glow" :style="{ background: intimacyInfo.level_color }"></div>
               <div class="heart-ring"></div>
             </div>
             <div class="intimacy-level-text">
               <div class="level-name-row">
-                <span class="intimacy-level-name" :style="{ color: intimacyInfo.level_color }">
+                <span class="intimacy-level-name neon-text" :style="{ 
+                  color: intimacyInfo.level_color,
+                  '--neon-color': intimacyInfo.level_color
+                }">
                   {{ intimacyInfo.level_name }}
                 </span>
-                <span class="intimacy-level-badge" :style="{ 
+                <span class="intimacy-level-badge neon-badge" :style="{ 
                   background: intimacyInfo.level_color + '15',
                   borderColor: intimacyInfo.level_color + '30',
-                  color: intimacyInfo.level_color
+                  color: intimacyInfo.level_color,
+                  '--neon-color': intimacyInfo.level_color
                 }">Lv.{{ intimacyInfo.current_level }}</span>
               </div>
               <div class="level-subtitle">亲密关系</div>
             </div>
           </div>
           
+          <!-- 中间装饰区域 -->
+          <div class="love-decoration">
+            <!-- 霓虹灯管线条 -->
+            <svg class="neon-tube" viewBox="0 0 100 60" preserveAspectRatio="none">
+              <!-- 爱心形状的霓虹灯管 -->
+              <path 
+                class="neon-path neon-path-1"
+                d="M 50,25 C 50,20 45,15 40,15 C 30,15 30,25 30,25 L 50,45 L 70,25 C 70,25 70,15 60,15 C 55,15 50,20 50,25 Z"
+                :stroke="intimacyInfo.level_color"
+                stroke-width="1.5"
+                fill="none"
+                stroke-linecap="round"
+                stroke-linejoin="round"
+              />
+              <!-- 装饰线条 -->
+              <path 
+                class="neon-path neon-path-2"
+                d="M 10,30 Q 30,25 50,30 T 90,30"
+                :stroke="intimacyInfo.level_color"
+                stroke-width="1"
+                fill="none"
+                stroke-linecap="round"
+              />
+            </svg>
+            
+            <div class="floating-hearts">
+              <span class="mini-heart h1" :style="{ color: intimacyInfo.level_color }">♥</span>
+              <span class="mini-heart h2" :style="{ color: intimacyInfo.level_color }">♥</span>
+              <span class="mini-heart h3" :style="{ color: intimacyInfo.level_color }">♥</span>
+            </div>
+            <div class="love-sparkles">
+              <span class="sparkle s1" :style="{ background: intimacyInfo.level_color }"></span>
+              <span class="sparkle s2" :style="{ background: intimacyInfo.level_color }"></span>
+              <span class="sparkle s3" :style="{ background: intimacyInfo.level_color }"></span>
+              <span class="sparkle s4" :style="{ background: intimacyInfo.level_color }"></span>
+            </div>
+          </div>
+          
           <div class="intimacy-exp-display">
             <div class="exp-label">经验值</div>
             <div class="exp-numbers">
-              <span class="exp-current">{{ intimacyInfo.current_exp }}</span>
+              <span class="exp-current neon-number" :style="{ 
+                color: intimacyInfo.level_color,
+                '--neon-color': intimacyInfo.level_color
+              }">{{ intimacyInfo.current_exp }}</span>
               <span class="exp-separator">/</span>
               <span class="exp-max">{{ intimacyInfo.next_level_exp }}</span>
             </div>
@@ -184,114 +229,9 @@ const showBondEffect = ref(localStorage.getItem('intimacy_show_bond_effect') !==
   overflow: hidden;
 }
 
-/* 背景装饰 */
+/* 背景装饰 - 已移除动画 */
 .bg-decoration {
-  position: absolute;
-  inset: 0;
-  pointer-events: none;
-  overflow: hidden;
-  z-index: 0;
-}
-
-/* 闪烁粒子 */
-.sparkle-particle {
-  position: absolute;
-  width: 4px;
-  height: 4px;
-  background: var(--intimacy-color, #ec4899);
-  border-radius: 50%;
-  opacity: 0;
-  
-  &::before,
-  &::after {
-    content: '';
-    position: absolute;
-    background: var(--intimacy-color, #ec4899);
-    border-radius: 50%;
-  }
-  
-  &::before {
-    width: 1px;
-    height: 8px;
-    top: -2px;
-    left: 1.5px;
-  }
-  
-  &::after {
-    width: 8px;
-    height: 1px;
-    top: 1.5px;
-    left: -2px;
-  }
-  
-  &.p1 {
-    top: 15%;
-    left: 10%;
-    animation: sparkle-float 3s ease-in-out infinite;
-  }
-  
-  &.p2 {
-    top: 25%;
-    right: 15%;
-    animation: sparkle-float 3s ease-in-out 1s infinite;
-  }
-  
-  &.p3 {
-    bottom: 20%;
-    left: 20%;
-    animation: sparkle-float 3s ease-in-out 2s infinite;
-  }
-  
-  &.p4 {
-    bottom: 30%;
-    right: 10%;
-    animation: sparkle-float 3s ease-in-out 1.5s infinite;
-  }
-}
-
-@keyframes sparkle-float {
-  0%, 100% {
-    opacity: 0;
-    transform: translateY(0) scale(0) rotate(0deg);
-  }
-  50% {
-    opacity: 0.6;
-    transform: translateY(-10px) scale(1) rotate(180deg);
-  }
-}
-
-/* 波浪线装饰 */
-.wave-line {
-  position: absolute;
-  width: 100%;
-  height: 2px;
-  background: linear-gradient(90deg, 
-    transparent,
-    var(--intimacy-color, #ec4899),
-    transparent
-  );
-  opacity: 0.1;
-  
-  &.w1 {
-    top: 30%;
-    animation: wave-move 4s ease-in-out infinite;
-  }
-  
-  &.w2 {
-    bottom: 30%;
-    animation: wave-move 4s ease-in-out 2s infinite;
-  }
-}
-
-@keyframes wave-move {
-  0%, 100% {
-    transform: translateX(-100%) scaleX(0.5);
-    opacity: 0;
-  }
-  50% {
-    transform: translateX(0) scaleX(1);
-    opacity: 0.15;
-  }
+  display: none;
 }
 
 /* 关闭按钮 */
@@ -425,6 +365,7 @@ const showBondEffect = ref(localStorage.getItem('intimacy_show_bond_effect') !==
   font-size: 20px;
   font-weight: 700;
   line-height: 1;
+  color: var(--neon-color, #ec4899);
   text-shadow: 0 0 20px color-mix(in srgb, var(--intimacy-color, #ec4899) 30%, transparent);
 }
 
@@ -433,9 +374,40 @@ const showBondEffect = ref(localStorage.getItem('intimacy_show_bond_effect') !==
   padding: 3px 10px;
   border-radius: 12px;
   font-weight: 600;
-  border: 1px solid;
   line-height: 1;
-  animation: badge-float 3s ease-in-out infinite;
+  background: color-mix(in srgb, var(--neon-color, #ec4899) 20%, #ffffff);
+  border: 2px solid var(--neon-color, #ec4899);
+  color: var(--neon-color, #ec4899);
+  text-shadow: 
+    0 0 3px color-mix(in srgb, var(--neon-color, #ec4899) 40%, transparent),
+    0 0 6px color-mix(in srgb, var(--neon-color, #ec4899) 30%, transparent);
+  box-shadow: 
+    0 0 8px color-mix(in srgb, var(--neon-color, #ec4899) 50%, transparent),
+    0 0 15px color-mix(in srgb, var(--neon-color, #ec4899) 30%, transparent),
+    0 0 25px color-mix(in srgb, var(--neon-color, #ec4899) 20%, transparent),
+    inset 0 0 8px color-mix(in srgb, var(--neon-color, #ec4899) 30%, transparent),
+    inset 0 0 15px color-mix(in srgb, var(--neon-color, #ec4899) 15%, transparent);
+  animation: badge-float 3s ease-in-out infinite, neon-glow-pulse 2s ease-in-out infinite;
+  transition: all 0.3s ease;
+}
+
+@keyframes neon-glow-pulse {
+  0%, 100% {
+    box-shadow: 
+      0 0 8px color-mix(in srgb, var(--neon-color, #ec4899) 50%, transparent),
+      0 0 15px color-mix(in srgb, var(--neon-color, #ec4899) 30%, transparent),
+      0 0 25px color-mix(in srgb, var(--neon-color, #ec4899) 20%, transparent),
+      inset 0 0 8px color-mix(in srgb, var(--neon-color, #ec4899) 30%, transparent),
+      inset 0 0 15px color-mix(in srgb, var(--neon-color, #ec4899) 15%, transparent);
+  }
+  50% {
+    box-shadow: 
+      0 0 12px color-mix(in srgb, var(--neon-color, #ec4899) 60%, transparent),
+      0 0 20px color-mix(in srgb, var(--neon-color, #ec4899) 40%, transparent),
+      0 0 30px color-mix(in srgb, var(--neon-color, #ec4899) 25%, transparent),
+      inset 0 0 12px color-mix(in srgb, var(--neon-color, #ec4899) 40%, transparent),
+      inset 0 0 20px color-mix(in srgb, var(--neon-color, #ec4899) 20%, transparent);
+  }
 }
 
 @keyframes badge-float {
@@ -452,6 +424,191 @@ const showBondEffect = ref(localStorage.getItem('intimacy_show_bond_effect') !==
   color: var(--text-secondary, #6b7280);
   font-weight: 500;
   opacity: 0.8;
+}
+
+/* ==================== 中间装饰区域 ==================== */
+.love-decoration {
+  position: relative;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 100px;
+  height: 60px;
+  margin: 0 20px;
+}
+
+/* 霓虹灯管 SVG */
+.neon-tube {
+  position: absolute;
+  width: 100%;
+  height: 100%;
+  z-index: 1;
+}
+
+.neon-path {
+  animation: neon-flicker 4s ease-in-out infinite;
+  
+  &.neon-path-1 {
+    stroke-dasharray: 200;
+    stroke-dashoffset: 200;
+    animation: neon-draw 3s ease-in-out forwards, neon-pulse 2s ease-in-out 3s infinite;
+  }
+  
+  &.neon-path-2 {
+    opacity: 0.5;
+    stroke-dasharray: 100;
+    stroke-dashoffset: 100;
+    animation: neon-draw 2s ease-in-out 0.5s forwards, neon-pulse 2s ease-in-out 2.5s infinite;
+  }
+}
+
+@keyframes neon-draw {
+  to {
+    stroke-dashoffset: 0;
+  }
+}
+
+@keyframes neon-pulse {
+  0%, 100% {
+    opacity: 1;
+    stroke-width: 1.5;
+  }
+  50% {
+    opacity: 0.8;
+    stroke-width: 2;
+  }
+}
+
+@keyframes neon-flicker {
+  0%, 100% {
+    opacity: 1;
+  }
+  2%, 8%, 12% {
+    opacity: 0.9;
+  }
+  4%, 10% {
+    opacity: 1;
+  }
+}
+
+/* 飘浮的小爱心 */
+.floating-hearts {
+  position: absolute;
+  inset: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 2;
+}
+
+.mini-heart {
+  position: absolute;
+  font-size: 10px;
+  opacity: 0;
+  animation: float-heart 3s ease-in-out infinite;
+  filter: drop-shadow(0 0 3px currentColor);
+  
+  &.h1 {
+    left: 15%;
+    animation-delay: 0s;
+  }
+  
+  &.h2 {
+    left: 50%;
+    transform: translateX(-50%);
+    animation-delay: 1s;
+  }
+  
+  &.h3 {
+    right: 15%;
+    animation-delay: 2s;
+  }
+}
+
+@keyframes float-heart {
+  0%, 100% {
+    opacity: 0;
+    transform: translateY(8px) scale(0.8);
+  }
+  20%, 80% {
+    opacity: 0.5;
+  }
+  50% {
+    opacity: 0.8;
+    transform: translateY(-8px) scale(1);
+  }
+}
+
+/* 闪烁的星星 */
+.love-sparkles {
+  position: absolute;
+  inset: 0;
+  z-index: 0;
+}
+
+.sparkle {
+  position: absolute;
+  width: 2px;
+  height: 2px;
+  border-radius: 50%;
+  opacity: 0;
+  animation: sparkle-twinkle 2s ease-in-out infinite;
+  
+  &::before,
+  &::after {
+    content: '';
+    position: absolute;
+    background: inherit;
+  }
+  
+  &::before {
+    width: 1px;
+    height: 5px;
+    top: -1.5px;
+    left: 0.5px;
+  }
+  
+  &::after {
+    width: 5px;
+    height: 1px;
+    top: 0.5px;
+    left: -1.5px;
+  }
+  
+  &.s1 {
+    top: 15%;
+    left: 10%;
+    animation-delay: 0s;
+  }
+  
+  &.s2 {
+    top: 70%;
+    left: 20%;
+    animation-delay: 0.5s;
+  }
+  
+  &.s3 {
+    top: 25%;
+    right: 15%;
+    animation-delay: 1s;
+  }
+  
+  &.s4 {
+    bottom: 20%;
+    right: 10%;
+    animation-delay: 1.5s;
+  }
+}
+
+@keyframes sparkle-twinkle {
+  0%, 100% {
+    opacity: 0;
+    transform: scale(0) rotate(0deg);
+  }
+  50% {
+    opacity: 0.8;
+    transform: scale(1) rotate(180deg);
+  }
 }
 
 /* 经验显示区域 */
@@ -481,7 +638,10 @@ const showBondEffect = ref(localStorage.getItem('intimacy_show_bond_effect') !==
   font-size: 20px;
   color: var(--intimacy-color, #ec4899);
   line-height: 1;
-  animation: number-glow 2s ease-in-out infinite;
+  
+  &.neon-number {
+    animation: number-glow 2s ease-in-out infinite;
+  }
 }
 
 @keyframes number-glow {
@@ -888,11 +1048,52 @@ html.dark-mode {
   }
 
   .intimacy-level-name {
-    text-shadow: 0 0 20px color-mix(in srgb, var(--intimacy-color, #ec4899) 50%, transparent);
+    &.neon-text {
+      text-shadow: 
+        0 0 8px var(--neon-color, #ec4899),
+        0 0 15px var(--neon-color, #ec4899);
+    }
   }
 
   .intimacy-level-badge {
-    box-shadow: 0 0 15px color-mix(in srgb, var(--intimacy-color, #ec4899) 40%, transparent);
+    &.neon-badge {
+      background: color-mix(in srgb, var(--neon-color, #ec4899) 25%, #0f172a) !important;
+      border: 2px solid var(--neon-color, #ec4899) !important;
+      color: #ffffff !important;
+      text-shadow: 
+        0 0 5px var(--neon-color, #ec4899),
+        0 0 10px var(--neon-color, #ec4899),
+        0 0 15px var(--neon-color, #ec4899);
+      box-shadow: 
+        0 0 10px var(--neon-color, #ec4899),
+        0 0 20px var(--neon-color, #ec4899),
+        0 0 30px var(--neon-color, #ec4899),
+        0 0 40px color-mix(in srgb, var(--neon-color, #ec4899) 60%, transparent),
+        inset 0 0 10px color-mix(in srgb, var(--neon-color, #ec4899) 50%, transparent),
+        inset 0 0 20px color-mix(in srgb, var(--neon-color, #ec4899) 30%, transparent);
+      animation: badge-float 3s ease-in-out infinite, neon-glow-pulse-dark 2s ease-in-out infinite;
+    }
+  }
+  
+  @keyframes neon-glow-pulse-dark {
+    0%, 100% {
+      box-shadow: 
+        0 0 10px var(--neon-color, #ec4899),
+        0 0 20px var(--neon-color, #ec4899),
+        0 0 30px var(--neon-color, #ec4899),
+        0 0 40px color-mix(in srgb, var(--neon-color, #ec4899) 60%, transparent),
+        inset 0 0 10px color-mix(in srgb, var(--neon-color, #ec4899) 50%, transparent),
+        inset 0 0 20px color-mix(in srgb, var(--neon-color, #ec4899) 30%, transparent);
+    }
+    50% {
+      box-shadow: 
+        0 0 15px var(--neon-color, #ec4899),
+        0 0 25px var(--neon-color, #ec4899),
+        0 0 35px var(--neon-color, #ec4899),
+        0 0 50px color-mix(in srgb, var(--neon-color, #ec4899) 70%, transparent),
+        inset 0 0 15px color-mix(in srgb, var(--neon-color, #ec4899) 60%, transparent),
+        inset 0 0 25px color-mix(in srgb, var(--neon-color, #ec4899) 40%, transparent);
+    }
   }
 
   .level-subtitle {
@@ -909,7 +1110,33 @@ html.dark-mode {
   }
 
   .exp-current {
-    text-shadow: 0 0 15px color-mix(in srgb, var(--intimacy-color, #ec4899) 50%, transparent);
+    &.neon-number {
+      text-shadow: 
+        0 0 8px var(--neon-color, #ec4899),
+        0 0 15px var(--neon-color, #ec4899);
+    }
+  }
+  
+  /* 霓虹灯管在深色模式下更亮 */
+  .neon-path {
+    filter: 
+      drop-shadow(0 0 2px var(--intimacy-color, #ec4899)) 
+      drop-shadow(0 0 4px var(--intimacy-color, #ec4899));
+  }
+  
+  @keyframes neon-glow {
+    0%, 100% {
+      filter: 
+        drop-shadow(0 0 2px var(--intimacy-color, #ec4899)) 
+        drop-shadow(0 0 4px var(--intimacy-color, #ec4899));
+      opacity: 1;
+    }
+    50% {
+      filter: 
+        drop-shadow(0 0 3px var(--intimacy-color, #ec4899)) 
+        drop-shadow(0 0 6px var(--intimacy-color, #ec4899));
+      opacity: 0.95;
+    }
   }
 
   /* 进度条区域 */
@@ -999,26 +1226,7 @@ html.dark-mode {
     box-shadow: 0 0 15px color-mix(in srgb, var(--intimacy-color, #ec4899) 50%, transparent);
   }
 
-  /* 装饰元素 */
-  .bg-decoration {
-    opacity: 0.6;
-  }
-
-  .sparkle-particle,
-  .sparkle-particle::before,
-  .sparkle-particle::after {
-    background: var(--intimacy-color, #ec4899);
-    filter: brightness(1.1) drop-shadow(0 0 4px var(--intimacy-color, #ec4899));
-  }
-
-  .wave-line {
-    background: linear-gradient(90deg, 
-      transparent,
-      color-mix(in srgb, var(--intimacy-color, #ec4899) 80%, transparent),
-      transparent
-    );
-    box-shadow: 0 0 10px var(--intimacy-color, #ec4899);
-  }
+  /* 装饰元素 - 已移除 */
 
   /* 加载状态 */
   .spinner {
