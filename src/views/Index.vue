@@ -1468,12 +1468,17 @@ const handleSendVideo = async (file: File) => {
         // 直接更新临时消息，不改变ID避免重新渲染
         const msg = chatStore.messages.find(m => m.id === tempId)
         if (msg) {
+          console.log('[视频上传] 更新临时消息:', { tempId, msgId: msg.id, currentStatus: msg.status })
           msg.videoUrl = fullVideoUrl // 更新为服务器URL
           msg.videoThumbnail = fullThumbnailUrl || undefined
           msg.videoDuration = videoDuration || 0
           msg.status = 'sent' // 更新状态
+          msg.isNew = false; // 取消新消息标记
           // 保存真实ID到自定义属性，用于后续操作
           (msg as any).realId = Number(result.data.id)
+          console.log('[视频上传] 临时消息已更新:', { status: msg.status, realId: (msg as any).realId })
+        } else {
+          console.warn('[视频上传] 未找到临时消息:', tempId)
         }
 
         // 私密房间：处理亲密度信息
