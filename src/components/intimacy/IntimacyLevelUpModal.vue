@@ -315,7 +315,7 @@ function handleClose() {
 }
 
 // 深色模式
-.chat-app.dark-mode .level-up-overlay {
+html.dark-mode .level-up-overlay {
   background: rgba(0, 0, 0, 0.8);
   backdrop-filter: blur(12px);
 

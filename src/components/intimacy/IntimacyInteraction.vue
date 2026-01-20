@@ -540,7 +540,7 @@ const currentLoveMessage = computed(() => {
 }
 
 /* ==================== 暗色模式 ==================== */
-.chat-app.dark-mode {
+html.dark-mode {
   .intimacy-interaction-wrapper {
     background: color-mix(in srgb, var(--intimacy-color, #ec4899) 6%, #0f172a);
     border: 1px solid color-mix(in srgb, var(--intimacy-color, #ec4899) 15%, transparent);

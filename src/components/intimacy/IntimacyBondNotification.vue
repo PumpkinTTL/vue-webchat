@@ -214,7 +214,7 @@ const handleClose = () => {
 }
 
 /* 暗色模式：稍微深一点 */
-.chat-app.dark-mode .bond-notification-overlay {
+html.dark-mode .bond-notification-overlay {
   background: rgba(0, 0, 0, 0.4);
   backdrop-filter: blur(12px);
 }
@@ -367,7 +367,7 @@ const handleClose = () => {
 }
 
 /* 暗色模式 */
-:global(.chat-app.dark-mode) .glass-orb {
+html.dark-mode .glass-orb {
   background: 
     radial-gradient(circle at 30% 30%, rgba(255, 255, 255, 0.2) 0%, transparent 50%),
     linear-gradient(135deg, 
@@ -871,7 +871,7 @@ const handleClose = () => {
   }
 }
 
-:global(.chat-app.dark-mode) .close-btn {
+html.dark-mode .close-btn {
   background: rgba(50, 50, 50, 0.9);
   color: #ccc;
   
@@ -882,7 +882,7 @@ const handleClose = () => {
 }
 
 /* ==================== 完整深色模式适配 ==================== */
-.chat-app.dark-mode .bond-notification-overlay {
+html.dark-mode .bond-notification-overlay {
   /* 装饰元素 */
   .floating-hearts .heart {
     filter: brightness(1.2) drop-shadow(0 0 8px currentColor);

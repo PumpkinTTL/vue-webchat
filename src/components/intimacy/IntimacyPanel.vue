@@ -865,7 +865,7 @@ const showBondEffect = ref(localStorage.getItem('intimacy_show_bond_effect') !==
 }
 
 /* ==================== 暗色模式 ==================== */
-.chat-app.dark-mode {
+html.dark-mode {
   .intimacy-card-expanded {
     background: #0f172a;
     border-color: #1e293b;
