@@ -136,7 +136,7 @@
 </template>
 
 <script setup lang="ts">
-import { ref, computed } from 'vue'
+import { ref } from 'vue'
 import IntimacyInteraction from './IntimacyInteraction.vue'
 import type { IntimacyInfo, IntimacyLevel, InteractionState } from '@/types/intimacy'
 
@@ -163,12 +163,6 @@ const emit = defineEmits<{
   'toggle-exp-toast': [value: boolean]
   'toggle-bond-effect': [value: boolean]
 }>()
-
-// 检测深色模式
-const isDarkMode = computed(() => {
-  if (typeof window === 'undefined') return false
-  return localStorage.getItem('darkMode') === 'true'
-})
 
 // 从localStorage读取初始值
 const showExpToast = ref(localStorage.getItem('intimacy_show_exp_toast') !== '0')

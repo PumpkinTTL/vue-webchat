@@ -205,7 +205,7 @@ const handleClose = () => {
   right: 0;
   bottom: 0;
   background: rgba(0, 0, 0, 0.1);
-  /* backdrop-filter: blur(8px); */ /* 暂时禁用，排查问题 */
+  backdrop-filter: blur(8px);
   display: flex;
   align-items: center;
   justify-content: center;
@@ -216,7 +216,7 @@ const handleClose = () => {
 /* 暗色模式：稍微深一点 */
 .chat-app.dark-mode .bond-notification-overlay {
   background: rgba(0, 0, 0, 0.4);
-  /* backdrop-filter: blur(12px); */ /* 暂时禁用，排查问题 */
+  backdrop-filter: blur(12px);
 }
 
 /* 过渡期间移除backdrop-filter，避免影响页面 */
