@@ -373,6 +373,56 @@ onMounted(async () => {
     }
   })
 
+  // 监听 room_joined 事件，直接更新当前房间的在线人数
+  wsStore.setOnRoomJoined((roomId, users) => {
+    console.log('[房间加入] room_joined 事件 - roomId:', roomId, 'users:', users.length, 'currentRoom:', currentRoom.value?.id)
+    
+    // 更新 chatStore
+    chatStore.updateRoomOnlineCount(users.length)
+    
+    // 直接更新 currentRoom 的在线人数（解决 watch 不触发的问题）
+    if (currentRoom.value && currentRoom.value.id === roomId) {
+      const previousOnline = currentRoom.value.onlineUsers
+      currentRoom.value.onlineUsers = users.length
+      console.log('[房间加入] 更新在线人数:', previousOnline, '->', users.length)
+      
+      // 如果是私密房间且有亲密度信息，检查是否需要启动互动
+      if (currentRoom.value.isPrivate && 
+          intimacyStore.currentIntimacy && 
+          currentRoom.value.totalUsers === 2) {
+        
+        // 对方上线（从1变成2）：启动亲密度互动
+        if (previousOnline === 1 && users.length === 2) {
+          console.log('[亲密度] room_joined 检测到对方上线，启动互动')
+          intimacyStore.startInteraction()
+          
+          // 显示羁绊通知
+          if (!shownBondNotificationRooms.has(roomId)) {
+            console.log('[羁绊通知] room_joined 准备显示通知')
+            const showBondEffect = localStorage.getItem('intimacy_show_bond_effect')
+            if (showBondEffect !== '0') {
+              if (bondNotificationTimer) {
+                clearTimeout(bondNotificationTimer)
+              }
+              bondNotificationTimer = setTimeout(() => {
+                console.log('[羁绊通知] 显示通知')
+                showBondNotification.value = true
+                shownBondNotificationRooms.add(roomId)
+              }, 500)
+            }
+          }
+        }
+        
+        // 对方离线（从2变成1）：重置互动
+        if (previousOnline === 2 && users.length === 1) {
+          console.log('[亲密度] room_joined 检测到对方离线，重置互动')
+          intimacyStore.resetInteraction()
+          shownBondNotificationRooms.delete(roomId)
+        }
+      }
+    }
+  })
+
   // 加载房间列表
   await loadUserRooms()
 })
@@ -921,6 +971,13 @@ const handleSelectRoom = async (room: any) => {
     console.error('获取房间人数失败:', error)
   }
 
+  // 加载亲密度信息（仅私密房间）- 必须在 WebSocket 加入之前加载
+  if (room.private === 1) {
+    await intimacyStore.loadIntimacyInfo(roomId)
+  } else {
+    intimacyStore.clearIntimacy()
+  }
+
   // 加入 WebSocket 房间（会触发room_joined事件，更新准确的在线人数）
   if (wsStore.isAuthed) {
     enterRoom(roomId)
@@ -929,6 +986,8 @@ const handleSelectRoom = async (room: any) => {
     // 使用 nextTick 确保 WebSocket 事件已处理
     nextTick(() => {
       setTimeout(() => {
+        console.log('[房间切换] 延迟检查 - roomId:', roomId, 'currentRoom:', currentRoom.value?.id, 'isPrivate:', currentRoom.value?.isPrivate, 'intimacy:', !!intimacyStore.currentIntimacy, 'totalUsers:', currentRoom.value?.totalUsers, 'onlineUsers:', currentRoom.value?.onlineUsers)
+        
         if (currentRoom.value?.id === roomId && 
             currentRoom.value.isPrivate && 
             intimacyStore.currentIntimacy && 
@@ -952,6 +1011,8 @@ const handleSelectRoom = async (room: any) => {
               }, 500)
             }
           }
+        } else {
+          console.log('[房间切换] 延迟检查未通过条件')
         }
       }, 300) // 给 WebSocket 一些时间更新
     })
@@ -970,13 +1031,6 @@ const handleSelectRoom = async (room: any) => {
   // 更新软删除消息数量（仅管理员需要）
   if (userStore.isAdmin) {
     await updateDeletedCount()
-  }
-
-  // 加载亲密度信息（仅私密房间）
-  if (room.private === 1) {
-    await intimacyStore.loadIntimacyInfo(roomId)
-  } else {
-    intimacyStore.clearIntimacy()
   }
 }
 

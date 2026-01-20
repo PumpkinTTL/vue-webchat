@@ -331,7 +331,7 @@ export const useWebSocketStore = defineStore('websocket', () => {
         typingUsers.value.clear()
         intimacyActive.value = false
         intimacyStartTime.value = null
-        console.log('[WebSocket] 加入房间:', data.room_id, '在线人数:', data.online_count)
+        console.log('[WebSocket] 加入房间:', data.room_id, '在线人数:', data.online_count, '用户列表:', data.users)
         if (onRoomJoined) {
           onRoomJoined(data.room_id, data.users)
         }

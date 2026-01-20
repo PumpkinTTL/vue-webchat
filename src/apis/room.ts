@@ -57,7 +57,7 @@ export function getUserRooms() {
  */
 export function createRoom(data: CreateRoomParams) {
   return request<{ code: number; msg: string; data: any }>({
-    url: '/room/save',
+    url: '/room/create',
     method: 'post',
     data
   })
