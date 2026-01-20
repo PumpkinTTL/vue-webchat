@@ -5,7 +5,6 @@
         v-for="tip in tips"
         :key="tip.id"
         class="exp-tip"
-        :class="{ 'dark-mode': isDarkMode }"
         :style="{ 
           '--random-x': `${getRandomOffset(tip)}px`,
           transform: `translateX(${getRandomOffset(tip)}px)`
@@ -29,7 +28,6 @@
 </template>
 
 <script setup lang="ts">
-import { computed } from 'vue'
 import type { ExpTip } from '@/types/intimacy'
 
 interface Props {
@@ -37,12 +35,6 @@ interface Props {
 }
 
 defineProps<Props>()
-
-// 检测深色模式
-const isDarkMode = computed(() => {
-  if (typeof window === 'undefined') return false
-  return localStorage.getItem('darkMode') === 'true'
-})
 
 // 为每个tip生成随机的水平偏移
 const offsetCache = new Map<string, number>()
@@ -188,7 +180,7 @@ function getTypeText(type: string): string {
 }
 
 // 深色模式
-.exp-tip.dark-mode {
+html.dark-mode {
   .exp-tip-inner {
     background: linear-gradient(135deg, 
       rgba(15, 23, 42, 0.95) 0%, 
@@ -198,12 +190,14 @@ function getTypeText(type: string): string {
     backdrop-filter: blur(12px) saturate(180%);
     box-shadow: 
       0 4px 16px rgba(0, 0, 0, 0.3),
-      0 0 0 1px rgba(255, 255, 255, 0.05);
+      0 0 0 1px rgba(255, 255, 255, 0.05),
+      0 0 20px rgba(139, 92, 246, 0.2);
   }
 
   .exp-icon {
     background: linear-gradient(135deg, #8B5CF6 0%, #EC4899 100%);
-    box-shadow: 0 2px 8px rgba(139, 92, 246, 0.4);
+    box-shadow: 0 2px 8px rgba(139, 92, 246, 0.4),
+                0 0 15px rgba(139, 92, 246, 0.3);
   }
 
   .exp-value {
@@ -211,11 +205,12 @@ function getTypeText(type: string): string {
     -webkit-background-clip: text;
     -webkit-text-fill-color: transparent;
     background-clip: text;
-    filter: brightness(1.1);
+    filter: brightness(1.1) drop-shadow(0 0 8px rgba(168, 85, 247, 0.5));
   }
 
   .exp-label {
     color: #CBD5E1;
+    text-shadow: 0 0 8px rgba(203, 213, 225, 0.3);
   }
 
   /* 增强动画效果 */
