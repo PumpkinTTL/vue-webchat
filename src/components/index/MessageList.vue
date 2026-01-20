@@ -612,7 +612,7 @@ defineExpose({ scrollToBottom, scrollToBottomWithHistory, scrollToMessage, obser
   }
 }
 
-.chat-app.dark-mode .scroll-to-bottom {
+html.dark-mode .scroll-to-bottom {
   background: rgba(30, 41, 59, 0.9);
   color: #60A5FA;
   border-color: rgba(96, 165, 250, 0.2);
@@ -703,7 +703,7 @@ defineExpose({ scrollToBottom, scrollToBottomWithHistory, scrollToMessage, obser
   }
 }
 
-.chat-app.dark-mode .back-to-history {
+html.dark-mode .back-to-history {
   background: rgba(30, 41, 59, 0.9);
   color: #A78BFA;
   border-color: rgba(167, 139, 250, 0.2);

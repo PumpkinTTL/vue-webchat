@@ -870,7 +870,7 @@ defineExpose({
 }
 
 // 深色模式 - 链接卡片
-.chat-app.dark-mode {
+html.dark-mode {
   .link-card {
     background: rgba(96, 165, 250, 0.12);
     border-color: rgba(96, 165, 250, 0.3);
