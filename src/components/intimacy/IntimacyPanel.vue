@@ -447,18 +447,23 @@ const showBondEffect = ref(localStorage.getItem('intimacy_show_bond_effect') !==
 
 .neon-path {
   animation: neon-flicker 4s ease-in-out infinite;
+  filter: 
+    drop-shadow(0 0 1px var(--intimacy-color, #ec4899)) 
+    drop-shadow(0 0 2px var(--intimacy-color, #ec4899));
   
   &.neon-path-1 {
     stroke-dasharray: 200;
     stroke-dashoffset: 200;
-    animation: neon-draw 3s ease-in-out forwards, neon-pulse 2s ease-in-out 3s infinite;
+    stroke-width: 2.5;
+    animation: neon-draw 3s ease-in-out forwards, neon-pulse-light 2s ease-in-out 3s infinite;
   }
   
   &.neon-path-2 {
-    opacity: 0.5;
+    opacity: 0.7;
     stroke-dasharray: 100;
     stroke-dashoffset: 100;
-    animation: neon-draw 2s ease-in-out 0.5s forwards, neon-pulse 2s ease-in-out 2.5s infinite;
+    stroke-width: 2;
+    animation: neon-draw 2s ease-in-out 0.5s forwards, neon-pulse-light 2s ease-in-out 2.5s infinite;
   }
 }
 
@@ -468,14 +473,16 @@ const showBondEffect = ref(localStorage.getItem('intimacy_show_bond_effect') !==
   }
 }
 
-@keyframes neon-pulse {
+@keyframes neon-pulse-light {
   0%, 100% {
-    opacity: 1;
-    stroke-width: 1.5;
+    filter: 
+      drop-shadow(0 0 1px var(--intimacy-color, #ec4899)) 
+      drop-shadow(0 0 2px var(--intimacy-color, #ec4899));
   }
   50% {
-    opacity: 0.8;
-    stroke-width: 2;
+    filter: 
+      drop-shadow(0 0 1.5px var(--intimacy-color, #ec4899)) 
+      drop-shadow(0 0 3px var(--intimacy-color, #ec4899));
   }
 }
 
@@ -1122,20 +1129,29 @@ html.dark-mode {
     filter: 
       drop-shadow(0 0 2px var(--intimacy-color, #ec4899)) 
       drop-shadow(0 0 4px var(--intimacy-color, #ec4899));
+    
+    &.neon-path-1 {
+      stroke-width: 3;
+      animation: neon-draw 3s ease-in-out forwards, neon-pulse-dark 2s ease-in-out 3s infinite;
+    }
+    
+    &.neon-path-2 {
+      stroke-width: 2.5;
+      opacity: 0.8;
+      animation: neon-draw 2s ease-in-out 0.5s forwards, neon-pulse-dark 2s ease-in-out 2.5s infinite;
+    }
   }
   
-  @keyframes neon-glow {
+  @keyframes neon-pulse-dark {
     0%, 100% {
       filter: 
         drop-shadow(0 0 2px var(--intimacy-color, #ec4899)) 
         drop-shadow(0 0 4px var(--intimacy-color, #ec4899));
-      opacity: 1;
     }
     50% {
       filter: 
         drop-shadow(0 0 3px var(--intimacy-color, #ec4899)) 
         drop-shadow(0 0 6px var(--intimacy-color, #ec4899));
-      opacity: 0.95;
     }
   }
 
@@ -1264,58 +1280,102 @@ html.dark-mode {
 /* ==================== 移动端适配 ==================== */
 @media (max-width: 768px) {
   .intimacy-card-expanded {
-    padding: 18px 16px;
+    padding: 16px 14px;
   }
   
   .intimacy-close {
-    top: 12px;
-    right: 12px;
-    width: 28px;
-    height: 28px;
-    font-size: 12px;
+    top: 10px;
+    right: 10px;
+    width: 26px;
+    height: 26px;
+    font-size: 11px;
   }
   
   .intimacy-top-section {
-    margin-bottom: 16px;
-    padding-right: 36px;
-  }
-  
-  .intimacy-level-display {
+    flex-direction: column;
+    align-items: stretch;
+    margin-bottom: 14px;
+    padding-right: 32px;
     gap: 12px;
   }
   
+  .intimacy-level-display {
+    gap: 10px;
+    justify-content: flex-start;
+  }
+  
   .intimacy-heart-icon {
-    font-size: 32px;
+    font-size: 28px;
   }
   
   .heart-glow {
-    width: 40px;
-    height: 40px;
+    width: 36px;
+    height: 36px;
+  }
+  
+  .heart-ring {
+    width: 50px;
+    height: 50px;
+  }
+  
+  .intimacy-level-text {
+    flex: 1;
+    min-width: 0;
+  }
+  
+  .level-name-row {
+    gap: 6px;
+    flex-wrap: nowrap;
   }
   
   .intimacy-level-name {
-    font-size: 18px;
+    font-size: 15px;
+    white-space: nowrap;
   }
   
   .intimacy-level-badge {
-    font-size: 10px;
-    padding: 2px 8px;
+    font-size: 9px;
+    padding: 2px 7px;
+    flex-shrink: 0;
   }
   
   .level-subtitle {
-    font-size: 10px;
+    font-size: 9px;
+  }
+  
+  /* 中间装饰区域 - 缩小尺寸 */
+  .love-decoration {
+    width: 80px;
+    height: 50px;
+    margin: 0 auto;
+  }
+  
+  /* 经验显示区域 */
+  .intimacy-exp-display {
+    align-items: center;
+    flex-direction: row;
+    justify-content: center;
+    gap: 8px;
   }
   
   .exp-label {
     font-size: 9px;
   }
   
+  .exp-numbers {
+    gap: 3px;
+  }
+  
   .exp-current {
-    font-size: 18px;
+    font-size: 16px;
+  }
+  
+  .exp-separator {
+    font-size: 12px;
   }
   
   .exp-max {
-    font-size: 13px;
+    font-size: 12px;
   }
   
   .intimacy-progress-section {
