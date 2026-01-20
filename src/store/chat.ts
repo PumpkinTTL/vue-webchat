@@ -312,13 +312,18 @@ export const useChatStore = defineStore('chat', () => {
     
     // 直接查找对应的消息，不需要遍历所有消息
     messageIds.forEach(messageId => {
-      const message = messages.value.find(m => m.id == messageId)
+      // 尝试通过 ID 或 realId 查找消息
+      const message = messages.value.find(m => 
+        m.id == messageId || (m as any).realId == messageId
+      )
       
       console.log('[Chat Store] 处理消息已读:', {
         messageId,
         found: !!message,
         isOwn: message?.isOwn,
-        type: message?.type
+        type: message?.type,
+        actualId: message?.id,
+        realId: (message as any)?.realId
       })
       
       // 只处理自己发送的消息
