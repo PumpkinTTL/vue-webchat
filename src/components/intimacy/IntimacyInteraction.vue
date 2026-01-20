@@ -170,6 +170,71 @@ const currentLoveMessage = computed(() => {
   border-radius: 12px;
   overflow: hidden;
   transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  
+  // 1. 边框流光动画
+  &::before {
+    content: '';
+    position: absolute;
+    inset: -1px;
+    border-radius: 12px;
+    padding: 2px;
+    background: linear-gradient(
+      90deg,
+      transparent,
+      transparent,
+      var(--intimacy-color, #ec4899),
+      transparent,
+      transparent
+    );
+    background-size: 200% 100%;
+    -webkit-mask: 
+      linear-gradient(#fff 0 0) content-box, 
+      linear-gradient(#fff 0 0);
+    -webkit-mask-composite: xor;
+    mask: 
+      linear-gradient(#fff 0 0) content-box, 
+      linear-gradient(#fff 0 0);
+    mask-composite: exclude;
+    animation: border-snake 2s linear infinite;
+    pointer-events: none;
+    z-index: 1;
+  }
+  
+  // 2. 渐变背景流动
+  &::after {
+    content: '';
+    position: absolute;
+    inset: 0;
+    border-radius: 12px;
+    background: linear-gradient(
+      45deg,
+      transparent 30%,
+      color-mix(in srgb, var(--intimacy-color, #ec4899) 20%, transparent) 50%,
+      transparent 70%
+    );
+    background-size: 200% 200%;
+    animation: gradient-flow 3s ease-in-out infinite;
+    pointer-events: none;
+    z-index: 0;
+  }
+}
+
+@keyframes border-snake {
+  0% {
+    background-position: 200% 0;
+  }
+  100% {
+    background-position: -200% 0;
+  }
+}
+
+@keyframes gradient-flow {
+  0%, 100% {
+    background-position: 0% 50%;
+  }
+  50% {
+    background-position: 100% 50%;
+  }
 }
 
 /* 第一行：头像行 */
