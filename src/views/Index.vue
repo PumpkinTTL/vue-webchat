@@ -408,6 +408,11 @@ watch(() => wsStore.onlineCount, (count, oldCount) => {
     const previousOnline = currentRoom.value.onlineUsers
     currentRoom.value.onlineUsers = count
     
+    // 同步更新 chatStore 的在线人数
+    if (chatStore.currentRoom) {
+      chatStore.currentRoom.onlineUsers = count
+    }
+    
     // 如果是私密房间且有亲密度信息
     if (currentRoom.value.isPrivate && intimacyStore.currentIntimacy && currentRoom.value.totalUsers === 2) {
       // 对方上线（从1变成2）：启动亲密度互动
@@ -919,6 +924,37 @@ const handleSelectRoom = async (room: any) => {
   // 加入 WebSocket 房间（会触发room_joined事件，更新准确的在线人数）
   if (wsStore.isAuthed) {
     enterRoom(roomId)
+    
+    // 等待 WebSocket 更新在线人数后，检查是否需要启动亲密度互动
+    // 使用 nextTick 确保 WebSocket 事件已处理
+    nextTick(() => {
+      setTimeout(() => {
+        if (currentRoom.value?.id === roomId && 
+            currentRoom.value.isPrivate && 
+            intimacyStore.currentIntimacy && 
+            currentRoom.value.totalUsers === 2 &&
+            currentRoom.value.onlineUsers === 2) {
+          console.log('[亲密度] 切换回房间，两人都在线，启动互动')
+          intimacyStore.startInteraction()
+          
+          // 检查是否需要显示羁绊通知（切换回房间时，如果两人都在线且未显示过）
+          if (!shownBondNotificationRooms.has(roomId)) {
+            console.log('[羁绊通知] 切换回房间，准备显示通知')
+            const showBondEffect = localStorage.getItem('intimacy_show_bond_effect')
+            if (showBondEffect !== '0') {
+              if (bondNotificationTimer) {
+                clearTimeout(bondNotificationTimer)
+              }
+              bondNotificationTimer = setTimeout(() => {
+                console.log('[羁绊通知] 显示通知')
+                showBondNotification.value = true
+                shownBondNotificationRooms.add(roomId)
+              }, 500)
+            }
+          }
+        }
+      }, 300) // 给 WebSocket 一些时间更新
+    })
   }
 
   // 设置 chatStore 的当前房间并同步锁定状态
