@@ -1,7 +1,7 @@
 <template>
   <Teleport to="body">
     <Transition name="bond-notification">
-      <div v-if="visible" class="bond-notification-overlay" :class="{ 'dark-mode': isDarkMode }" @click="handleClose">
+      <div v-if="visible" class="bond-notification-overlay" @click="handleClose">
         <div class="bond-notification-container" @click.stop>
           <!-- 发光容器 -->
           <div class="orb-glow-wrapper">
@@ -140,12 +140,6 @@ interface Props {
 const props = defineProps<Props>()
 const emit = defineEmits<{ close: [] }>()
 
-// 检测深色模式
-const isDarkMode = computed(() => {
-  if (typeof window === 'undefined') return false
-  return localStorage.getItem('darkMode') === 'true'
-})
-
 // 服务器URL
 const serverUrl = import.meta.env.VITE_SERVER_URL || ''
 
@@ -211,7 +205,7 @@ const handleClose = () => {
   right: 0;
   bottom: 0;
   background: rgba(0, 0, 0, 0.1);
-  backdrop-filter: blur(8px);
+  /* backdrop-filter: blur(8px); */ /* 暂时禁用，排查问题 */
   display: flex;
   align-items: center;
   justify-content: center;
@@ -220,9 +214,14 @@ const handleClose = () => {
 }
 
 /* 暗色模式：稍微深一点 */
-.bond-notification-overlay.dark-mode {
+.chat-app.dark-mode .bond-notification-overlay {
   background: rgba(0, 0, 0, 0.4);
-  backdrop-filter: blur(12px);
+  /* backdrop-filter: blur(12px); */ /* 暂时禁用，排查问题 */
+}
+
+/* 过渡期间移除backdrop-filter，避免影响页面 */
+.bond-notification-leave-active {
+  backdrop-filter: none !important;
 }
 
 .bond-notification-container {
@@ -367,8 +366,8 @@ const handleClose = () => {
   }
 }
 
-/* 暗色模式：更深邃的玻璃效果 */
-:global(.dark-mode) .glass-orb {
+/* 暗色模式 */
+:global(.chat-app.dark-mode) .glass-orb {
   background: 
     radial-gradient(circle at 30% 30%, rgba(255, 255, 255, 0.2) 0%, transparent 50%),
     linear-gradient(135deg, 
@@ -872,7 +871,7 @@ const handleClose = () => {
   }
 }
 
-:global(.dark-mode) .close-btn {
+:global(.chat-app.dark-mode) .close-btn {
   background: rgba(50, 50, 50, 0.9);
   color: #ccc;
   
@@ -883,30 +882,33 @@ const handleClose = () => {
 }
 
 /* ==================== 完整深色模式适配 ==================== */
-.bond-notification-overlay.dark-mode {
+.chat-app.dark-mode .bond-notification-overlay {
   /* 装饰元素 */
   .floating-hearts .heart {
-    filter: brightness(1.2);
+    filter: brightness(1.2) drop-shadow(0 0 8px currentColor);
   }
 
   .twinkling-stars .star {
-    filter: brightness(1.2);
+    filter: brightness(1.2) drop-shadow(0 0 6px currentColor);
   }
 
   /* 玻璃球内容 */
   .user-avatar img,
   .avatar-placeholder {
     border: 3px solid rgba(255, 255, 255, 0.2);
+    box-shadow: 0 0 20px rgba(236, 72, 153, 0.4);
   }
 
   .avatar-placeholder {
     background: linear-gradient(135deg, rgba(236, 72, 153, 0.9), rgba(219, 39, 119, 0.9));
     border: 3px solid rgba(255, 255, 255, 0.3);
+    box-shadow: 0 0 25px rgba(236, 72, 153, 0.5);
   }
 
   /* 圆环装饰 */
   .orb-ring {
     border-color: rgba(255, 255, 255, 0.2);
+    box-shadow: 0 0 10px rgba(255, 255, 255, 0.1);
   }
 
   .ring-2 {
@@ -939,18 +941,25 @@ const handleClose = () => {
   .inner-glow {
     filter: blur(50px);
     opacity: 0.4;
+    box-shadow: 0 0 60px currentColor;
   }
 
   /* 标题文字 */
   .title-glow {
     color: rgba(255, 255, 255, 0.9) !important;
+    text-shadow: 0 0 15px currentColor;
   }
 
   .title-main {
     filter: brightness(1.1);
+    text-shadow: 0 0 20px currentColor;
     
     &::before {
       opacity: 0.08;
+    }
+
+    svg {
+      filter: drop-shadow(0 0 8px currentColor);
     }
   }
 
@@ -959,24 +968,34 @@ const handleClose = () => {
     border: 2px solid rgba(255, 255, 255, 0.2);
     box-shadow: 
       inset 0 1px 0 rgba(255, 255, 255, 0.2),
-      0 4px 20px rgba(0, 0, 0, 0.3);
+      0 4px 20px rgba(0, 0, 0, 0.3),
+      0 0 25px var(--level-color);
     
     &::after {
       border-color: rgba(255, 255, 255, 0.1);
+    }
+
+    i, svg {
+      filter: drop-shadow(0 0 6px white);
     }
   }
 
   .level-name {
     filter: brightness(1.1);
+    text-shadow: 0 0 15px currentColor;
+  }
+
+  .level-underline {
+    box-shadow: 0 0 10px currentColor;
   }
 
   /* 闪电连接线 */
   .lightning-bolt .bolt-path {
-    filter: brightness(1.2) drop-shadow(0 0 4px currentColor);
+    filter: brightness(1.2) drop-shadow(0 0 8px currentColor);
   }
 
   .energy-particle {
-    filter: brightness(1.2);
+    filter: brightness(1.2) drop-shadow(0 0 6px currentColor);
   }
 }
 

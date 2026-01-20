@@ -540,10 +540,11 @@ const currentLoveMessage = computed(() => {
 }
 
 /* ==================== 暗色模式 ==================== */
-:global(.dark-mode) {
+.chat-app.dark-mode {
   .intimacy-interaction-wrapper {
     background: color-mix(in srgb, var(--intimacy-color, #ec4899) 6%, #0f172a);
     border: 1px solid color-mix(in srgb, var(--intimacy-color, #ec4899) 15%, transparent);
+    box-shadow: 0 0 20px color-mix(in srgb, var(--intimacy-color, #ec4899) 15%, transparent);
   }
 
   .intimacy-interaction-bar {
@@ -558,16 +559,17 @@ const currentLoveMessage = computed(() => {
   /* 用户头像区域 */
   .intimacy-user-name {
     color: #f1f5f9;
+    text-shadow: 0 0 8px color-mix(in srgb, var(--intimacy-color, #ec4899) 30%, transparent);
   }
 
-  .intimacy-user-avatar-wrapper {
-    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.3);
-    border: 2px solid color-mix(in srgb, var(--intimacy-color, #ec4899) 25%, transparent);
+  .intimacy-user-avatar {
+    box-shadow: 0 0 15px color-mix(in srgb, var(--intimacy-color, #ec4899) 40%, transparent);
   }
 
   .intimacy-user-avatar-placeholder {
     background: color-mix(in srgb, var(--intimacy-color, #ec4899) 20%, #334155);
     color: #f1f5f9;
+    box-shadow: 0 0 15px color-mix(in srgb, var(--intimacy-color, #ec4899) 40%, transparent);
   }
 
   /* 进度条区域 */
@@ -584,17 +586,48 @@ const currentLoveMessage = computed(() => {
 
   /* 中心爱心图标 */
   .intimacy-center-heart {
-    background: #0f172a;
+    background: radial-gradient(circle at center, 
+      rgba(236, 72, 153, 0.25) 0%, 
+      rgba(147, 51, 234, 0.2) 50%,
+      rgba(15, 23, 42, 0.85) 100%
+    );
     border: 2px solid var(--intimacy-color, #ec4899);
     box-shadow:
-      0 2px 12px rgba(236, 72, 153, 0.4),
-      0 0 0 4px rgba(15, 23, 42, 0.9);
+      0 2px 12px rgba(236, 72, 153, 0.5),
+      0 0 25px var(--intimacy-color, #ec4899),
+      0 0 40px rgba(236, 72, 153, 0.3),
+      0 0 0 4px rgba(15, 23, 42, 0.9),
+      inset 0 0 25px rgba(236, 72, 153, 0.3),
+      inset 0 2px 10px rgba(255, 255, 255, 0.1);
+  }
+
+  .intimacy-center-heart i,
+  .intimacy-center-heart svg {
+    color: #f0abfc !important;
+    filter: drop-shadow(0 0 10px var(--intimacy-color, #ec4899)) 
+            drop-shadow(0 0 20px rgba(236, 72, 153, 0.6));
   }
 
   .intimacy-progress-section.completed .intimacy-center-heart {
+    background: radial-gradient(circle at center,
+      var(--intimacy-color, #ec4899) 0%,
+      color-mix(in srgb, var(--intimacy-color, #ec4899) 85%, white) 50%,
+      color-mix(in srgb, var(--intimacy-color, #ec4899) 70%, white) 100%
+    );
     box-shadow:
-      0 4px 20px rgba(236, 72, 153, 0.6),
-      0 0 0 6px rgba(15, 23, 42, 0.9);
+      0 4px 20px rgba(236, 72, 153, 0.7),
+      0 0 35px var(--intimacy-color, #ec4899),
+      0 0 50px rgba(236, 72, 153, 0.5),
+      0 0 0 6px rgba(15, 23, 42, 0.9),
+      inset 0 0 30px rgba(255, 255, 255, 0.4),
+      inset 0 2px 15px rgba(255, 255, 255, 0.3);
+  }
+
+  .intimacy-progress-section.completed .intimacy-center-heart i,
+  .intimacy-progress-section.completed .intimacy-center-heart svg {
+    color: white !important;
+    filter: drop-shadow(0 0 8px white) 
+            drop-shadow(0 0 15px rgba(255, 255, 255, 0.8));
   }
 
   /* 碰撞波纹 */
@@ -608,14 +641,20 @@ const currentLoveMessage = computed(() => {
     color: #94a3b8;
   }
 
+  .intimacy-countdown-row i,
+  .intimacy-countdown-row svg {
+    color: var(--intimacy-color, #ec4899) !important;
+    filter: drop-shadow(0 0 6px var(--intimacy-color, #ec4899));
+  }
+
   .intimacy-love-message {
     color: var(--intimacy-color, #ec4899);
-    text-shadow: 0 0 10px color-mix(in srgb, var(--intimacy-color, #ec4899) 30%, transparent);
+    text-shadow: 0 0 15px color-mix(in srgb, var(--intimacy-color, #ec4899) 50%, transparent);
   }
 
   .intimacy-countdown-row.urgent .intimacy-love-message {
     color: #f87171;
-    text-shadow: 0 0 8px rgba(248, 113, 113, 0.4);
+    text-shadow: 0 0 12px rgba(248, 113, 113, 0.6);
   }
 }
 

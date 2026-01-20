@@ -1,7 +1,7 @@
 <template>
   <Teleport to="body">
     <Transition name="modal-fade">
-      <div v-if="visible" class="level-up-overlay" :class="{ 'dark-mode': isDarkMode }" @click="handleClose">
+      <div v-if="visible" class="level-up-overlay" @click="handleClose">
         <div class="level-up-modal" @click.stop>
           <!-- 装饰元素 -->
           <div class="deco-circle deco-circle-1"></div>
@@ -79,12 +79,6 @@ const emit = defineEmits<{
   close: []
 }>()
 
-// 检测深色模式
-const isDarkMode = computed(() => {
-  if (typeof window === 'undefined') return false
-  return localStorage.getItem('darkMode') === 'true'
-})
-
 const levelGradient = computed(() => {
   if (!props.levelUpData?.levelColor) {
     return 'linear-gradient(135deg, #ec4899, #9333ea)'
@@ -119,12 +113,17 @@ function handleClose() {
   width: 100%;
   height: 100%;
   background: rgba(0, 0, 0, 0.6);
-  backdrop-filter: blur(8px);
+  /* backdrop-filter: blur(8px); */ /* 暂时禁用，排查问题 */
   display: flex;
   align-items: center;
   justify-content: center;
   z-index: 10000;
   padding: 20px;
+}
+
+/* 过渡期间移除backdrop-filter，避免影响页面 */
+.modal-fade-leave-active .level-up-overlay {
+  backdrop-filter: none !important;
 }
 
 .level-up-modal {
@@ -316,7 +315,7 @@ function handleClose() {
 }
 
 // 深色模式
-.level-up-overlay.dark-mode {
+.chat-app.dark-mode .level-up-overlay {
   background: rgba(0, 0, 0, 0.8);
   backdrop-filter: blur(12px);
 
@@ -326,49 +325,67 @@ function handleClose() {
     border: 1px solid rgba(255, 255, 255, 0.1);
     box-shadow: 
       0 20px 60px rgba(0, 0, 0, 0.6),
-      0 0 0 1px rgba(255, 255, 255, 0.05);
+      0 0 0 1px rgba(255, 255, 255, 0.05),
+      0 0 40px rgba(236, 72, 153, 0.2);
   }
   
   .level-up-title {
     background-clip: text;
-    filter: brightness(1.1);
+    filter: brightness(1.1) drop-shadow(0 0 20px currentColor);
   }
   
   .level-up-subtitle {
     color: #cbd5e1;
+    text-shadow: 0 0 10px rgba(203, 213, 225, 0.3);
   }
 
   .level-highlight {
     filter: brightness(1.1);
+    text-shadow: 0 0 15px currentColor;
   }
 
   /* 装饰元素 */
   .deco-circle {
     border-color: rgba(236, 72, 153, 0.3);
+    box-shadow: 0 0 20px rgba(236, 72, 153, 0.2);
   }
 
   .deco-star {
     color: #fbbf24;
-    filter: brightness(1.1);
+    filter: brightness(1.1) drop-shadow(0 0 8px currentColor);
   }
 
   .heart-particle {
     color: #f472b6;
-    filter: brightness(1.1);
+    filter: brightness(1.1) drop-shadow(0 0 8px currentColor);
   }
 
   /* 图标 */
   .level-up-icon {
-    box-shadow: 0 10px 40px rgba(236, 72, 153, 0.6);
+    box-shadow: 
+      0 10px 40px rgba(236, 72, 153, 0.6),
+      0 0 60px rgba(236, 72, 153, 0.4);
     filter: brightness(1.1);
+
+    svg {
+      filter: drop-shadow(0 0 8px white);
+    }
   }
 
   /* 按钮 */
   .level-up-btn {
-    box-shadow: 0 4px 15px rgba(236, 72, 153, 0.5);
+    box-shadow: 
+      0 4px 15px rgba(236, 72, 153, 0.5),
+      0 0 30px rgba(236, 72, 153, 0.3);
+    
+    svg {
+      filter: drop-shadow(0 0 4px white);
+    }
     
     &:hover {
-      box-shadow: 0 8px 25px rgba(236, 72, 153, 0.6);
+      box-shadow: 
+        0 8px 25px rgba(236, 72, 153, 0.6),
+        0 0 40px rgba(236, 72, 153, 0.4);
       transform: translateY(-2px);
     }
   }

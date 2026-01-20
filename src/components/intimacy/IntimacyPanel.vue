@@ -871,22 +871,34 @@ const showBondEffect = ref(localStorage.getItem('intimacy_show_bond_effect') !==
 }
 
 /* ==================== 暗色模式 ==================== */
-.intimacy-card-expanded.dark-mode {
-  background: #0f172a;
-  border-color: #1e293b;
-  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.4);
+.chat-app.dark-mode {
+  .intimacy-card-expanded {
+    background: #0f172a;
+    border-color: #1e293b;
+    box-shadow: 0 4px 16px rgba(0, 0, 0, 0.4), 0 0 30px color-mix(in srgb, var(--intimacy-color, #ec4899) 15%, transparent);
+  }
 
   .intimacy-close {
     background: color-mix(in srgb, var(--intimacy-color, #ec4899) 15%, transparent);
+    box-shadow: 0 0 15px color-mix(in srgb, var(--intimacy-color, #ec4899) 30%, transparent);
 
     &:hover {
       background: color-mix(in srgb, var(--intimacy-color, #ec4899) 25%, transparent);
+      box-shadow: 0 0 20px color-mix(in srgb, var(--intimacy-color, #ec4899) 40%, transparent);
     }
   }
 
   /* 顶部区域 */
   .intimacy-level-text {
     color: #f1f5f9;
+  }
+
+  .intimacy-level-name {
+    text-shadow: 0 0 20px color-mix(in srgb, var(--intimacy-color, #ec4899) 50%, transparent);
+  }
+
+  .intimacy-level-badge {
+    box-shadow: 0 0 15px color-mix(in srgb, var(--intimacy-color, #ec4899) 40%, transparent);
   }
 
   .level-subtitle {
@@ -902,6 +914,10 @@ const showBondEffect = ref(localStorage.getItem('intimacy_show_bond_effect') !==
     color: #94a3b8;
   }
 
+  .exp-current {
+    text-shadow: 0 0 15px color-mix(in srgb, var(--intimacy-color, #ec4899) 50%, transparent);
+  }
+
   /* 进度条区域 */
   .progress-label {
     color: #94a3b8;
@@ -912,15 +928,24 @@ const showBondEffect = ref(localStorage.getItem('intimacy_show_bond_effect') !==
     }
   }
 
+  .progress-percent {
+    text-shadow: 0 0 10px color-mix(in srgb, var(--intimacy-color, #ec4899) 40%, transparent);
+  }
+
   .intimacy-progress-bar {
     background: color-mix(in srgb, var(--intimacy-color, #ec4899) 12%, #1e293b);
     box-shadow: inset 0 1px 2px rgba(0, 0, 0, 0.3);
+  }
+
+  .intimacy-progress-fill {
+    box-shadow: 0 0 20px var(--intimacy-color, #ec4899);
   }
 
   /* 底部区域 */
   .intimacy-message-count {
     background: color-mix(in srgb, var(--intimacy-color, #ec4899) 8%, #1e293b);
     border: 1px solid color-mix(in srgb, var(--intimacy-color, #ec4899) 15%, transparent);
+    box-shadow: 0 0 15px color-mix(in srgb, var(--intimacy-color, #ec4899) 10%, transparent);
 
     &::before {
       background: linear-gradient(45deg, transparent 30%, color-mix(in srgb, var(--intimacy-color, #ec4899) 15%, transparent) 50%, transparent 70%);
@@ -928,15 +953,27 @@ const showBondEffect = ref(localStorage.getItem('intimacy_show_bond_effect') !==
 
     &:hover {
       background: color-mix(in srgb, var(--intimacy-color, #ec4899) 12%, #1e293b);
+      box-shadow: 0 0 20px color-mix(in srgb, var(--intimacy-color, #ec4899) 20%, transparent);
     }
   }
 
   .message-icon-wrapper {
     background: color-mix(in srgb, var(--intimacy-color, #ec4899) 20%, #334155);
+    box-shadow: 0 0 15px color-mix(in srgb, var(--intimacy-color, #ec4899) 30%, transparent);
+  }
+
+  .message-icon-wrapper i,
+  .message-icon-wrapper svg {
+    color: var(--intimacy-color, #ec4899) !important;
+    filter: drop-shadow(0 0 6px var(--intimacy-color, #ec4899));
   }
 
   .message-label {
     color: #94a3b8;
+  }
+
+  .message-value {
+    text-shadow: 0 0 10px color-mix(in srgb, var(--intimacy-color, #ec4899) 40%, transparent);
   }
 
   .intimacy-divider {
@@ -946,6 +983,12 @@ const showBondEffect = ref(localStorage.getItem('intimacy_show_bond_effect') !==
   /* 开关设置 */
   .settings-label {
     color: #f1f5f9;
+  }
+
+  .settings-label i,
+  .settings-label svg {
+    color: var(--intimacy-color, #ec4899) !important;
+    filter: drop-shadow(0 0 6px var(--intimacy-color, #ec4899));
   }
 
   .intimacy-slider {
@@ -958,6 +1001,10 @@ const showBondEffect = ref(localStorage.getItem('intimacy_show_bond_effect') !==
     }
   }
 
+  .intimacy-switch input:checked + .intimacy-slider {
+    box-shadow: 0 0 15px color-mix(in srgb, var(--intimacy-color, #ec4899) 50%, transparent);
+  }
+
   /* 装饰元素 */
   .bg-decoration {
     opacity: 0.6;
@@ -967,7 +1014,7 @@ const showBondEffect = ref(localStorage.getItem('intimacy_show_bond_effect') !==
   .sparkle-particle::before,
   .sparkle-particle::after {
     background: var(--intimacy-color, #ec4899);
-    filter: brightness(1.1);
+    filter: brightness(1.1) drop-shadow(0 0 4px var(--intimacy-color, #ec4899));
   }
 
   .wave-line {
@@ -976,12 +1023,14 @@ const showBondEffect = ref(localStorage.getItem('intimacy_show_bond_effect') !==
       color-mix(in srgb, var(--intimacy-color, #ec4899) 80%, transparent),
       transparent
     );
+    box-shadow: 0 0 10px var(--intimacy-color, #ec4899);
   }
 
   /* 加载状态 */
   .spinner {
     border-color: #334155;
     border-top-color: var(--intimacy-color, #ec4899);
+    filter: drop-shadow(0 0 8px var(--intimacy-color, #ec4899));
   }
 
   .loading-state p {
@@ -989,12 +1038,18 @@ const showBondEffect = ref(localStorage.getItem('intimacy_show_bond_effect') !==
   }
 
   /* 心形图标包装器 */
+  .intimacy-heart-icon {
+    filter: drop-shadow(0 0 12px var(--intimacy-color, #ec4899));
+  }
+
   .heart-glow {
     filter: brightness(1.2);
+    box-shadow: 0 0 30px var(--intimacy-color, #ec4899);
   }
 
   .heart-ring {
     opacity: 0.6;
+    box-shadow: 0 0 15px var(--intimacy-color, #ec4899);
   }
 
   /* 互动条区域的背景调整 */
