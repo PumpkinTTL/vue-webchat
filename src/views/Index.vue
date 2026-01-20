@@ -1,5 +1,5 @@
 <template>
-  <div class="chat-app" :class="{ 'dark-mode': isDarkMode }">
+  <div class="chat-app">
     <!-- 侧边栏 -->
     <aside class="chat-sidebar" :class="{ 'sidebar-open': sidebarOpen }">
       <Sidebar :rooms="roomList" :contacts="contactList" :active-room-id="currentRoom?.id"
@@ -173,6 +173,7 @@ import { getUserRooms, createRoom, joinRoom, leaveRoom, getRoomUserCount, toggle
 import { getMessageList, sendTextMessage, sendImageMessage, sendVideoMessage, sendFileMessage, editMessage } from '@/apis/message'
 import type { CreateRoomParams, JoinRoomParams } from '@/apis/room'
 import { useChat } from '@/composables/useChat'
+import { useDarkMode } from '@/composables/useDarkMode'
 import { useUserStore } from '@/store/user'
 import { useIntimacyStore } from '@/store/intimacy'
 import type { ChatMessageItem } from '@/store/chat'
@@ -182,6 +183,9 @@ const userStore = useUserStore()
 
 // 使用亲密度 store
 const intimacyStore = useIntimacyStore()
+
+// 使用深色模式 composable
+const { toggle: toggleDarkMode } = useDarkMode()
 
 // 使用聊天组合式函数
 const { wsStore, chatStore, initChat, destroyChat, enterRoom, broadcastMessage, sendTyping, toggleRoomLock, clearRoomMessages: broadcastClearRoom, restoreRoomMessages: broadcastRestoreRoom } = useChat()
@@ -193,8 +197,6 @@ const messageListRef = ref<InstanceType<typeof MessageList>>()
 const inputBarRef = ref<InstanceType<typeof InputBar>>()
 
 // 响应式状态
-// 暗色模式 - 从本地存储读取初始值
-const isDarkMode = ref(localStorage.getItem('darkMode') === 'true')
 const sidebarOpen = ref(false)
 
 // 亲密度面板状态
@@ -855,13 +857,10 @@ const submitJoinRoom = async () => {
 const toggleSidebar = () => { sidebarOpen.value = !sidebarOpen.value }
 const closeSidebar = () => { sidebarOpen.value = false }
 const toggleTheme = () => {
-  isDarkMode.value = !isDarkMode.value
-  // 保存到本地存储
-  localStorage.setItem('darkMode', String(isDarkMode.value))
-  // 触发自定义事件，通知 App.vue 更新主题
-  window.dispatchEvent(new Event('darkModeChange'))
+  // 使用 composable 切换深色模式（会自动更新 html 元素的 class）
+  toggleDarkMode()
 }
-const handleSelectContact = (contact: any) => { console.log('选择联系人:', contact) }
+const handleSelectContact = (contact: any) => { console.log('选择人:', contact) }
 
 const handleSelectRoom = async (room: any) => {
   if (!room || !room.id) {
@@ -1754,7 +1753,7 @@ const handleToggleIntimacyPanel = () => {
 }
 
 // 深色模式
-.chat-app.dark-mode {
+html.dark-mode .chat-app {
   background: $bg-color-page-dark;
   color: $text-primary-dark;
 
@@ -1890,6 +1889,28 @@ const handleToggleIntimacyPanel = () => {
       }
     }
   }
+
+  // 深色模式 - 菜单按钮
+  .menu-btn {
+    color: $text-secondary-dark;
+
+    &:active {
+      background: rgba($primary-color, 0.15);
+    }
+  }
+
+  // 深色模式 - 新消息提示
+  .new-message-tip {
+    background: $bg-color-elevated-dark;
+    border-color: $primary-color;
+    box-shadow: $box-shadow-lg-dark;
+
+    &:hover {
+      background: $primary-color;
+      color: white;
+      box-shadow: $box-shadow-lg-dark, 0 6px 20px rgba($primary-color, 0.4);
+    }
+  }
 }
 
 // 侧边栏
@@ -1946,15 +1967,6 @@ const handleToggleIntimacyPanel = () => {
   svg {
     width: 22px;
     height: 22px;
-  }
-}
-
-// 深色模式 - 菜单按钮
-.chat-app.dark-mode .menu-btn {
-  color: $text-secondary-dark;
-
-  &:active {
-    background: rgba($primary-color, 0.15);
   }
 }
 
@@ -2024,19 +2036,6 @@ const handleToggleIntimacyPanel = () => {
 .new-msg-fade-leave-to {
   opacity: 0;
   transform: translateX(-50%) translateY(10px);
-}
-
-// 深色模式 - 新消息提示
-.chat-app.dark-mode .new-message-tip {
-  background: $bg-color-elevated-dark;
-  border-color: $primary-color;
-  box-shadow: $box-shadow-lg-dark;
-
-  &:hover {
-    background: $primary-color;
-    color: white;
-    box-shadow: $box-shadow-lg-dark, 0 6px 20px rgba($primary-color, 0.4);
-  }
 }
 
 // 输入区域 - 固定高度
