@@ -304,9 +304,22 @@ export const useChatStore = defineStore('chat', () => {
     const messageIds = data.message_ids || []
     const readerIdStr = String(data.reader_id)
     
+    console.log('[Chat Store] 收到已读回执:', {
+      messageIds,
+      readerId: readerIdStr,
+      totalMessages: messages.value.length
+    })
+    
     // 直接查找对应的消息，不需要遍历所有消息
     messageIds.forEach(messageId => {
       const message = messages.value.find(m => m.id == messageId)
+      
+      console.log('[Chat Store] 处理消息已读:', {
+        messageId,
+        found: !!message,
+        isOwn: message?.isOwn,
+        type: message?.type
+      })
       
       // 只处理自己发送的消息
       if (!message || !message.isOwn) return
@@ -318,6 +331,7 @@ export const useChatStore = defineStore('chat', () => {
       
       // 检查是否已经记录过这个用户的已读
       if ((message as any)._readUserIds.has(readerIdStr)) {
+        console.log('[Chat Store] 用户已读过此消息，跳过')
         return // 已存在，跳过
       }
       
@@ -325,6 +339,13 @@ export const useChatStore = defineStore('chat', () => {
       (message as any)._readUserIds.add(readerIdStr)
       message.status = 'read'
       message.readCount = (message.readCount || 0) + 1
+      
+      console.log('[Chat Store] 已更新消息已读状态:', {
+        messageId,
+        type: message.type,
+        readCount: message.readCount,
+        status: message.status
+      })
     })
   }
 

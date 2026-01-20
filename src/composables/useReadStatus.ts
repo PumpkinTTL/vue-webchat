@@ -27,6 +27,8 @@ export function useReadStatus() {
     const idsToSend = [...pendingReadBatch.value]
     pendingReadBatch.value = []
 
+    console.log('[已读] 批量发送已读标记:', idsToSend)
+
     // 通过 WebSocket 发送已读标记
     if (wsStore.isConnected) {
       wsStore.markMessagesAsRead(idsToSend)
@@ -35,6 +37,10 @@ export function useReadStatus() {
       idsToSend.forEach(id => {
         chatStore.markMessageAsRead(id)
       })
+      
+      console.log('[已读] 已标记为已读:', idsToSend)
+    } else {
+      console.warn('[已读] WebSocket 未连接，无法发送已读标记')
     }
   }
 
@@ -105,6 +111,12 @@ export function useReadStatus() {
           const msg = chatStore.messages.find(m => m.id == numericMsgId)
           if (!msg || msg.isOwn) return
 
+          console.log('[已读] 检测到可见的未读消息:', {
+            id: numericMsgId,
+            type: msg.type,
+            isOwn: msg.isOwn
+          })
+
           visibleUnreadIds.push(numericMsgId)
 
           // 已读后停止观察该元素
@@ -112,6 +124,7 @@ export function useReadStatus() {
         })
 
         if (visibleUnreadIds.length > 0) {
+          console.log('[已读] 准备标记消息为已读:', visibleUnreadIds)
           markMessagesAsRead(visibleUnreadIds)
         }
       },
