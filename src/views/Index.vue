@@ -1427,7 +1427,7 @@ const handleSendImage = async (file: File) => {
       if (msg) {
         msg.status = 'failed'
       }
-      message.error(result.msg || '图片发送失败')
+      message.error(result.msg || result.message || '图片发送失败')
     }
   } catch (error: any) {
     // 发送失败，更新临时消息状态
@@ -1598,7 +1598,7 @@ const handleSendVideo = async (file: File) => {
       if (msg) {
         msg.status = 'failed'
       }
-      message.error(result.msg || '视频发送失败')
+      message.error(result.msg || result.message || '视频发送失败')
     }
   } catch (error: any) {
     // 发送失败，更新临时消息状态
@@ -1650,7 +1650,7 @@ const handleSendFile = async (file: File) => {
       })
       message.success('文件发送成功')
     } else {
-      message.error(result.msg || '发送文件失败')
+      message.error(result.msg || result.message || '发送文件失败')
     }
   } catch (error: any) {
     message.error(error.message || '发送文件失败')
