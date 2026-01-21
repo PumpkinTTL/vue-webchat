@@ -180,7 +180,7 @@ const getCategoryType = (category: string): string => {
 
 // ==================== Timeline ====================
 .version-timeline {
-  padding: 16px 0 20px 0; // 移除左侧内边距，顶部减小到16px
+  padding: 12px 0 16px 0; // 减小顶部和底部内边距
   max-height: 600px;
   overflow-y: auto;
   margin-right: 8px; // 右侧留出滚动条空间
@@ -206,11 +206,11 @@ const getCategoryType = (category: string): string => {
 
 .timeline-item {
   display: flex;
-  gap: 14px;
+  gap: 12px; // 减小间距
   position: relative;
   
   &:not(:last-child) {
-    margin-bottom: 20px;
+    margin-bottom: 16px; // 减小项目间距
   }
 }
 
@@ -287,8 +287,8 @@ const getCategoryType = (category: string): string => {
     rgba($primary-color, 0.12) 50%,
     rgba($border-light, 0.8) 100%
   );
-  margin-top: 6px;
-  min-height: 30px;
+  margin-top: 4px; // 减小间距
+  min-height: 24px; // 减小最小高度
   transition: background 0.2s ease;
   border-radius: 1px;
   position: relative;
@@ -309,6 +309,7 @@ const getCategoryType = (category: string): string => {
     border-radius: 2px;
   }
 }
+
 
 // ==================== Version Card ====================
 .timeline-content {
@@ -334,8 +335,8 @@ const getCategoryType = (category: string): string => {
   display: flex;
   align-items: center;
   justify-content: space-between;
-  gap: 12px;
-  padding: 12px 14px; // 稍微减小内边距
+  gap: 10px; // 减小间距
+  padding: 10px 12px; // 减小内边距
   background: linear-gradient(135deg, 
     rgba($primary-color, 0.02) 0%, 
     rgba($primary-light, 0.01) 100%
@@ -404,13 +405,13 @@ const getCategoryType = (category: string): string => {
 
 // ==================== Card Body ====================
 .card-body {
-  padding: 14px; // 稍微减小内边距
+  padding: 12px; // 减小内边距
 }
 
 .feature-group {
   &:not(:last-child) {
-    margin-bottom: 14px;
-    padding-bottom: 14px;
+    margin-bottom: 12px; // 减小间距
+    padding-bottom: 12px; // 减小间距
     border-bottom: 1px solid rgba($border-light, 0.6); // 更淡的分隔线
   }
 }
@@ -418,8 +419,8 @@ const getCategoryType = (category: string): string => {
 .feature-header {
   display: flex;
   align-items: center;
-  gap: 7px;
-  margin-bottom: 9px;
+  gap: 6px; // 减小间距
+  margin-bottom: 8px; // 减小间距
 }
 
 .feature-icon {
@@ -482,8 +483,8 @@ const getCategoryType = (category: string): string => {
 .feature-item {
   display: flex;
   align-items: flex-start;
-  gap: 7px;
-  padding: 3px 0;
+  gap: 6px; // 减小间距
+  padding: 2px 0; // 减小内边距
 }
 
 .item-bullet {
@@ -773,6 +774,13 @@ const getCategoryType = (category: string): string => {
 </style>
 
 <style lang="scss">
+// Ant Design Modal 全局样式穿透
+.version-log-modal {
+  .ant-modal-body {
+    padding: 0 !important;
+  }
+}
+
 // Ant Design Modal 深色模式适配（全局样式）
 .dark-mode {
   .version-log-modal {
