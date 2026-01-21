@@ -43,11 +43,11 @@
 
         <!-- 新消息提示按钮 -->
         <Transition name="new-msg-fade">
-          <button v-if="newMessageCount > 0" class="new-message-tip" @click="handleScrollToNewMessage">
+          <button v-if="totalUnreadCount > 0" class="new-message-tip" @click="handleScrollToNewMessage">
             <svg viewBox="0 0 24 24" fill="none" stroke="currentColor">
               <path d="M12 5v14M19 12l-7 7-7-7" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" />
             </svg>
-            <span>{{ newMessageCount }} 条新消息</span>
+            <span>{{ unreadMessageText }}</span>
           </button>
         </Transition>
       </section>
@@ -518,6 +518,20 @@ const isAtBottom = ref(true)
 
 // 新消息数量
 const newMessageCount = ref(0)
+// 自己发送但未查看的消息数
+const ownSentMessageCount = ref(0)
+
+// 计算属性：总计数和显示文本
+const totalUnreadCount = computed(() => ownSentMessageCount.value + newMessageCount.value)
+const unreadMessageText = computed(() => {
+  if (ownSentMessageCount.value > 0 && newMessageCount.value > 0) {
+    return `${ownSentMessageCount.value} 条已发送 | ${newMessageCount.value} 条新消息`
+  } else if (ownSentMessageCount.value > 0) {
+    return `${ownSentMessageCount.value} 条已发送`
+  } else {
+    return `${newMessageCount.value} 条新消息`
+  }
+})
 
 // 监听新消息，滚动到底部（仅在非加载历史消息时且在底部时）
 watch(() => chatStore.messages.length, (newLength, oldLength) => {
@@ -541,11 +555,7 @@ watch(() => chatStore.messages.length, (newLength, oldLength) => {
         newMessageCount.value += nonSystemMessages.length
       }
       
-      // 自己的消息：显示toast提示
-      const ownMessages = newMessages.filter(msg => msg.type !== 'system' && msg.isOwn)
-      if (ownMessages.length > 0) {
-        message.success('发送成功，继续看历史记录吧！')
-      }
+      // 注意：自己的消息计数在 HTTP 回调成功后处理，不在这里
     }
 
     // 对于别人的新消息，触发已读检测
@@ -1178,15 +1188,17 @@ const updateDeletedCount = async () => {
 // 处理滚动位置变化
 const handleScrollChange = (atBottom: boolean) => {
   isAtBottom.value = atBottom
-  // 如果滚动到底部，清除新消息计数
+  // 如果滚动到底部，清除所有计数
   if (atBottom) {
     newMessageCount.value = 0
+    ownSentMessageCount.value = 0
   }
 }
 
 // 点击新消息提示，滚动到底部
 const handleScrollToNewMessage = () => {
   newMessageCount.value = 0
+  ownSentMessageCount.value = 0
   nextTick(() => {
     messageListRef.value?.scrollToBottomWithHistory(true)
   })
@@ -1291,6 +1303,11 @@ const handleSendMessage = async (text: string) => {
         } : undefined,
         intimacy: result.intimacy?.data // 只传递data部分，不传递整个intimacy对象
       })
+
+      // 如果不在底部，增加已发送计数
+      if (!isAtBottom.value) {
+        ownSentMessageCount.value++
+      }
     } else {
       // 发送失败
       chatStore.updateMessageStatus(tempId, 'failed')
@@ -1418,6 +1435,11 @@ const handleSendImage = async (file: File) => {
           content: imageUrl,
           intimacy: result.intimacy?.data
         })
+
+        // 如果不在底部，增加已发送计数
+        if (!isAtBottom.value) {
+          ownSentMessageCount.value++
+        }
       }, 300)
     } else {
       // 发送失败，更新临时消息状态
@@ -1589,6 +1611,11 @@ const handleSendVideo = async (file: File) => {
           video_duration: videoDuration || undefined,
           intimacy: result.intimacy?.data
         })
+
+        // 如果不在底部，增加已发送计数
+        if (!isAtBottom.value) {
+          ownSentMessageCount.value++
+        }
       }, 300)
     } else {
       // 发送失败，更新临时消息状态
@@ -1648,6 +1675,12 @@ const handleSendFile = async (file: File) => {
         file_size: file.size,
         intimacy: result.intimacy?.data
       })
+
+      // 如果不在底部，增加已发送计数
+      if (!isAtBottom.value) {
+        ownSentMessageCount.value++
+      }
+
       message.success('文件发送成功')
     } else {
       message.error(result.msg || result.message || '发送文件失败')
