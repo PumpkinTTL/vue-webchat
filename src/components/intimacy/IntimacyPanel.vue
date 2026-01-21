@@ -184,6 +184,9 @@
 import { ref } from 'vue'
 import IntimacyInteraction from './IntimacyInteraction.vue'
 import type { IntimacyInfo, IntimacyLevel, InteractionState } from '@/types/intimacy'
+import { useDarkMode } from '@/composables/useDarkMode'
+
+const { isDarkMode } = useDarkMode()
 
 interface User {
   nick_name: string
