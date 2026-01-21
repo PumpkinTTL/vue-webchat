@@ -618,9 +618,10 @@ const handleVideoClick = () => {
 // 高亮消息
 const highlight = () => {
   isHighlighted.value = true
+  // 动画时长 + 一点缓冲时间，确保动画完全结束后再移除 class
   setTimeout(() => {
     isHighlighted.value = false
-  }, 2000)
+  }, 650)
 }
 
 // 暴露方法给父组件
