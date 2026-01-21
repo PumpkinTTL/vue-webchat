@@ -50,6 +50,14 @@
             <div class="msg-bubble" :class="bubbleClass">
               <!-- 图片 -->
               <div v-if="message.type === 'image'" class="image-wrapper" @click.stop>
+                <!-- 移动端菜单按钮（仅图片消息） -->
+                <button class="image-menu-btn" @click.stop="toggleMobileMenu">
+                  <svg viewBox="0 0 24 24" fill="currentColor">
+                    <circle cx="12" cy="5" r="2" />
+                    <circle cx="12" cy="12" r="2" />
+                    <circle cx="12" cy="19" r="2" />
+                  </svg>
+                </button>
                 <a-image :src="imageUrl" alt="Image" :preview="{ src: imageUrl }" />
               </div>
               <!-- 视频消息 -->
@@ -181,6 +189,14 @@
             <div class="msg-bubble msg-bubble-own" :class="bubbleClass">
               <!-- 图片 -->
               <div v-if="message.type === 'image'" class="image-wrapper" @click.stop>
+                <!-- 移动端菜单按钮（仅图片消息） -->
+                <button class="image-menu-btn image-menu-btn-own" @click.stop="toggleMobileMenu">
+                  <svg viewBox="0 0 24 24" fill="currentColor">
+                    <circle cx="12" cy="5" r="2" />
+                    <circle cx="12" cy="12" r="2" />
+                    <circle cx="12" cy="19" r="2" />
+                  </svg>
+                </button>
                 <a-image :src="imageUrl" alt="Image" :preview="{ src: imageUrl }" />
                 <!-- 上传进度遮罩 -->
                 <div v-if="message.status === 'sending' && uploadProgress !== undefined"
@@ -391,6 +407,11 @@ const emit = defineEmits<{
 
 // Popover 显示状态
 const popoverVisible = ref(false)
+
+// 切换移动端菜单
+const toggleMobileMenu = () => {
+  popoverVisible.value = !popoverVisible.value
+}
 
 // 高亮状态
 const isHighlighted = ref(false)
@@ -737,6 +758,65 @@ defineExpose({
   display: flex;
   flex-direction: column;
   max-width: 100%;
+  position: relative;
+}
+
+// 图片消息的菜单按钮
+.image-wrapper {
+  position: relative;
+  
+  .image-menu-btn {
+    position: absolute;
+    top: 6px;
+    right: 6px;
+    width: 24px;
+    height: 24px;
+    border-radius: 50%;
+    border: none;
+    background: rgba(0, 0, 0, 0.4);
+    backdrop-filter: blur(4px);
+    color: #ffffff;
+    cursor: pointer;
+    display: none; // 默认隐藏，只在移动端显示
+    align-items: center;
+    justify-content: center;
+    padding: 0;
+    transition: background 0.2s ease;
+    z-index: 10;
+    
+    svg {
+      width: 14px;
+      height: 14px;
+    }
+    
+    &:hover {
+      background: rgba(0, 0, 0, 0.6);
+    }
+    
+    &:active {
+      background: rgba(0, 0, 0, 0.7);
+    }
+    
+    // 自己的消息，按钮样式稍有不同
+    &.image-menu-btn-own {
+      background: rgba(255, 255, 255, 0.25);
+      
+      &:hover {
+        background: rgba(255, 255, 255, 0.35);
+      }
+      
+      &:active {
+        background: rgba(255, 255, 255, 0.45);
+      }
+    }
+  }
+}
+
+// 移动端显示图片菜单按钮
+@media (max-width: 768px) {
+  .image-wrapper .image-menu-btn {
+    display: flex;
+  }
 }
 
 // 气泡
@@ -867,6 +947,33 @@ defineExpose({
 // 深色模式
 .dark-mode .msg-edited {
   color: rgba(255, 255, 255, 0.45);
+}
+
+// 深色模式 - 图片菜单按钮
+html.dark-mode {
+  .image-menu-btn {
+    background: rgba(0, 0, 0, 0.5);
+    
+    &:hover {
+      background: rgba(0, 0, 0, 0.7);
+    }
+    
+    &:active {
+      background: rgba(0, 0, 0, 0.8);
+    }
+    
+    &.image-menu-btn-own {
+      background: rgba(255, 255, 255, 0.3);
+      
+      &:hover {
+        background: rgba(255, 255, 255, 0.4);
+      }
+      
+      &:active {
+        background: rgba(255, 255, 255, 0.5);
+      }
+    }
+  }
 }
 
 // 深色模式 - 链接卡片
