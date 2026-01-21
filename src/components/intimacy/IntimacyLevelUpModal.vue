@@ -2,60 +2,66 @@
   <Teleport to="body">
     <Transition name="modal-fade">
       <div v-if="visible" class="level-up-overlay" @click="handleClose">
-        <div class="level-up-modal" @click.stop>
-          <!-- 装饰元素 -->
-          <div class="deco-circle deco-circle-1"></div>
-          <div class="deco-circle deco-circle-2"></div>
+        <div class="level-up-modal" @click.stop :style="{ '--intimacy-color': levelUpData?.levelColor || '#ec4899' }">
           
-          <!-- 星星装饰 -->
-          <svg class="deco-star deco-star-1" viewBox="0 0 24 24" fill="currentColor">
-            <path d="M12 2L15.09 8.26L22 9.27L17 14.14L18.18 21.02L12 17.77L5.82 21.02L7 14.14L2 9.27L8.91 8.26L12 2Z" />
-          </svg>
-          <svg class="deco-star deco-star-2" viewBox="0 0 24 24" fill="currentColor">
-            <path d="M12 2L15.09 8.26L22 9.27L17 14.14L18.18 21.02L12 17.77L5.82 21.02L7 14.14L2 9.27L8.91 8.26L12 2Z" />
-          </svg>
-          <svg class="deco-star deco-star-3" viewBox="0 0 24 24" fill="currentColor">
-            <path d="M12 2L15.09 8.26L22 9.27L17 14.14L18.18 21.02L12 17.77L5.82 21.02L7 14.14L2 9.27L8.91 8.26L12 2Z" />
-          </svg>
-          <svg class="deco-star deco-star-4" viewBox="0 0 24 24" fill="currentColor">
-            <path d="M12 2L15.09 8.26L22 9.27L17 14.14L18.18 21.02L12 17.77L5.82 21.02L7 14.14L2 9.27L8.91 8.26L12 2Z" />
-          </svg>
-          
-          <!-- 爱心粒子 -->
-          <svg class="heart-particle heart-particle-1" viewBox="0 0 24 24" fill="currentColor">
-            <path d="M20.84 4.61a5.5 5.5 0 00-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 00-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 000-7.78z"/>
-          </svg>
-          <svg class="heart-particle heart-particle-2" viewBox="0 0 24 24" fill="currentColor">
-            <path d="M20.84 4.61a5.5 5.5 0 00-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 00-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 000-7.78z"/>
-          </svg>
-          <svg class="heart-particle heart-particle-3" viewBox="0 0 24 24" fill="currentColor">
-            <path d="M20.84 4.61a5.5 5.5 0 00-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 00-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 000-7.78z"/>
-          </svg>
-          <svg class="heart-particle heart-particle-4" viewBox="0 0 24 24" fill="currentColor">
-            <path d="M20.84 4.61a5.5 5.5 0 00-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 00-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 000-7.78z"/>
-          </svg>
+          <!-- 背景装饰 - 和亲密度面板一样 -->
+          <div class="bg-decoration">
+            <div class="sparkle-particle p1"></div>
+            <div class="sparkle-particle p2"></div>
+            <div class="sparkle-particle p3"></div>
+            <div class="sparkle-particle p4"></div>
+            <div class="wave-line w1"></div>
+            <div class="wave-line w2"></div>
+          </div>
           
           <!-- 内容 -->
           <div class="level-up-content">
-            <div class="level-up-icon" :style="{ background: levelGradient }">
-              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                <path d="M12 2L15.09 8.26L22 9.27L17 14.14L18.18 21.02L12 17.77L5.82 21.02L7 14.14L2 9.27L8.91 8.26L12 2Z" />
-              </svg>
+            <!-- 爱心图标 - 和亲密度面板一样的风格 -->
+            <div class="intimacy-heart-wrapper">
+              <font-awesome-icon icon="heart" class="intimacy-heart-icon neon-glow" />
+              <div class="heart-glow"></div>
+              <div class="heart-ring"></div>
             </div>
-            <h2 class="level-up-title" :style="{ background: levelGradient, WebkitBackgroundClip: 'text', WebkitTextFillColor: 'transparent' }">
-              升级啦！
+            
+            <!-- 标题 -->
+            <h2 class="level-up-title neon-text">
+              恭喜升级！
             </h2>
-            <p class="level-up-subtitle">
-              恭喜亲密度升至 
-              <span class="level-highlight" :style="{ color: levelUpData?.levelColor }">
-                Lv.{{ levelUpData?.newLevel }} {{ levelUpData?.levelName }}
-              </span>
-            </p>
-            <button class="level-up-btn" :style="{ background: levelGradient }" @click="handleClose">
-              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            
+            <!-- 等级信息 -->
+            <div class="level-info">
+              <div class="level-name-row">
+                <span class="intimacy-level-name neon-text">
+                  {{ levelUpData?.levelName }}
+                </span>
+                <span class="intimacy-level-badge neon-badge">
+                  Lv.{{ levelUpData?.newLevel }}
+                </span>
+              </div>
+              <div class="level-subtitle">亲密关系升级</div>
+            </div>
+            
+            <!-- 装饰爱心 -->
+            <div class="floating-hearts">
+              <span class="mini-heart h1">♥</span>
+              <span class="mini-heart h2">♥</span>
+              <span class="mini-heart h3">♥</span>
+            </div>
+            
+            <!-- 闪光装饰 -->
+            <div class="love-sparkles">
+              <span class="sparkle s1"></span>
+              <span class="sparkle s2"></span>
+              <span class="sparkle s3"></span>
+              <span class="sparkle s4"></span>
+            </div>
+            
+            <!-- 按钮 -->
+            <button class="level-up-btn" @click="handleClose">
+              <span class="btn-text">太棒了</span>
+              <svg class="btn-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
                 <path d="M5 13l4 4L19 7"/>
               </svg>
-              <span>太棒了！</span>
             </button>
           </div>
         </div>
@@ -65,7 +71,6 @@
 </template>
 
 <script setup lang="ts">
-import { computed } from 'vue'
 import type { LevelUpData } from '@/types/intimacy'
 
 interface Props {
@@ -73,32 +78,11 @@ interface Props {
   levelUpData: LevelUpData | null
 }
 
-const props = defineProps<Props>()
+defineProps<Props>()
 
 const emit = defineEmits<{
   close: []
 }>()
-
-const levelGradient = computed(() => {
-  if (!props.levelUpData?.levelColor) {
-    return 'linear-gradient(135deg, #ec4899, #9333ea)'
-  }
-  const color = props.levelUpData.levelColor
-  return `linear-gradient(135deg, ${color}, ${lightenColor(color, 30)})`
-})
-
-function lightenColor(color: string, percent: number): string {
-  const hex = color.replace('#', '')
-  const r = parseInt(hex.substring(0, 2), 16)
-  const g = parseInt(hex.substring(2, 4), 16)
-  const b = parseInt(hex.substring(4, 6), 16)
-  
-  const newR = Math.min(255, Math.floor(r + (255 - r) * (percent / 100)))
-  const newG = Math.min(255, Math.floor(g + (255 - g) * (percent / 100)))
-  const newB = Math.min(255, Math.floor(b + (255 - b) * (percent / 100)))
-  
-  return `#${newR.toString(16).padStart(2, '0')}${newG.toString(16).padStart(2, '0')}${newB.toString(16).padStart(2, '0')}`
-}
 
 function handleClose() {
   emit('close')
@@ -112,7 +96,7 @@ function handleClose() {
   left: 0;
   width: 100%;
   height: 100%;
-  background: rgba(0, 0, 0, 0.6);
+  background: rgba(0, 0, 0, 0.7);
   backdrop-filter: blur(8px);
   display: flex;
   align-items: center;
@@ -121,93 +105,86 @@ function handleClose() {
   padding: 20px;
 }
 
-/* 过渡期间移除backdrop-filter，避免影响页面 */
-.modal-fade-leave-active .level-up-overlay {
-  backdrop-filter: none !important;
-}
-
 .level-up-modal {
   position: relative;
   width: 100%;
   max-width: 420px;
-  padding: 48px 36px;
-  background: rgba(255, 255, 255, 0.95);
-  backdrop-filter: blur(20px);
+  padding: 56px 40px 48px;
+  background: var(--header-bg, #ffffff);
   border-radius: 24px;
   text-align: center;
   overflow: hidden;
-  box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
+  box-shadow: 0 20px 60px rgba(0, 0, 0, 0.2);
 }
 
-// 装饰圆圈
-.deco-circle {
+// 背景装饰 - 复制亲密度面板的样式
+.bg-decoration {
   position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  overflow: hidden;
+  pointer-events: none;
+  opacity: 0.4;
+}
+
+.sparkle-particle {
+  position: absolute;
+  width: 4px;
+  height: 4px;
+  background: var(--intimacy-color, #ec4899);
   border-radius: 50%;
-  border: 2px solid rgba(236, 72, 153, 0.2);
-  animation: rotate 20s linear infinite;
+  animation: sparkle-float 3s ease-in-out infinite;
+  box-shadow: 0 0 10px var(--intimacy-color, #ec4899);
 }
 
-.deco-circle-1 {
-  width: 200px;
-  height: 200px;
-  top: -80px;
-  right: -80px;
-}
+.p1 { top: 15%; left: 10%; animation-delay: 0s; }
+.p2 { top: 25%; right: 15%; animation-delay: 0.8s; }
+.p3 { bottom: 30%; left: 20%; animation-delay: 1.6s; }
+.p4 { bottom: 20%; right: 12%; animation-delay: 2.4s; }
 
-.deco-circle-2 {
-  width: 150px;
-  height: 150px;
-  bottom: -60px;
-  left: -60px;
-  animation-direction: reverse;
-}
-
-@keyframes rotate {
-  from { transform: rotate(0deg); }
-  to { transform: rotate(360deg); }
-}
-
-// 星星装饰
-.deco-star {
-  position: absolute;
-  width: 20px;
-  height: 20px;
-  color: #f9a916;
-  animation: star-twinkle 1.5s ease-in-out infinite;
-}
-
-.deco-star-1 { top: 20px; left: 30px; animation-delay: 0s; }
-.deco-star-2 { top: 40px; right: 40px; animation-delay: 0.3s; }
-.deco-star-3 { bottom: 30px; left: 50px; animation-delay: 0.6s; }
-.deco-star-4 { bottom: 50px; right: 30px; animation-delay: 0.9s; }
-
-@keyframes star-twinkle {
-  0%, 100% { opacity: 0.3; transform: scale(0.8); }
-  50% { opacity: 1; transform: scale(1.2); }
-}
-
-// 爱心粒子
-.heart-particle {
-  position: absolute;
-  width: 24px;
-  height: 24px;
-  color: #ec4899;
-  animation: heart-float 3s ease-in-out infinite;
-}
-
-.heart-particle-1 { top: 60%; left: 10%; animation-delay: 0s; }
-.heart-particle-2 { top: 30%; right: 15%; animation-delay: 0.5s; }
-.heart-particle-3 { bottom: 20%; right: 20%; animation-delay: 1s; }
-.heart-particle-4 { top: 20%; left: 20%; animation-delay: 1.5s; }
-
-@keyframes heart-float {
+@keyframes sparkle-float {
   0%, 100% {
-    transform: translateY(0) rotate(0deg);
-    opacity: 0.6;
+    opacity: 0;
+    transform: translateY(0) scale(0);
   }
   50% {
-    transform: translateY(-20px) rotate(10deg);
     opacity: 1;
+    transform: translateY(-20px) scale(1);
+  }
+}
+
+.wave-line {
+  position: absolute;
+  width: 100%;
+  height: 2px;
+  background: linear-gradient(90deg, 
+    transparent, 
+    color-mix(in srgb, var(--intimacy-color, #ec4899) 30%, transparent), 
+    transparent
+  );
+  animation: wave-move 4s ease-in-out infinite;
+}
+
+.w1 {
+  top: 30%;
+  animation-delay: 0s;
+}
+
+.w2 {
+  bottom: 35%;
+  animation-delay: 2s;
+}
+
+@keyframes wave-move {
+  0%, 100% {
+    transform: translateX(-100%);
+    opacity: 0;
+  }
+  50% {
+    transform: translateX(100%);
+    opacity: 0.5;
   }
 }
 
@@ -217,91 +194,374 @@ function handleClose() {
   z-index: 1;
 }
 
-.level-up-icon {
-  width: 100px;
-  height: 100px;
-  margin: 0 auto 24px;
-  border-radius: 50%;
+// 爱心图标 - 复制亲密度面板的样式
+.intimacy-heart-wrapper {
+  position: relative;
+  width: 120px;
+  height: 120px;
+  margin: 0 auto 32px;
   display: flex;
   align-items: center;
   justify-content: center;
-  box-shadow: 0 10px 40px rgba(236, 72, 153, 0.4);
-  animation: level-up-bounce 0.6s ease-out;
-  
-  svg {
-    width: 48px;
-    height: 48px;
-    color: white;
+  animation: heart-pop 0.8s cubic-bezier(0.34, 1.56, 0.64, 1);
+}
+
+.intimacy-heart-icon {
+  font-size: 64px;
+  color: var(--intimacy-color, #ec4899);
+  position: relative;
+  z-index: 2;
+  animation: heart-beat 1.5s ease-in-out infinite;
+}
+
+.heart-glow {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  width: 140px;
+  height: 140px;
+  background: var(--intimacy-color, #ec4899);
+  border-radius: 50%;
+  filter: blur(30px);
+  opacity: 0.4;
+  animation: glow-pulse 2s ease-in-out infinite;
+}
+
+.heart-ring {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  width: 100px;
+  height: 100px;
+  border: 3px solid var(--intimacy-color, #ec4899);
+  border-radius: 50%;
+  opacity: 0.3;
+  animation: ring-expand 2s ease-out infinite;
+}
+
+@keyframes heart-pop {
+  0% {
+    transform: scale(0) rotate(-30deg);
+    opacity: 0;
+  }
+  60% {
+    transform: scale(1.1) rotate(5deg);
+  }
+  100% {
+    transform: scale(1) rotate(0deg);
+    opacity: 1;
   }
 }
 
-@keyframes level-up-bounce {
-  0% { transform: scale(0); }
-  50% { transform: scale(1.1); }
-  100% { transform: scale(1); }
+@keyframes heart-beat {
+  0%, 100% {
+    transform: scale(1);
+  }
+  50% {
+    transform: scale(1.05);
+  }
 }
 
+@keyframes glow-pulse {
+  0%, 100% {
+    opacity: 0.4;
+    transform: translate(-50%, -50%) scale(1);
+  }
+  50% {
+    opacity: 0.6;
+    transform: translate(-50%, -50%) scale(1.1);
+  }
+}
+
+@keyframes ring-expand {
+  0% {
+    transform: translate(-50%, -50%) scale(0.8);
+    opacity: 0;
+  }
+  50% {
+    opacity: 0.3;
+  }
+  100% {
+    transform: translate(-50%, -50%) scale(1.3);
+    opacity: 0;
+  }
+}
+
+// 霓虹文字效果 - 复制亲密度面板的样式
+.neon-text {
+  color: var(--intimacy-color, #ec4899);
+  text-shadow: 
+    0 0 10px color-mix(in srgb, var(--intimacy-color, #ec4899) 80%, transparent),
+    0 0 20px color-mix(in srgb, var(--intimacy-color, #ec4899) 60%, transparent),
+    0 0 30px color-mix(in srgb, var(--intimacy-color, #ec4899) 40%, transparent);
+}
+
+.neon-glow {
+  filter: drop-shadow(0 0 15px var(--intimacy-color, #ec4899))
+          drop-shadow(0 0 25px color-mix(in srgb, var(--intimacy-color, #ec4899) 60%, transparent));
+}
+
+.neon-badge {
+  box-shadow: 
+    0 0 15px color-mix(in srgb, var(--intimacy-color, #ec4899) 50%, transparent),
+    inset 0 0 15px color-mix(in srgb, var(--intimacy-color, #ec4899) 20%, transparent);
+}
+
+// 标题
 .level-up-title {
-  font-size: 36px;
-  font-weight: 700;
-  margin-bottom: 12px;
-  background-clip: text;
+  font-size: 42px;
+  font-weight: 900;
+  margin: 0 0 28px;
+  animation: title-glow 0.6s ease-out 0.3s both;
 }
 
-.level-up-subtitle {
-  font-size: 16px;
-  color: #64748b;
-  margin-bottom: 28px;
+@keyframes title-glow {
+  0% {
+    opacity: 0;
+    transform: translateY(20px);
+    filter: blur(10px);
+  }
+  100% {
+    opacity: 1;
+    transform: translateY(0);
+    filter: blur(0);
+  }
 }
 
-.level-highlight {
-  font-weight: 700;
-  font-size: 18px;
+// 等级信息 - 复制亲密度面板的样式
+.level-info {
+  margin-bottom: 36px;
+  animation: info-fade 0.6s ease-out 0.5s both;
 }
 
-.level-up-btn {
-  padding: 14px 36px;
-  color: white;
-  border: none;
-  border-radius: 14px;
-  font-size: 16px;
-  font-weight: 600;
-  cursor: pointer;
-  transition: all 0.3s ease;
-  box-shadow: 0 4px 15px rgba(236, 72, 153, 0.3);
+.level-name-row {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 12px;
+  margin-bottom: 8px;
+  flex-wrap: wrap;
+}
+
+.intimacy-level-name {
+  font-size: 32px;
+  font-weight: 800;
+}
+
+.intimacy-level-badge {
   display: inline-flex;
   align-items: center;
-  gap: 8px;
+  padding: 6px 16px;
+  background: color-mix(in srgb, var(--intimacy-color, #ec4899) 15%, transparent);
+  border: 2px solid color-mix(in srgb, var(--intimacy-color, #ec4899) 30%, transparent);
+  border-radius: 12px;
+  font-weight: 800;
+  font-size: 20px;
+  color: var(--intimacy-color, #ec4899);
+  animation: badge-bounce 0.5s cubic-bezier(0.34, 1.56, 0.64, 1) 0.7s both;
+}
+
+.level-subtitle {
+  font-size: 14px;
+  color: var(--text-secondary, #64748b);
+  font-weight: 500;
+}
+
+@keyframes info-fade {
+  0% {
+    opacity: 0;
+    transform: translateY(15px);
+  }
+  100% {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+@keyframes badge-bounce {
+  0% {
+    opacity: 0;
+    transform: scale(0);
+  }
+  100% {
+    opacity: 1;
+    transform: scale(1);
+  }
+}
+
+// 浮动爱心 - 复制亲密度面板的样式
+.floating-hearts {
+  position: absolute;
+  width: 100%;
+  height: 100%;
+  top: 0;
+  left: 0;
+  pointer-events: none;
+}
+
+.mini-heart {
+  position: absolute;
+  font-size: 20px;
+  color: var(--intimacy-color, #ec4899);
+  opacity: 0;
+  animation: heart-float 4s ease-in-out infinite;
+  filter: drop-shadow(0 0 8px var(--intimacy-color, #ec4899));
+}
+
+.h1 { left: 15%; animation-delay: 0s; }
+.h2 { left: 75%; animation-delay: 1.3s; }
+.h3 { left: 45%; animation-delay: 2.6s; }
+
+@keyframes heart-float {
+  0% {
+    bottom: -5%;
+    opacity: 0;
+    transform: translateY(0) scale(0.8);
+  }
+  20% {
+    opacity: 0.7;
+  }
+  80% {
+    opacity: 0.7;
+  }
+  100% {
+    bottom: 105%;
+    opacity: 0;
+    transform: translateY(-10px) scale(1);
+  }
+}
+
+// 闪光装饰 - 复制亲密度面板的样式
+.love-sparkles {
+  position: absolute;
+  width: 100%;
+  height: 100%;
+  top: 0;
+  left: 0;
+  pointer-events: none;
+}
+
+.sparkle {
+  position: absolute;
+  width: 6px;
+  height: 6px;
+  background: var(--intimacy-color, #ec4899);
+  border-radius: 50%;
+  opacity: 0;
+  animation: sparkle-twinkle 3s ease-in-out infinite;
+  box-shadow: 0 0 12px var(--intimacy-color, #ec4899);
+}
+
+.s1 { top: 20%; left: 12%; animation-delay: 0s; }
+.s2 { top: 35%; right: 18%; animation-delay: 0.75s; }
+.s3 { bottom: 25%; left: 22%; animation-delay: 1.5s; }
+.s4 { bottom: 40%; right: 15%; animation-delay: 2.25s; }
+
+@keyframes sparkle-twinkle {
+  0%, 100% {
+    opacity: 0;
+    transform: scale(0);
+  }
+  50% {
+    opacity: 1;
+    transform: scale(1);
+  }
+}
+
+// 按钮
+.level-up-btn {
+  position: relative;
+  padding: 16px 44px;
+  background: linear-gradient(135deg, 
+    var(--intimacy-color, #ec4899), 
+    color-mix(in srgb, var(--intimacy-color, #ec4899) 85%, white)
+  );
+  color: white;
+  border: none;
+  border-radius: 16px;
+  font-size: 18px;
+  font-weight: 800;
+  cursor: pointer;
+  display: inline-flex;
+  align-items: center;
+  gap: 10px;
+  overflow: hidden;
+  animation: btn-rise 0.5s ease-out 0.9s both;
+  box-shadow: 
+    0 8px 24px color-mix(in srgb, var(--intimacy-color, #ec4899) 40%, transparent),
+    0 0 30px color-mix(in srgb, var(--intimacy-color, #ec4899) 20%, transparent);
+  transition: all 0.3s cubic-bezier(0.34, 1.56, 0.64, 1);
   
-  svg {
-    width: 20px;
-    height: 20px;
+  &::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: -100%;
+    width: 100%;
+    height: 100%;
+    background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.3), transparent);
+    transition: left 0.5s;
+  }
+  
+  .btn-text,
+  .btn-icon {
+    position: relative;
+    z-index: 1;
+  }
+  
+  .btn-icon {
+    width: 22px;
+    height: 22px;
+    transition: transform 0.3s ease;
   }
   
   &:hover {
-    transform: translateY(-2px);
-    box-shadow: 0 8px 25px rgba(236, 72, 153, 0.4);
+    transform: translateY(-3px) scale(1.03);
+    box-shadow: 
+      0 12px 32px color-mix(in srgb, var(--intimacy-color, #ec4899) 50%, transparent),
+      0 0 40px color-mix(in srgb, var(--intimacy-color, #ec4899) 30%, transparent);
+    
+    &::before {
+      left: 100%;
+    }
+    
+    .btn-icon {
+      transform: translateX(3px);
+    }
   }
   
   &:active {
+    transform: translateY(-1px) scale(1);
+  }
+}
+
+@keyframes btn-rise {
+  0% {
+    opacity: 0;
+    transform: translateY(20px);
+  }
+  100% {
+    opacity: 1;
     transform: translateY(0);
   }
 }
 
 // 过渡动画
 .modal-fade-enter-active {
-  transition: all 0.3s ease;
+  transition: all 0.4s ease;
   
   .level-up-modal {
-    transition: all 0.4s cubic-bezier(0.34, 1.56, 0.64, 1);
+    transition: all 0.5s cubic-bezier(0.34, 1.56, 0.64, 1);
   }
 }
 
 .modal-fade-leave-active {
-  transition: all 0.2s ease;
+  transition: all 0.3s ease;
   
   .level-up-modal {
-    transition: all 0.2s ease;
+    transition: all 0.3s ease;
   }
 }
 
@@ -310,83 +570,36 @@ function handleClose() {
   opacity: 0;
   
   .level-up-modal {
-    transform: scale(0.8);
+    transform: scale(0.85) translateY(30px);
+    opacity: 0;
   }
 }
 
 // 深色模式
 html.dark-mode .level-up-overlay {
-  background: rgba(0, 0, 0, 0.8);
+  background: rgba(0, 0, 0, 0.85);
   backdrop-filter: blur(12px);
 
   .level-up-modal {
-    background: rgba(15, 23, 42, 0.95);
-    backdrop-filter: blur(24px);
-    border: 1px solid rgba(255, 255, 255, 0.1);
+    background: var(--bg-color-elevated-dark, #1e293b);
     box-shadow: 
       0 20px 60px rgba(0, 0, 0, 0.6),
-      0 0 0 1px rgba(255, 255, 255, 0.05),
-      0 0 40px rgba(236, 72, 153, 0.2);
+      0 0 0 1px rgba(255, 255, 255, 0.1) inset;
   }
   
-  .level-up-title {
-    background-clip: text;
-    filter: brightness(1.1) drop-shadow(0 0 20px currentColor);
-  }
-  
-  .level-up-subtitle {
-    color: #cbd5e1;
-    text-shadow: 0 0 10px rgba(203, 213, 225, 0.3);
+  .level-subtitle {
+    color: var(--text-secondary-dark, #cbd5e1);
   }
 
-  .level-highlight {
-    filter: brightness(1.1);
-    text-shadow: 0 0 15px currentColor;
-  }
-
-  /* 装饰元素 */
-  .deco-circle {
-    border-color: rgba(236, 72, 153, 0.3);
-    box-shadow: 0 0 20px rgba(236, 72, 153, 0.2);
-  }
-
-  .deco-star {
-    color: #fbbf24;
-    filter: brightness(1.1) drop-shadow(0 0 8px currentColor);
-  }
-
-  .heart-particle {
-    color: #f472b6;
-    filter: brightness(1.1) drop-shadow(0 0 8px currentColor);
-  }
-
-  /* 图标 */
-  .level-up-icon {
-    box-shadow: 
-      0 10px 40px rgba(236, 72, 153, 0.6),
-      0 0 60px rgba(236, 72, 153, 0.4);
-    filter: brightness(1.1);
-
-    svg {
-      filter: drop-shadow(0 0 8px white);
-    }
-  }
-
-  /* 按钮 */
   .level-up-btn {
     box-shadow: 
-      0 4px 15px rgba(236, 72, 153, 0.5),
-      0 0 30px rgba(236, 72, 153, 0.3);
-    
-    svg {
-      filter: drop-shadow(0 0 4px white);
-    }
+      0 8px 24px color-mix(in srgb, var(--intimacy-color, #ec4899) 50%, transparent),
+      0 0 35px color-mix(in srgb, var(--intimacy-color, #ec4899) 28%, transparent);
     
     &:hover {
       box-shadow: 
-        0 8px 25px rgba(236, 72, 153, 0.6),
-        0 0 40px rgba(236, 72, 153, 0.4);
-      transform: translateY(-2px);
+        0 12px 32px color-mix(in srgb, var(--intimacy-color, #ec4899) 60%, transparent),
+        0 0 45px color-mix(in srgb, var(--intimacy-color, #ec4899) 38%, transparent);
     }
   }
 }
@@ -394,48 +607,65 @@ html.dark-mode .level-up-overlay {
 // 移动端适配
 @media (max-width: 768px) {
   .level-up-modal {
-    padding: 36px 24px;
+    padding: 48px 32px 44px;
     max-width: 90%;
+    border-radius: 20px;
   }
   
-  .level-up-icon {
-    width: 80px;
-    height: 80px;
-    margin-bottom: 20px;
-    
-    svg {
-      width: 40px;
-      height: 40px;
-    }
+  .intimacy-heart-wrapper {
+    width: 100px;
+    height: 100px;
+    margin-bottom: 28px;
+  }
+  
+  .intimacy-heart-icon {
+    font-size: 56px;
+  }
+  
+  .heart-glow {
+    width: 120px;
+    height: 120px;
+  }
+  
+  .heart-ring {
+    width: 85px;
+    height: 85px;
   }
   
   .level-up-title {
-    font-size: 28px;
-  }
-  
-  .level-up-subtitle {
-    font-size: 14px;
+    font-size: 36px;
     margin-bottom: 24px;
   }
   
-  .level-highlight {
-    font-size: 16px;
+  .level-info {
+    margin-bottom: 32px;
+  }
+  
+  .intimacy-level-name {
+    font-size: 28px;
+  }
+  
+  .intimacy-level-badge {
+    font-size: 18px;
+    padding: 5px 14px;
+  }
+  
+  .level-subtitle {
+    font-size: 13px;
   }
   
   .level-up-btn {
-    padding: 12px 28px;
-    font-size: 14px;
+    padding: 14px 36px;
+    font-size: 16px;
     
-    svg {
-      width: 18px;
-      height: 18px;
+    .btn-icon {
+      width: 20px;
+      height: 20px;
     }
   }
   
-  .deco-star,
-  .heart-particle {
-    width: 18px;
-    height: 18px;
+  .mini-heart {
+    font-size: 18px;
   }
 }
 </style>

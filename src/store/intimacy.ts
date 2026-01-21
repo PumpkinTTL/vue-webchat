@@ -2,7 +2,7 @@
  * 亲密度系统状态管理
  */
 import { defineStore } from 'pinia'
-import { ref, computed } from 'vue'
+import { ref, computed, watch } from 'vue'
 import type { IntimacyLevel, IntimacyInfo, ExpTip, LevelUpData, InteractionState } from '@/types/intimacy'
 import { getIntimacyInfo, getLevels, collectInteractionExp } from '@/apis/intimacy'
 
@@ -40,6 +40,8 @@ export const useIntimacyStore = defineStore('intimacy', () => {
   
   // 倒计时定时器
   let countdownTimer: ReturnType<typeof setInterval> | null = null
+  
+
 
   // ==================== 计算属性 ====================
   
@@ -79,6 +81,9 @@ export const useIntimacyStore = defineStore('intimacy', () => {
       const result = await getIntimacyInfo(roomId)
       if (result.code === 0) {
         currentIntimacy.value = result.data
+        
+        // 不在这里初始化 shownLevelsByRoom
+        // 让 watch 自然检测，只有真正升级时才记录
         
         // 保存伴侣信息并处理头像URL
         if (result.data.partner) {
@@ -125,7 +130,8 @@ export const useIntimacyStore = defineStore('intimacy', () => {
     total_messages?: number
   }) {
     if (!currentIntimacy.value) return
-
+    
+    // 保存旧等级用于检测升级
     const oldLevel = currentIntimacy.value.current_level
     
     // 直接使用后端返回的current_exp（后端已经计算好了）
@@ -181,13 +187,14 @@ export const useIntimacyStore = defineStore('intimacy', () => {
       currentIntimacy.value.level_color = currentLevelConfig.color
     }
 
-    // 检查是否升级
-    if (data.level_up && data.current_level > oldLevel) {
+    // 检测升级：只有等级真正变化时才弹窗
+    if (data.current_level > oldLevel) {
       const levelConfig = levels.value.find(l => l.level === data.current_level)
       if (levelConfig) {
+        console.log('[亲密度] 检测到升级:', { oldLevel, newLevel: data.current_level })
         showLevelUp({
           newLevel: data.current_level,
-          levelName: data.level_name || levelConfig.name,
+          levelName: currentIntimacy.value.level_name || levelConfig.name,
           levelColor: levelConfig.color
         })
       }
@@ -323,6 +330,9 @@ export const useIntimacyStore = defineStore('intimacy', () => {
   function updateIntimacyFromServer(intimacyData: any, expGain: number) {
     if (!currentIntimacy.value) return
     
+    // 保存旧等级用于检测升级
+    const oldLevel = currentIntimacy.value.current_level
+    
     // 直接使用服务器返回的数据
     currentIntimacy.value.current_exp = intimacyData.current_exp
     currentIntimacy.value.current_level = intimacyData.current_level
@@ -335,6 +345,19 @@ export const useIntimacyStore = defineStore('intimacy', () => {
     
     // 显示经验提示
     addExpTip(expGain, 'interaction')
+    
+    // 检测升级：只有等级真正变化时才弹窗
+    if (intimacyData.current_level > oldLevel) {
+      const levelConfig = levels.value.find(l => l.level === intimacyData.current_level)
+      if (levelConfig) {
+        console.log('[亲密度] 检测到升级（互动）:', { oldLevel, newLevel: intimacyData.current_level })
+        showLevelUp({
+          newLevel: intimacyData.current_level,
+          levelName: intimacyData.level_name || levelConfig.name,
+          levelColor: levelConfig.color
+        })
+      }
+    }
   }
 
   /**
