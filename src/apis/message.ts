@@ -115,15 +115,19 @@ export function sendImageMessage(roomId: number, image: File) {
   const formData = new FormData()
   formData.append('room_id', String(roomId))
   formData.append('image', image)
-  
+
+  console.log('[API] sendImageMessage - FormData entries:')
+  for (let [key, value] of formData.entries()) {
+    console.log(`  ${key}:`, value instanceof File ? `File(${value.name}, ${value.size} bytes)` : value)
+  }
+  console.log('[API] sendImageMessage - image file:', image)
+
   return request<SendMessageResponse>({
     url: '/message/sendImage',
     method: 'post',
     data: formData,
-    headers: {
-      'Content-Type': 'multipart/form-data'
-    },
-    timeout: 60000 // 60秒超时，适配3M带宽上传大图片
+    // 不要手动设置 Content-Type，让 Axios 自动设置正确的 multipart/form-data (带 boundary)
+    timeout: 180000 // 180秒超时（3分钟），适配内网穿透慢速网络上传
   })
 }
 
@@ -139,10 +143,8 @@ export function sendVideoMessage(roomId: number, video: File) {
     url: '/message/sendVideo',
     method: 'post',
     data: formData,
-    headers: {
-      'Content-Type': 'multipart/form-data'
-    },
-    timeout: 120000 // 120秒超时，视频文件通常更大
+    // 不要手动设置 Content-Type，让 Axios 自动设置正确的 multipart/form-data (带 boundary)
+    timeout: 600000 // 600秒超时（10分钟），匹配旧版HTML配置，适配内网穿透慢速网络
   })
 }
 
@@ -158,10 +160,8 @@ export function sendFileMessage(roomId: number, file: File) {
     url: '/message/sendFile',
     method: 'post',
     data: formData,
-    headers: {
-      'Content-Type': 'multipart/form-data'
-    },
-    timeout: 120000 // 120秒超时
+    // 不要手动设置 Content-Type，让 Axios 自动设置正确的 multipart/form-data (带 boundary)
+    timeout: 300000 // 300秒超时（5分钟），匹配旧版HTML配置，适配内网穿透慢速网络
   })
 }
 

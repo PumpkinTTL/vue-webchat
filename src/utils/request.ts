@@ -16,11 +16,25 @@ const service: AxiosInstance = axios.create({
 service.interceptors.request.use(
   (config: InternalAxiosRequestConfig) => {
     // 在发送请求之前做些什么
-    
+
+    // 如果是FormData请求，删除Content-Type让Axios自动设置（带boundary）
+    if (config.data instanceof FormData) {
+      console.log('📤 检测到FormData请求，删除Content-Type')
+      if (config.headers) {
+        delete config.headers['Content-Type']
+      }
+
+      // 打印FormData内容（调试用）
+      console.log('📤 FormData内容:')
+      for (let [key, value] of config.data.entries()) {
+        console.log(`  ${key}:`, value instanceof File ? `File(${value.name}, ${value.size} bytes, type: ${value.type})` : value)
+      }
+    }
+
     // 暂时注释掉 Authorization header，只使用 Cookie 传递 token
     // 登录接口不需要添加 token
     // const isLoginRequest = config.url?.includes('/user/login')
-    
+
     // if (!isLoginRequest) {
     //   try {
     //     const userInfo = localStorage.getItem('userInfo')
@@ -34,8 +48,8 @@ service.interceptors.request.use(
     //     console.error('获取token失败:', error)
     //   }
     // }
-    
-    console.log('📤 发送请求:', config.url, config.data)
+
+    console.log('📤 发送请求:', config.url, 'headers:', config.headers)
     return config
   },
   (error) => {
