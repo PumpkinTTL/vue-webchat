@@ -1,316 +1,197 @@
 <template>
-  <div class="test-page" :class="{ 'dark-mode': isDarkMode }">
-    <div class="test-header">
-      <h1>版本日志组件测试</h1>
-      <button @click="toggleDarkMode" class="toggle-btn">
-        切换深色模式 (当前: {{ isDarkMode ? '深色' : '浅色' }})
-      </button>
-    </div>
-    
-    <div class="test-content">
-      <h2>直接渲染（不在Modal中）</h2>
-      <div class="version-log-wrapper">
-        <div class="version-log-content">
-          <div
-            v-for="version in versionLogs"
-            :key="version.version"
-            class="version-block"
-          >
-            <!-- 版本头 -->
-            <div class="version-header">
-              <span class="version-number">v{{ version.version }}</span>
-              <span class="version-date">{{ version.date }}</span>
-              <span v-if="version.isCurrent" class="current-badge">
-                <font-awesome-icon :icon="['fas', 'check-circle']" />
-                当前版本
-              </span>
-            </div>
+  <div class="test-container">
+    <div class="content-area">
+      <div class="header">
+        <h1>灵动胶囊 Tabbar</h1>
+        <p>Dynamic Capsule Navigation</p>
+      </div>
 
-            <!-- 更新列表 -->
-            <div class="changes-list">
-              <div
-                v-for="(items, category) in version.features"
-                :key="category"
-                class="change-group"
-              >
-                <div class="group-title">
-                  <font-awesome-icon :icon="['fas', getCategoryIcon(category)]" class="icon" />
-                  <span>{{ category }}</span>
-                </div>
-                <ul class="items">
-                  <li v-for="(item, idx) in items" :key="idx">
-                    <span v-html="item"></span>
-                  </li>
-                </ul>
-              </div>
-            </div>
-          </div>
-        </div>
+      <div class="controls">
+        <el-switch
+          v-model="isDark"
+          active-text="深色模式"
+          inactive-text="浅色模式"
+          @change="handleThemeChange"
+          style="--el-switch-on-color: #2563EB;"
+        />
       </div>
       
-      <h2 style="margin-top: 40px;">在Modal中渲染</h2>
-      <button @click="showModal = true" class="open-modal-btn">打开Modal</button>
-      
-      <VersionLog v-model:open="showModal" />
+      <div class="preview-card">
+        <transition name="fade" mode="out-in">
+          <div :key="activeTab" class="active-content">
+            <font-awesome-icon :icon="tabs[activeTab].icon" class="big-icon" />
+            <h2>{{ tabs[activeTab].label }}</h2>
+            <div class="status-badge">Index: {{ activeTab }}</div>
+          </div>
+        </transition>
+      </div>
+
+      <div class="instruction">
+        <p>Try clicking the tabs below to see the animation</p>
+      </div>
     </div>
+
+    <!-- Mount the Tabbar here -->
+    <Tabbar v-model="activeTab" :tabs="tabs" />
   </div>
 </template>
 
 <script setup lang="ts">
-import { ref } from 'vue'
-import VersionLog from '@/components/common/VersionLog.vue'
-import versionLogsData from '@/data/version-logs.json'
+import { ref, onMounted } from 'vue'
+import Tabbar from '@/components/common/Tabbar.vue'
+import { useDarkMode } from '@/composables/useDarkMode'
 
-const isDarkMode = ref(false)
-const showModal = ref(false)
-const versionLogs = ref(versionLogsData.versions)
+const { isDarkMode, toggle } = useDarkMode()
+const isDark = ref(isDarkMode.value)
 
-const toggleDarkMode = () => {
-  isDarkMode.value = !isDarkMode.value
+const activeTab = ref(0)
+const tabs = [
+  { label: '首页', icon: 'home' },
+  { label: '发现', icon: 'rocket' },
+  { label: '消息', icon: 'comments', badge: 5 },
+  { label: '我的', icon: 'user' }
+]
+
+const handleThemeChange = () => {
+  toggle()
+  isDark.value = isDarkMode.value
 }
 
-const getCategoryIcon = (category: string): string => {
-  if (category.includes('重构')) return 'sync-alt'
-  if (category.includes('新增')) return 'plus-circle'
-  if (category.includes('优化')) return 'magic'
-  if (category.includes('修复')) return 'wrench'
-  if (category.includes('发布')) return 'rocket'
-  return 'star'
-}
+onMounted(() => {
+  isDark.value = isDarkMode.value
+})
 </script>
 
 <style lang="scss" scoped>
-.test-page {
+@use "@/styles/variables.scss" as *;
+
+.test-container {
   min-height: 100vh;
-  background: #27d01e;
-  padding: 40px;
-  transition: background 0.3s;
+  width: 100%;
+  background-color: $bg-color-page;
+  transition: background-color 0.3s ease;
+  padding: 40px 20px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
   
-  &.dark-mode {
-    background: #ebb111;
+  // Use global class for dark mode styles
+  :global(.dark-mode) & {
+    background-color: $bg-color-dark;
   }
 }
 
-.test-header {
-  max-width: 800px;
-  margin: 0 auto 40px;
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
+.content-area {
+  width: 100%;
+  max-width: 500px;
+  text-align: center;
+  margin-top: 60px;
+}
+
+.header {
+  margin-bottom: 40px;
   
   h1 {
     font-size: 28px;
-    font-weight: 600;
-    color: #0F172A;
-  }
-}
-
-.dark-mode .test-header h1 {
-  color: #F8FAFC;
-}
-
-.toggle-btn {
-  padding: 10px 20px;
-  background: #25eb43;
-  color: white;
-  border: none;
-  border-radius: 8px;
-  cursor: pointer;
-  font-size: 14px;
-  font-weight: 500;
-  
-  &:hover {
-    background: #1E40AF;
-  }
-}
-
-.test-content {
-  max-width: 800px;
-  margin: 0 auto;
-  
-  h2 {
-    font-size: 20px;
-    font-weight: 600;
-    color: #0F172A;
-    margin-bottom: 20px;
-  }
-}
-
-.dark-mode .test-content h2 {
-  color: #F8FAFC;
-}
-
-.version-log-wrapper {
-  background: white;
-  padding: 24px;
-  border-radius: 12px;
-  box-shadow: 0 2px 8px rgba(0,0,0,0.1);
-}
-
-.dark-mode .version-log-wrapper {
-  background: #1E293B;
-}
-
-.open-modal-btn {
-  padding: 12px 24px;
-  background: #2563EB;
-  color: white;
-  border: none;
-  border-radius: 8px;
-  cursor: pointer;
-  font-size: 15px;
-  font-weight: 500;
-  
-  &:hover {
-    background: #1E40AF;
-  }
-}
-
-// 复制版本日志组件的样式
-.version-log-content {
-  max-height: 600px;
-  overflow-y: auto;
-  padding: 4px;
-}
-
-.version-block {
-  padding: $spacing-lg 0;
-  border-bottom: 1px solid $border-base;
-  
-  &:first-child {
-    padding-top: 0;
+    font-weight: 800;
+    margin-bottom: 8px;
+    background: linear-gradient(135deg, $primary-color, $primary-lighter);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
   }
   
-  &:last-child {
-    border-bottom: none;
-    padding-bottom: 0;
+  p {
+    color: $text-tertiary;
+    font-size: 14px;
+    
+    :global(.dark-mode) & {
+      color: $text-tertiary-dark;
+    }
   }
 }
 
-.test-page.dark-mode .version-block {
-  border-bottom-color: #475569;
+.controls {
+  margin-bottom: 40px;
 }
 
-.version-header {
-  display: flex;
-  align-items: center;
-  gap: $spacing-sm;
-  margin-bottom: $spacing-md;
-}
-
-.version-number {
-  font-family: 'SF Mono', 'Consolas', monospace;
-  font-size: $font-size-lg;
-  font-weight: $font-weight-semibold;
-  color: $text-primary;
-}
-
-.test-page.dark-mode .version-number {
-  color: #FFFFFF;
-}
-
-.version-date {
-  font-size: $font-size-sm;
-  color: $text-tertiary;
-}
-
-.test-page.dark-mode .version-date {
-  color: #CBD5E1;
-}
-
-.current-badge {
-  display: inline-flex;
-  align-items: center;
-  gap: 4px;
-  margin-left: auto;
-  padding: 4px 10px;
-  font-size: $font-size-xs;
-  font-weight: $font-weight-medium;
-  color: $primary-color;
-  background: rgba($primary-color, 0.1);
-  border-radius: $border-radius-sm;
+.preview-card {
+  background: $bg-color-elevated;
+  border-radius: 32px;
+  padding: 60px 20px;
+  box-shadow: $box-shadow-xl;
+  border: 1px solid $border-light;
+  margin-bottom: 40px;
+  transition: all 0.3s ease;
   
-  svg {
-    font-size: 11px;
+  :global(.dark-mode) & {
+    background: $bg-color-elevated-dark;
+    border-color: $border-base-dark;
+    box-shadow: 0 20px 40px rgba(0,0,0,0.4);
   }
 }
 
-.test-page.dark-mode .current-badge {
-  color: #93C5FD;
-  background: rgba(147, 197, 253, 0.2);
-}
-
-.changes-list {
+.active-content {
   display: flex;
   flex-direction: column;
-  gap: $spacing-md;
-}
-
-.group-title {
-  display: flex;
   align-items: center;
-  gap: $spacing-sm;
-  margin-bottom: $spacing-sm;
-  font-size: $font-size-base;
-  font-weight: $font-weight-semibold;
-  color: $text-primary;
+  gap: 20px;
   
-  .icon {
-    font-size: 14px;
-    color: $primary-color;
-  }
-}
-
-.test-page.dark-mode .group-title {
-  color: #FFFFFF;
-  
-  .icon {
-    color: #93C5FD;
-  }
-}
-
-.items {
-  margin: 0;
-  padding: 0;
-  list-style: none;
-  
-  li {
-    position: relative;
-    padding-left: 16px;
-    margin-bottom: 6px;
-    font-size: $font-size-sm;
-    line-height: 1.6;
-    color: $text-secondary;
-    
-    &::before {
-      content: '•';
-      position: absolute;
-      left: 0;
-      color: $text-tertiary;
-    }
-    
-    &:last-child {
-      margin-bottom: 0;
-    }
-  }
-  
-  :deep(strong) {
-    font-weight: $font-weight-semibold;
+  h2 {
+    font-size: 24px;
+    margin: 0;
     color: $text-primary;
+    
+    :global(.dark-mode) & {
+      color: $text-primary-dark;
+    }
   }
 }
 
-.test-page.datems {
-  li {
-    color: #F1F5F9;
-    
-    &::before {
-      color: #94A3B8;
-    }
-  }
+.status-badge {
+  padding: 4px 12px;
+  background: rgba($primary-color, 0.1);
+  color: $primary-color;
+  border-radius: 99px;
+  font-size: 12px;
+  font-weight: 600;
   
-  :deep(strong) {
-    color: #FFFFFF;
+  :global(.dark-mode) & {
+    background: rgba($primary-color, 0.2);
+    color: $primary-lighter;
   }
+}
+
+.big-icon {
+  width: 80px;
+  height: 80px;
+  color: $primary-color;
+  filter: drop-shadow(0 10px 20px rgba($primary-color, 0.3));
+  animation: float 4s ease-in-out infinite;
+}
+
+.instruction {
+  color: $text-placeholder;
+  font-size: 12px;
+  margin-top: 20px;
+}
+
+@keyframes float {
+  0%, 100% { transform: translateY(0); }
+  50% { transform: translateY(-15px); }
+}
+
+.fade-enter-active,
+.fade-leave-active {
+  transition: opacity 0.3s ease, transform 0.3s ease;
+}
+
+.fade-enter-from {
+  opacity: 0;
+  transform: translateY(10px);
+}
+
+.fade-leave-to {
+  opacity: 0;
+  transform: translateY(-10px);
 }
 </style>
