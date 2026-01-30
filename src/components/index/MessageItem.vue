@@ -13,9 +13,12 @@
     <!-- 普通消息 -->
     <template v-else>
       <!-- 头像 -->
-      <div class="msg-avatar">
-        <img v-if="avatarUrl" :src="avatarUrl" :alt="senderName">
-        <span v-else class="avatar-char">{{ avatarChar }}</span>
+      <div class="msg-avatar-wrapper">
+        <img src="@/assets/icons/header_icon.png" alt="frame" class="avatar-frame">
+        <div class="msg-avatar">
+          <img v-if="avatarUrl" :src="avatarUrl" :alt="senderName">
+          <span v-else class="avatar-char">{{ avatarChar }}</span>
+        </div>
       </div>
 
       <!-- 他人消息 -->
@@ -708,6 +711,29 @@ defineExpose({
   font-weight: $font-weight-medium;
 }
 
+// 头像容器
+.msg-avatar-wrapper {
+  position: relative;
+  width: 48px;
+  height: 48px;
+  min-width: 48px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+}
+
+.avatar-frame {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  object-fit: contain;
+  pointer-events: none;
+  z-index: 2;
+}
+
 // 头像
 .msg-avatar {
   width: 36px;
@@ -719,7 +745,8 @@ defineExpose({
   align-items: center;
   justify-content: center;
   overflow: hidden;
-  flex-shrink: 0;
+  position: relative;
+  z-index: 1;
 
   img {
     width: 100%;
@@ -1664,10 +1691,16 @@ html.dark-mode {
     max-width: 80%;
   }
 
+  .msg-avatar-wrapper {
+    width: 40px;
+    height: 40px;
+    min-width: 40px;
+  }
+
   .msg-avatar {
-    width: 32px;
-    height: 32px;
-    min-width: 32px;
+    width: 30px;
+    height: 30px;
+    min-width: 30px;
   }
 
   .avatar-char {

@@ -2,15 +2,18 @@
   <div class="user-card-wrapper animate__animated animate__fadeIn" style="--animate-duration: 0.4s">
     <div class="user-card">
       <div class="user-avatar-wrapper">
-        <div class="user-avatar animate__animated animate__bounceIn" style="--animate-duration: 0.5s">
-          <img 
-            v-if="userInfo.avatar" 
-            :src="avatarUrl" 
-            :alt="userInfo.nick_name"
-          >
-          <span v-else class="avatar-placeholder">
-            {{ userInfo.nick_name?.charAt(0) || 'U' }}
-          </span>
+        <div class="avatar-frame-container animate__animated animate__bounceIn" style="--animate-duration: 0.5s">
+          <img src="@/assets/icons/header_icon.png" alt="frame" class="avatar-frame">
+          <div class="user-avatar">
+            <img 
+              v-if="userInfo.avatar" 
+              :src="avatarUrl" 
+              :alt="userInfo.nick_name"
+            >
+            <span v-else class="avatar-placeholder">
+              {{ userInfo.nick_name?.charAt(0) || 'U' }}
+            </span>
+          </div>
         </div>
         <div class="status-indicator animate__animated animate__bounceIn" style="--animate-duration: 0.4s; --animate-delay: 0.15s"></div>
       </div>
@@ -138,6 +141,26 @@ const handleLogout = () => {
   transition: transform $transition-base;
 }
 
+.avatar-frame-container {
+  position: relative;
+  width: 64px;
+  height: 64px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.avatar-frame {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  object-fit: contain;
+  pointer-events: none;
+  z-index: 2;
+}
+
 .user-avatar {
   width: 48px;
   height: 48px;
@@ -147,6 +170,8 @@ const handleLogout = () => {
   display: flex;
   align-items: center;
   justify-content: center;
+  position: relative;
+  z-index: 1;
 
   img {
     width: 100%;
@@ -364,6 +389,11 @@ const handleLogout = () => {
   .user-card {
     padding: $spacing-md;
     gap: $spacing-sm;
+  }
+
+  .avatar-frame-container {
+    width: 52px;
+    height: 52px;
   }
 
   .user-avatar {
