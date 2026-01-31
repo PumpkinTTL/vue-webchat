@@ -14,6 +14,8 @@
     <template v-else>
       <!-- 头像 -->
       <div class="msg-avatar-wrapper">
+        <!-- 流光特效层 -->
+        <div class="avatar-glow"></div>
         <img src="@/assets/icons/header_icon.png" alt="frame" class="avatar-frame">
         <div class="msg-avatar">
           <img v-if="avatarUrl" :src="avatarUrl" :alt="senderName">
@@ -721,6 +723,40 @@ defineExpose({
   align-items: center;
   justify-content: center;
   flex-shrink: 0;
+}
+
+// 流光特效
+.avatar-glow {
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: conic-gradient(
+    from 0deg,
+    #ff0080 0%,
+    #ff8c00 15%,
+    #ffd700 30%,
+    #00ff88 45%,
+    #00d4ff 60%,
+    #8000ff 75%,
+    #ff0080 90%,
+    #ff0080 100%
+  );
+  border-radius: 50%;
+  animation: avatarGlowRotate 3s linear infinite;
+  z-index: 0;
+  opacity: 0.65;
+  filter: blur(2.5px);
+}
+
+@keyframes avatarGlowRotate {
+  0% {
+    transform: rotate(0deg);
+  }
+  100% {
+    transform: rotate(360deg);
+  }
 }
 
 .avatar-frame {
