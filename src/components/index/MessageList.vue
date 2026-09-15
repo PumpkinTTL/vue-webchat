@@ -143,7 +143,7 @@ const showBackToHistory = ref(false)
 const isAutoScrolling = ref(false)
 
 // 已读状态管理
-const { initObserver, observeMessageElement, observeAllUnreadMessages, cleanup } = useReadStatus()
+const { initObserver, observeMessageElement, observeMessages, observeAllUnreadMessages, cleanup } = useReadStatus()
 
 const scrollToBottom = (smooth = true) => {
   if (!messageContainer.value) return
@@ -377,9 +377,29 @@ const observeNewMessage = (messageId: number) => {
   }
 }
 
+// 批量观察消息（供外部调用）
+const observeMessagesBatch = (messageIds: number[]) => {
+  if (messageContainer.value) {
+    observeMessages(messageIds, messageContainer.value)
+  }
+}
+
+// 处理页面可见性变化（移动端挂起后返回）
+const handleVisibilityChange = () => {
+  if (document.visibilityState === 'visible' && messageContainer.value) {
+    console.log('[已读] 页面重新可见，重新观察未读消息')
+    // 延迟执行，确保DOM已更新
+    nextTick(() => {
+      observeAllUnreadMessages(messageContainer.value!)
+    })
+  }
+}
+
 onMounted(() => {
   if (messageContainer.value) {
     messageContainer.value.addEventListener('scroll', handleScroll, { passive: true })
+    // 监听页面可见性变化
+    document.addEventListener('visibilitychange', handleVisibilityChange)
     nextTick(() => {
       scrollToBottom(false)
       // 初始化已读检测
@@ -393,11 +413,13 @@ onUnmounted(() => {
   if (messageContainer.value) {
     messageContainer.value.removeEventListener('scroll', handleScroll)
   }
+  // 移除页面可见性监听
+  document.removeEventListener('visibilitychange', handleVisibilityChange)
   // 清理已读检测
   cleanup()
 })
 
-defineExpose({ scrollToBottom, scrollToBottomWithHistory, scrollToMessage, observeNewMessage, clearHistoryPosition })
+defineExpose({ scrollToBottom, scrollToBottomWithHistory, scrollToMessage, observeNewMessage, observeMessagesBatch, clearHistoryPosition })
 </script>
 
 <style lang="scss" scoped>

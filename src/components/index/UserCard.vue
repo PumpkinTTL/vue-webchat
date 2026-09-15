@@ -1,110 +1,142 @@
 <template>
-  <div class="user-card-wrapper animate__animated animate__fadeIn" style="--animate-duration: 0.4s">
+  <div
+    class="user-card-wrapper animate__animated animate__fadeIn"
+    style="--animate-duration: 0.4s"
+  >
     <div class="user-card">
       <div class="user-avatar-wrapper">
-        <div class="avatar-frame-container animate__animated animate__bounceIn" style="--animate-duration: 0.5s">
+        <div
+          class="avatar-frame-container animate__animated animate__bounceIn"
+          style="--animate-duration: 0.5s"
+        >
           <!-- 流光特效层 -->
           <div class="avatar-glow"></div>
-          <img src="@/assets/icons/header_icon.png" alt="frame" class="avatar-frame">
+          <img
+            src="@/assets/icons/header_icon.png"
+            alt="frame"
+            class="avatar-frame"
+          />
           <div class="user-avatar">
-            <img 
-              v-if="userInfo.avatar" 
-              :src="avatarUrl" 
+            <img
+              v-if="userInfo.avatar"
+              :src="avatarUrl"
               :alt="userInfo.nick_name"
-            >
+            />
             <span v-else class="avatar-placeholder">
-              {{ userInfo.nick_name?.charAt(0) || 'U' }}
+              {{ userInfo.nick_name?.charAt(0) || "U" }}
             </span>
           </div>
         </div>
-        <div class="status-indicator animate__animated animate__bounceIn" style="--animate-duration: 0.4s; --animate-delay: 0.15s"></div>
+        <div
+          class="status-indicator animate__animated animate__bounceIn"
+          style="--animate-duration: 0.4s; --animate-delay: 0.15s"
+        ></div>
       </div>
 
       <div class="user-info">
-        <div class="user-name animate__animated animate__fadeInLeft" style="--animate-duration: 0.35s; --animate-delay: 0.05s">{{ userInfo.nick_name || '用户' }}</div>
-        <div class="user-id animate__animated animate__fadeInLeft" style="--animate-duration: 0.35s; --animate-delay: 0.1s">
+        <div
+          class="user-name animate__animated animate__fadeInLeft"
+          style="--animate-duration: 0.35s; --animate-delay: 0.05s"
+        >
+          {{ userInfo.nick_name || "用户" }}
+        </div>
+        <div
+          class="user-id animate__animated animate__fadeInLeft"
+          style="--animate-duration: 0.35s; --animate-delay: 0.1s"
+        >
           <span class="id-label">ID</span>
-          <span class="id-value">{{ userInfo.id || '---' }}</span>
+          <span class="id-value">{{ userInfo.id || "---" }}</span>
         </div>
       </div>
 
-      <button 
-        class="logout-btn animate__animated animate__fadeIn" style="--animate-duration: 0.3s; --animate-delay: 0.15s"
+      <button
+        class="logout-btn animate__animated animate__fadeIn"
+        style="--animate-duration: 0.3s; --animate-delay: 0.15s"
         @click="handleLogout"
         title="退出登录"
       >
         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor">
-          <path d="M9 21H5a2 2 0 01-2-2V5a2 2 0 012-2h4M16 17l5-5-5-5M21 12H9" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+          <path
+            d="M9 21H5a2 2 0 01-2-2V5a2 2 0 012-2h4M16 17l5-5-5-5M21 12H9"
+            stroke-width="2"
+            stroke-linecap="round"
+            stroke-linejoin="round"
+          />
         </svg>
       </button>
     </div>
-    
+
     <!-- 版本日志按钮 -->
-    <button 
-      class="version-log-btn animate__animated animate__fadeIn" 
+    <button
+      class="version-log-btn animate__animated animate__fadeIn"
       style="--animate-duration: 0.3s; --animate-delay: 0.2s"
       @click="showVersionLog = true"
     >
       <svg viewBox="0 0 24 24" fill="none" stroke="currentColor">
-        <path d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2m-6 9l2 2 4-4" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+        <path
+          d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2m-6 9l2 2 4-4"
+          stroke-width="2"
+          stroke-linecap="round"
+          stroke-linejoin="round"
+        />
       </svg>
       <span>版本日志</span>
       <span class="version-badge">v2.0.1</span>
     </button>
   </div>
-  
+
   <!-- 版本日志弹窗 -->
   <VersionLog v-model:open="showVersionLog" />
 </template>
 
 <script setup lang="ts">
-import { computed, ref } from 'vue'
-import { useRouter } from 'vue-router'
-import { Modal } from 'ant-design-vue'
-import { getUserInfo, clearUserInfo } from '@/utils/storage'
-import { Message } from '@/utils/message'
-import VersionLog from '@/components/common/VersionLog.vue'
+import { computed, ref } from "vue";
+import { useRouter } from "vue-router";
+import { Modal } from "ant-design-vue";
+import { getUserInfo, clearUserInfo } from "@/utils/storage";
+import { Message } from "@/utils/message";
+import VersionLog from "@/components/common/VersionLog.vue";
 
 // 服务器地址
-const serverUrl = import.meta.env.VITE_SERVER_URL || ''
+const serverUrl = import.meta.env.VITE_SERVER_URL || "";
 
 interface UserInfo {
-  id?: string | number
-  nick_name?: string
-  avatar?: string
+  id?: string | number;
+  nick_name?: string;
+  avatar?: string;
 }
 
-const router = useRouter()
+const router = useRouter();
 
 // 获取用户信息
-const userInfo = computed<UserInfo>(() => getUserInfo() || {})
+const userInfo = computed<UserInfo>(() => getUserInfo() || {});
 
 // 版本日志弹窗
-const showVersionLog = ref(false)
+const showVersionLog = ref(false);
 
 // 拼接头像URL
 const avatarUrl = computed(() => {
-  if (!userInfo.value.avatar) return ''
+  if (!userInfo.value.avatar) return "";
   // 如果已经是完整URL则直接返回
-  if (userInfo.value.avatar.startsWith('http')) return userInfo.value.avatar
-  return `${serverUrl}/${userInfo.value.avatar}`
-})
+  if (userInfo.value.avatar.startsWith("http")) return userInfo.value.avatar;
+  return `${serverUrl}/${userInfo.value.avatar}`;
+});
 
 // 退出登录
 const handleLogout = () => {
   Modal.confirm({
-    title: '确认退出',
-    content: '确定要退出登录吗？',
-    okText: '退出',
-    cancelText: '取消',
+    title: "确认退出",
+    content: "确定要退出登录吗？",
+    okText: "退出",
+    cancelText: "取消",
     okButtonProps: { danger: true },
     onOk: () => {
-      clearUserInfo()
-      Message.success('已退出登录')
-      router.push('/login')
-    }
-  })
-}
+      clearUserInfo();
+      Message.success("已退出登录");
+      router.push("/login");
+    },
+  });
+};
 </script>
 
 <style lang="scss" scoped>
@@ -342,9 +374,9 @@ const handleLogout = () => {
   cursor: pointer;
   transition: all $transition-base;
   position: relative;
-  
+
   &::before {
-    content: '';
+    content: "";
     position: absolute;
     top: 0;
     left: $spacing-lg;
@@ -353,18 +385,18 @@ const handleLogout = () => {
     background: $border-light;
     transition: background $transition-base;
   }
-  
+
   svg {
     width: 18px;
     height: 18px;
     flex-shrink: 0;
     transition: transform $transition-base;
   }
-  
+
   span {
     transition: color $transition-base;
   }
-  
+
   .version-badge {
     padding: 2px 8px;
     background: rgba($primary-color, 0.1);
@@ -372,28 +404,28 @@ const handleLogout = () => {
     border-radius: $border-radius-sm;
     font-size: $font-size-xs;
     font-weight: $font-weight-semibold;
-    font-family: 'Consolas', 'Monaco', monospace;
+    font-family: "Consolas", "Monaco", monospace;
     transition: all $transition-base;
   }
-  
+
   &:hover {
     background: rgba($primary-color, 0.05);
     color: $primary-color;
-    
+
     &::before {
       background: $primary-color;
     }
-    
+
     svg {
       transform: translateY(-2px);
     }
-    
+
     .version-badge {
       background: $primary-color;
       color: white;
     }
   }
-  
+
   &:active {
     transform: scale(0.98);
   }
@@ -401,19 +433,19 @@ const handleLogout = () => {
 
 .dark-mode .version-log-btn {
   color: $text-secondary-dark;
-  
+
   &::before {
     background: $border-light-dark;
   }
-  
+
   .version-badge {
     background: rgba($primary-color, 0.15);
   }
-  
+
   &:hover {
     background: rgba($primary-color, 0.1);
     color: $primary-light;
-    
+
     &::before {
       background: $primary-light;
     }
@@ -467,22 +499,22 @@ const handleLogout = () => {
       height: 18px;
     }
   }
-  
+
   .version-log-btn {
     padding: $spacing-sm $spacing-md;
     font-size: $font-size-xs;
     gap: $spacing-xs;
-    
+
     &::before {
       left: $spacing-md;
       right: $spacing-md;
     }
-    
+
     svg {
       width: 16px;
       height: 16px;
     }
-    
+
     .version-badge {
       font-size: 10px;
       padding: 1px 6px;

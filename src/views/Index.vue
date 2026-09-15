@@ -790,6 +790,16 @@ const handleLoadMore = async () => {
           const newScrollHeight = container.scrollHeight
           container.scrollTop = newScrollHeight - oldScrollHeight
         }
+
+        // 手动触发新加载消息的已读检测
+        const newIds = convertedMessages
+          .filter(msg => !msg.isOwn && msg.type !== 'system' && msg.id)
+          .map(msg => Number(msg.id))
+        
+        if (newIds.length > 0) {
+          messageListRef.value?.observeMessagesBatch(newIds)
+        }
+
         // 延迟重置标志位，确保 watch 不会触发
         setTimeout(() => {
           isLoadingHistory.value = false
