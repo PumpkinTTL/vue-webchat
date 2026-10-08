@@ -56,6 +56,11 @@ export default defineConfig({
         target: 'http://localhost:7070',
         changeOrigin: true
         // 不要 rewrite，保留 /api 前缀
+      },
+      '/ws': {
+        target: 'http://localhost:2346',
+        ws: true,
+        changeOrigin: true
       }
     }
   }

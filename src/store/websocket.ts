@@ -85,9 +85,13 @@ export const useWebSocketStore = defineStore('websocket', () => {
       return
     }
 
-    // 如果没有提供wsUrl，则根据VITE_SERVER_URL构建
+    // 如果没有提供wsUrl，则优先取 VITE_WS_URL，其次根据 VITE_SERVER_URL 构建
     let url = wsUrl
     if (!url) {
+      const envWsUrl = import.meta.env.VITE_WS_URL
+      if (envWsUrl) {
+        url = envWsUrl
+      } else {
       const serverUrl = import.meta.env.VITE_SERVER_URL
       if (serverUrl) {
         // 从 http://8.138.90.156:5000 转换为 ws://8.138.90.156:5000/ws
@@ -100,6 +104,7 @@ export const useWebSocketStore = defineStore('websocket', () => {
         const protocol = window.location.protocol === 'https:' ? 'wss:' : 'ws:'
         const host = window.location.host
         url = `${protocol}//${host}/ws`
+      }
       }
     }
     
