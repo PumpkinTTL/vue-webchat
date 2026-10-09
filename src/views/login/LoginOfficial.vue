@@ -283,14 +283,10 @@ const handleLogin = async () => {
       requestData.client_ip = clientIp
     }
 
-    console.log('🔍 发送登录请求:', requestData)
     
     // axios 拦截器已经返回了 response.data，所以这里直接就是结果
     const result = await login(requestData)
     
-    console.log('🔍 后端返回的完整响应:', result)
-    console.log('🔍 result.code:', result.code)
-    console.log('🔍 result.token:', result.token)
 
     if (result.code === 0) {
       if (!result.token) {
@@ -306,7 +302,6 @@ const handleLogin = async () => {
         token: result.token
       }
 
-      console.log('✅ 保存用户信息:', userInfo)
       saveUserInfo(userInfo)
 
       if (formState.rememberMe) {
@@ -322,7 +317,6 @@ const handleLogin = async () => {
       
       // 延迟跳转，确保消息显示
       setTimeout(() => {
-        console.log('🔄 准备跳转到首页')
         router.push('/')
       }, 500)
     } else if (result.code === 403) {

@@ -19,15 +19,12 @@ service.interceptors.request.use(
 
     // 如果是FormData请求，删除Content-Type让Axios自动设置（带boundary）
     if (config.data instanceof FormData) {
-      console.log('📤 检测到FormData请求，删除Content-Type')
       if (config.headers) {
         delete config.headers['Content-Type']
       }
 
       // 打印FormData内容（调试用）
-      console.log('📤 FormData内容:')
       for (let [key, value] of config.data.entries()) {
-        console.log(`  ${key}:`, value instanceof File ? `File(${value.name}, ${value.size} bytes, type: ${value.type})` : value)
       }
     }
 
@@ -49,7 +46,6 @@ service.interceptors.request.use(
     //   }
     // }
 
-    console.log('📤 发送请求:', config.url, 'headers:', config.headers)
     return config
   },
   (error) => {
@@ -63,7 +59,6 @@ service.interceptors.request.use(
 service.interceptors.response.use(
   (response: AxiosResponse) => {
     // 直接返回响应的 data 部分（后端返回的 JSON 数据）
-    console.log('📥 API响应:', response.config.url, response.data)
     return response.data
   },
   (error) => {

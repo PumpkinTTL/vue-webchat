@@ -299,12 +299,10 @@ const handleEdit = (messageId: string | number, content: string) => {
 const handleScrollToMessage = (messageId: number) => {
   if (!messageContainer.value) return
   
-  console.log('[MessageList] 开始跳转到消息:', messageId)
   
   // 使用递归重试机制，确保DOM完全渲染
   const attemptScroll = (attempt: number = 0): void => {
     if (!messageContainer.value) {
-      console.log('[MessageList] 容器不存在，取消跳转')
       return
     }
     
@@ -314,16 +312,13 @@ const handleScrollToMessage = (messageId: number) => {
     if (!targetEl) {
       if (attempt < 10) {
         // 最多重试10次，每次间隔50ms
-        console.log(`[MessageList] 第${attempt + 1}次未找到目标元素，50ms后重试`)
         setTimeout(() => attemptScroll(attempt + 1), 50)
       } else {
-        console.log('[MessageList] 重试次数用尽，目标消息不在视图中')
         antMessage.info('原消息不在当前视图中')
       }
       return
     }
     
-    console.log('[MessageList] 找到目标元素，开始滚动')
     
     // 计算滚动位置，让目标消息居中
     const containerRect = messageContainer.value.getBoundingClientRect()
@@ -343,7 +338,6 @@ const handleScrollToMessage = (messageId: number) => {
       behavior: 'smooth'
     })
     
-    console.log('[MessageList] 滚动完成，准备触发高亮')
     
     // 滚动完成后直接操作DOM添加高亮class，不依赖ref
     setTimeout(() => {
@@ -351,12 +345,10 @@ const handleScrollToMessage = (messageId: number) => {
       
       // 添加高亮class
       targetEl.classList.add('highlight-message')
-      console.log('[MessageList] 已添加高亮class')
       
       // 2秒后移除高亮
       setTimeout(() => {
         targetEl.classList.remove('highlight-message')
-        console.log('[MessageList] 已移除高亮class')
       }, 2000)
     }, scrollDuration + 100)
   }
@@ -387,7 +379,6 @@ const observeMessagesBatch = (messageIds: number[]) => {
 // 处理页面可见性变化（移动端挂起后返回）
 const handleVisibilityChange = () => {
   if (document.visibilityState === 'visible' && messageContainer.value) {
-    console.log('[已读] 页面重新可见，重新观察未读消息')
     // 延迟执行，确保DOM已更新
     nextTick(() => {
       observeAllUnreadMessages(messageContainer.value!)

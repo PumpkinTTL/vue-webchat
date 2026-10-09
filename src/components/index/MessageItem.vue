@@ -594,7 +594,6 @@ const handleEdit = () => {
 const handleScrollToReply = () => {
   if (!props.message.replyTo?.message_id) return
   
-  console.log('[MessageItem] 点击引用，跳转到消息:', props.message.replyTo.message_id)
   emit('scrollToMessage', props.message.replyTo.message_id)
 }
 
@@ -616,7 +615,6 @@ const handleVideoClick = () => {
   if (videoUrl.value) {
     // 可以使用Ant Design的Modal或者原生video播放
     // 这里简单处理，让video标签自己播放
-    console.log('[视频] 点击播放:', videoUrl.value)
   }
 }
 

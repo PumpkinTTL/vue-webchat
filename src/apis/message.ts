@@ -116,11 +116,8 @@ export function sendImageMessage(roomId: number, image: File) {
   formData.append('room_id', String(roomId))
   formData.append('image', image)
 
-  console.log('[API] sendImageMessage - FormData entries:')
   for (let [key, value] of formData.entries()) {
-    console.log(`  ${key}:`, value instanceof File ? `File(${value.name}, ${value.size} bytes)` : value)
   }
-  console.log('[API] sendImageMessage - image file:', image)
 
   return request<SendMessageResponse>({
     url: '/message/sendImage',

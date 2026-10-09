@@ -322,30 +322,25 @@ onMounted(async () => {
 
   // 监听亲密度互动事件
   wsStore.setOnIntimacyStart(() => {
-    console.log('[亲密度] 互动开始')
     intimacyStore.startInteraction()
   })
 
   wsStore.setOnIntimacyComplete((data) => {
-    console.log('[亲密度] 互动完成，服务器已增加经验')
     // 服务器已经增加了经验，直接更新本地状态
     intimacyStore.completeInteraction()
     
     // 如果服务器返回了经验信息，更新本地亲密度
     if (data.exp_gain && data.intimacy) {
-      console.log('[亲密度] 收到服务器经验数据:', data.exp_gain, data.intimacy)
       intimacyStore.updateIntimacyFromServer(data.intimacy, data.exp_gain)
     }
     
     // 自动通知服务器重启计时
     if (currentRoom.value?.id) {
-      console.log('[亲密度] 通知服务器重启计时')
       wsStore.restartIntimacy(currentRoom.value.id)
     }
   })
 
   wsStore.setOnIntimacyReset(() => {
-    console.log('[亲密度] 收到服务器重置信号，自动重启计时')
     // 重置倒计时状态（不隐藏组件）
     intimacyStore.resetInteraction()
     // 自动重启计时（如果是私密房间且两人在线）
@@ -358,7 +353,6 @@ onMounted(async () => {
   wsStore.setOnMessage((data) => {
     // 如果消息包含亲密度信息，更新store并触发动画
     if (data.intimacy && currentRoom.value?.isPrivate) {
-      console.log('[亲密度] WebSocket收到更新:', data.intimacy)
       intimacyStore.updateIntimacyFromMessage(data.intimacy)
       
       // 如果是别人发送的消息，也触发爱心动画
@@ -375,7 +369,6 @@ onMounted(async () => {
 
   // 监听 room_joined 事件，直接更新当前房间的在线人数
   wsStore.setOnRoomJoined((roomId, users) => {
-    console.log('[房间加入] room_joined 事件 - roomId:', roomId, 'users:', users.length, 'currentRoom:', currentRoom.value?.id)
     
     // 更新 chatStore
     chatStore.updateRoomOnlineCount(users.length)
@@ -384,7 +377,6 @@ onMounted(async () => {
     if (currentRoom.value && currentRoom.value.id === roomId) {
       const previousOnline = currentRoom.value.onlineUsers
       currentRoom.value.onlineUsers = users.length
-      console.log('[房间加入] 更新在线人数:', previousOnline, '->', users.length)
       
       // 如果是私密房间且有亲密度信息，检查是否需要启动互动
       if (currentRoom.value.isPrivate && 
@@ -393,19 +385,16 @@ onMounted(async () => {
         
         // 对方上线（从1变成2）：启动亲密度互动
         if (previousOnline === 1 && users.length === 2) {
-          console.log('[亲密度] room_joined 检测到对方上线，启动互动')
           intimacyStore.startInteraction()
           
           // 显示羁绊通知
           if (!shownBondNotificationRooms.has(roomId)) {
-            console.log('[羁绊通知] room_joined 准备显示通知')
             const showBondEffect = localStorage.getItem('intimacy_show_bond_effect')
             if (showBondEffect !== '0') {
               if (bondNotificationTimer) {
                 clearTimeout(bondNotificationTimer)
               }
               bondNotificationTimer = setTimeout(() => {
-                console.log('[羁绊通知] 显示通知')
                 showBondNotification.value = true
                 shownBondNotificationRooms.add(roomId)
               }, 500)
@@ -415,7 +404,6 @@ onMounted(async () => {
         
         // 对方离线（从2变成1）：重置互动
         if (previousOnline === 2 && users.length === 1) {
-          console.log('[亲密度] room_joined 检测到对方离线，重置互动')
           intimacyStore.resetInteraction()
           shownBondNotificationRooms.delete(roomId)
         }
@@ -453,7 +441,6 @@ watch(() => chatStore.currentRoom?.isLocked, (isLocked) => {
 
 // 监听房间在线人数变化（统一处理在线人数更新、亲密度互动、羁绊通知）
 watch(() => wsStore.onlineCount, (count, oldCount) => {
-  console.log('[房间] WebSocket在线人数变化:', count, '(旧值:', oldCount, ')')
   if (currentRoom.value) {
     const previousOnline = currentRoom.value.onlineUsers
     currentRoom.value.onlineUsers = count
@@ -467,13 +454,11 @@ watch(() => wsStore.onlineCount, (count, oldCount) => {
     if (currentRoom.value.isPrivate && intimacyStore.currentIntimacy && currentRoom.value.totalUsers === 2) {
       // 对方上线（从1变成2）：启动亲密度互动
       if (previousOnline === 1 && count === 2) {
-        console.log('[亲密度] 对方上线，启动互动')
         intimacyStore.startInteraction()
       }
       
       // 对方离线（从2变成1）：重置互动（不关闭面板）
       if (previousOnline === 2 && count === 1) {
-        console.log('[亲密度] 对方离线，重置互动计时器')
         intimacyStore.resetInteraction()
         // 清除通知记录，以便对方再次上线时可以显示通知
         shownBondNotificationRooms.delete(currentRoom.value.id)
@@ -489,7 +474,6 @@ watch(() => wsStore.onlineCount, (count, oldCount) => {
         count === 2 &&
         !shownBondNotificationRooms.has(currentRoom.value.id)) {
       
-      console.log('[羁绊通知] 满足条件，准备显示通知')
       const showBondEffect = localStorage.getItem('intimacy_show_bond_effect')
       if (showBondEffect !== '0') {
         // 清除之前的定时器
@@ -498,13 +482,11 @@ watch(() => wsStore.onlineCount, (count, oldCount) => {
         }
         // 延迟500ms显示，让爱心点亮动画先完成
         bondNotificationTimer = setTimeout(() => {
-          console.log('[羁绊通知] 显示通知')
           showBondNotification.value = true
           // 标记这个房间已显示过通知
           shownBondNotificationRooms.add(currentRoom.value!.id)
         }, 500)
       } else {
-        console.log('[羁绊通知] 用户已关闭羁绊特效')
       }
     }
   }
@@ -935,7 +917,7 @@ const toggleTheme = () => {
   // 使用 composable 切换深色模式（会自动更新 html 元素的 class）
   toggleDarkMode()
 }
-const handleSelectContact = (contact: any) => { console.log('选择人:', contact) }
+const handleSelectContact = (contact: any) => { }
 
 const handleSelectRoom = async (room: any) => {
   if (!room || !room.id) {
@@ -949,10 +931,8 @@ const handleSelectRoom = async (room: any) => {
   // 这样切回来时可以再次显示通知
   if (currentRoom.value?.id) {
     shownBondNotificationRooms.delete(currentRoom.value.id)
-    console.log('[羁绊通知] 离开房间，清除通知记录:', currentRoom.value.id)
     
     // 重置亲密度相关状态
-    console.log('[亲密度] 切换房间，重置互动状态')
     intimacyStore.resetInteraction()
     showIntimacyPanel.value = false
     showBondNotification.value = false
@@ -985,7 +965,6 @@ const handleSelectRoom = async (room: any) => {
       // 刷新页面时，使用HTTP返回的在线人数
       // 如果HTTP返回0，至少显示1（自己）
       currentRoom.value.onlineUsers = Math.max(1, result.data.online_count)
-      console.log('[房间] HTTP获取人数 - 总数:', result.data.total_count, '在线:', result.data.online_count)
     }
   } catch (error) {
     console.error('获取房间人数失败:', error)
@@ -1006,33 +985,28 @@ const handleSelectRoom = async (room: any) => {
     // 使用 nextTick 确保 WebSocket 事件已处理
     nextTick(() => {
       setTimeout(() => {
-        console.log('[房间切换] 延迟检查 - roomId:', roomId, 'currentRoom:', currentRoom.value?.id, 'isPrivate:', currentRoom.value?.isPrivate, 'intimacy:', !!intimacyStore.currentIntimacy, 'totalUsers:', currentRoom.value?.totalUsers, 'onlineUsers:', currentRoom.value?.onlineUsers)
         
         if (currentRoom.value?.id === roomId && 
             currentRoom.value.isPrivate && 
             intimacyStore.currentIntimacy && 
             currentRoom.value.totalUsers === 2 &&
             currentRoom.value.onlineUsers === 2) {
-          console.log('[亲密度] 切换回房间，两人都在线，启动互动')
           intimacyStore.startInteraction()
           
           // 检查是否需要显示羁绊通知（切换回房间时，如果两人都在线且未显示过）
           if (!shownBondNotificationRooms.has(roomId)) {
-            console.log('[羁绊通知] 切换回房间，准备显示通知')
             const showBondEffect = localStorage.getItem('intimacy_show_bond_effect')
             if (showBondEffect !== '0') {
               if (bondNotificationTimer) {
                 clearTimeout(bondNotificationTimer)
               }
               bondNotificationTimer = setTimeout(() => {
-                console.log('[羁绊通知] 显示通知')
                 showBondNotification.value = true
                 shownBondNotificationRooms.add(roomId)
               }, 500)
             }
           }
         } else {
-          console.log('[房间切换] 延迟检查未通过条件')
         }
       }, 300) // 给 WebSocket 一些时间更新
     })
@@ -1054,7 +1028,7 @@ const handleSelectRoom = async (room: any) => {
   }
 }
 
-const handleAddContact = () => { console.log('添加联系人') }
+const handleAddContact = () => { }
 const handleRefresh = () => { loadUserRooms() }
 
 const handleLeaveRoomAction = async (room: any) => {
@@ -1289,7 +1263,6 @@ const handleSendMessage = async (text: string) => {
 
       // 私密房间：处理亲密度信息（注意：intimacy在result根级别，不是result.data下）
       if (currentRoom.value?.isPrivate && result.intimacy && result.intimacy.code === 0) {
-        console.log('[亲密度] 收到更新:', result.intimacy)
         
         // 更新亲密度 store（即时刷新消息记录和经验值）
         intimacyStore.updateIntimacyFromMessage(result.intimacy.data)
@@ -1396,12 +1369,10 @@ const handleSendImage = async (file: File) => {
     clearInterval(progressInterval)
     uploadProgress.value[tempId] = 100
 
-    console.log('[图片上传] 后端返回:', result)
 
     if (result.code === 0 && result.data) {
       // 获取图片路径
       const imageUrl = result.data.imageUrl || result.data.image_url || result.data.content || result.data.text || ''
-      console.log('[图片上传] 图片路径:', imageUrl)
 
       // 拼接完整URL
       const serverUrl = import.meta.env.VITE_SERVER_URL || ''
@@ -1409,7 +1380,6 @@ const handleSendImage = async (file: File) => {
         ? serverUrl + imageUrl
         : imageUrl
 
-      console.log('[图片上传] 完整URL:', fullImageUrl)
 
       // 短暂延迟后更新临时消息（让用户看到100%）
       setTimeout(() => {
@@ -1432,13 +1402,11 @@ const handleSendImage = async (file: File) => {
 
         // 私密房间：处理亲密度信息
         if (currentRoom.value?.isPrivate && result.intimacy && result.intimacy.code === 0) {
-          console.log('[亲密度] 图片消息收到更新:', result.intimacy)
           intimacyStore.updateIntimacyFromMessage(result.intimacy.data)
           triggerFloatingHearts()
         }
 
         // 广播消息（携带图片路径和亲密度信息）
-        console.log('[图片上传] 广播消息, content:', imageUrl)
         broadcastMessage({
           message_id: Number(result.data.id),
           message_type: 'image',
@@ -1554,7 +1522,6 @@ const handleSendVideo = async (file: File) => {
     clearInterval(progressInterval)
     uploadProgress.value[tempId] = 100
 
-    console.log('[视频上传] 后端返回:', result)
 
     if (result.code === 0 && result.data) {
       // 获取视频路径
@@ -1562,9 +1529,6 @@ const handleSendVideo = async (file: File) => {
       const videoThumbnail = result.data.videoThumbnail || result.data.video_thumbnail || ''
       const videoDuration = result.data.videoDuration || result.data.video_duration || 0
 
-      console.log('[视频上传] 视频URL:', videoUrl)
-      console.log('[视频上传] 缩略图URL:', videoThumbnail)
-      console.log('[视频上传] 时长:', videoDuration)
 
       // 拼接完整URL
       const serverUrl = import.meta.env.VITE_SERVER_URL || ''
@@ -1576,8 +1540,6 @@ const handleSendVideo = async (file: File) => {
         ? serverUrl + videoThumbnail
         : videoThumbnail
 
-      console.log('[视频上传] 完整视频URL:', fullVideoUrl)
-      console.log('[视频上传] 完整缩略图URL:', fullThumbnailUrl)
 
       // 短暂延迟后更新临时消息（让用户看到100%）
       setTimeout(() => {
@@ -1590,7 +1552,6 @@ const handleSendVideo = async (file: File) => {
         // 直接更新临时消息，不改变ID避免重新渲染
         const msg = chatStore.messages.find(m => m.id === tempId)
         if (msg) {
-          console.log('[视频上传] 更新临时消息:', { tempId, msgId: msg.id, currentStatus: msg.status })
           msg.videoUrl = fullVideoUrl // 更新为服务器URL
           msg.videoThumbnail = fullThumbnailUrl || undefined
           msg.videoDuration = videoDuration || 0
@@ -1598,20 +1559,17 @@ const handleSendVideo = async (file: File) => {
           msg.isNew = false; // 取消新消息标记
           // 保存真实ID到自定义属性，用于后续操作
           (msg as any).realId = Number(result.data.id)
-          console.log('[视频上传] 临时消息已更新:', { status: msg.status, realId: (msg as any).realId })
         } else {
           console.warn('[视频上传] 未找到临时消息:', tempId)
         }
 
         // 私密房间：处理亲密度信息
         if (currentRoom.value?.isPrivate && result.intimacy && result.intimacy.code === 0) {
-          console.log('[亲密度] 视频消息收到更新:', result.intimacy)
           intimacyStore.updateIntimacyFromMessage(result.intimacy.data)
           triggerFloatingHearts()
         }
 
         // 广播消息（携带视频路径和亲密度信息）
-        console.log('[视频上传] 广播消息, videoUrl:', videoUrl, 'thumbnail:', videoThumbnail, 'duration:', videoDuration)
         broadcastMessage({
           message_id: Number(result.data.id),
           message_type: 'video',
@@ -1672,7 +1630,6 @@ const handleSendFile = async (file: File) => {
     if (result.code === 0 && result.data) {
       // 私密房间：处理亲密度信息
       if (currentRoom.value?.isPrivate && result.intimacy && result.intimacy.code === 0) {
-        console.log('[亲密度] 文件消息收到更新:', result.intimacy)
         intimacyStore.updateIntimacyFromMessage(result.intimacy.data)
         triggerFloatingHearts()
       }
@@ -1700,8 +1657,8 @@ const handleSendFile = async (file: File) => {
   }
 }
 
-const handleStartRecording = () => { console.log('开始录音') }
-const handleStopRecording = () => { console.log('停止录音') }
+const handleStartRecording = () => { }
+const handleStopRecording = () => { }
 
 const handleTyping = () => {
   // 发送正在输入状态

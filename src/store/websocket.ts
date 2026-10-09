@@ -81,7 +81,6 @@ export const useWebSocketStore = defineStore('websocket', () => {
    */
   function connect(wsUrl?: string) {
     if (ws.value && (ws.value.readyState === WebSocket.CONNECTING || ws.value.readyState === WebSocket.OPEN)) {
-      console.log('[WebSocket] 已在连接或已连接')
       return
     }
 
@@ -108,14 +107,12 @@ export const useWebSocketStore = defineStore('websocket', () => {
       }
     }
     
-    console.log('[WebSocket] 正在连接:', url)
     status.value = 'connecting'
 
     try {
       ws.value = new WebSocket(url)
 
       ws.value.onopen = () => {
-        console.log('[WebSocket] 连接成功')
         status.value = 'connected'
         manualClose.value = false
 
@@ -132,7 +129,6 @@ export const useWebSocketStore = defineStore('websocket', () => {
       ws.value.onmessage = (event) => {
         try {
           const data: ServerMessage = JSON.parse(event.data)
-          console.log('[WebSocket] 收到消息:', data)
           handleMessage(data)
         } catch (e) {
           console.error('[WebSocket] 解析消息失败:', e, event.data)
@@ -144,7 +140,6 @@ export const useWebSocketStore = defineStore('websocket', () => {
       }
 
       ws.value.onclose = (event) => {
-        console.log('[WebSocket] 连接关闭: code=' + event.code + ', reason=' + event.reason)
         status.value = 'disconnected'
         stopPing()
 
@@ -327,7 +322,6 @@ export const useWebSocketStore = defineStore('websocket', () => {
         currentUserId.value = data.user_id
         currentNickname.value = data.nickname
         currentAvatar.value = data.avatar
-        console.log('[WebSocket] 认证成功:', data.nickname)
         break
 
       case 'room_joined':
@@ -336,7 +330,6 @@ export const useWebSocketStore = defineStore('websocket', () => {
         typingUsers.value.clear()
         intimacyActive.value = false
         intimacyStartTime.value = null
-        console.log('[WebSocket] 加入房间:', data.room_id, '在线人数:', data.online_count, '用户列表:', data.users)
         if (onRoomJoined) {
           onRoomJoined(data.room_id, data.users)
         }
@@ -445,7 +438,6 @@ export const useWebSocketStore = defineStore('websocket', () => {
         break
 
       default:
-        console.log('[WebSocket] 未知消息类型:', data)
     }
   }
 
@@ -488,7 +480,6 @@ export const useWebSocketStore = defineStore('websocket', () => {
     if (reconnectTimer.value) {
       return
     }
-    console.log('[WebSocket] ' + reconnectDelay / 1000 + '秒后重连...')
     reconnectTimer.value = setTimeout(() => {
       reconnectTimer.value = null
       connect()

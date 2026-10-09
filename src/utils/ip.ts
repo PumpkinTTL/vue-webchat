@@ -15,7 +15,6 @@ const IP_SERVICES = [
 export async function getRealIpFromThirdParty(): Promise<string | null> {
   for (let i = 0; i < IP_SERVICES.length; i++) {
     try {
-      console.log(`尝试IP服务 ${i + 1}:`, IP_SERVICES[i].url)
 
       // 创建超时控制器（3秒超时）
       const controller = new AbortController()
@@ -46,7 +45,6 @@ export async function getRealIpFromThirdParty(): Promise<string | null> {
 
       // 验证IP格式（支持IPv4和IPv6）
       if (ip && (/^[\d.]+$/.test(ip) || /^[0-9a-fA-F:]+$/.test(ip))) {
-        console.log('成功获取IP:', ip)
         return ip
       }
 

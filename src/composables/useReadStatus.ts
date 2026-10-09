@@ -32,7 +32,6 @@ export function useReadStatus() {
     const idsToSend = new Set([...pendingReadBatch.value, ...offlineReadQueue.value])
     pendingReadBatch.value = [] // 清空当前批次
 
-    console.log('[已读] 准备发送已读标记:', Array.from(idsToSend))
 
     // 通过 WebSocket 发送已读标记
     if (wsStore.isConnected) {
@@ -47,7 +46,6 @@ export function useReadStatus() {
       // 清空离线队列
       offlineReadQueue.value.clear()
       
-      console.log('[已读] 已发送并标记为已读:', idsArray)
     } else {
       // 如果未连接，加入离线队列
       idsToSend.forEach(id => offlineReadQueue.value.add(id))
@@ -63,7 +61,6 @@ export function useReadStatus() {
   // 监听 WebSocket 连接状态，重连后自动发送离线队列
   watch(() => wsStore.isConnected, (connected) => {
     if (connected && offlineReadQueue.value.size > 0) {
-      console.log('[已读] WebSocket 重连成功，正在同步离线已读状态:', offlineReadQueue.value.size)
       flushReadBatch()
     }
   })
@@ -151,12 +148,6 @@ export function useReadStatus() {
             (entry.boundingClientRect.height > viewportHeight * 0.5 && entry.intersectionRect.height > viewportHeight * 0.5)
 
           if (isVisible) {
-            console.log('[已读] 检测到可见的未读消息:', {
-              id: numericMsgId,
-              type: msg.type,
-              ratio: entry.intersectionRatio,
-              visibleHeight: entry.intersectionRect.height
-            })
 
             visibleUnreadIds.push(numericMsgId)
             

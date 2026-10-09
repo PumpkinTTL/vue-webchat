@@ -191,7 +191,6 @@ export const useIntimacyStore = defineStore('intimacy', () => {
     if (data.current_level > oldLevel) {
       const levelConfig = levels.value.find(l => l.level === data.current_level)
       if (levelConfig) {
-        console.log('[亲密度] 检测到升级:', { oldLevel, newLevel: data.current_level })
         showLevelUp({
           newLevel: data.current_level,
           levelName: currentIntimacy.value.level_name || levelConfig.name,
@@ -208,7 +207,6 @@ export const useIntimacyStore = defineStore('intimacy', () => {
     // 检查用户是否开启了经验提示
     const showExpToast = localStorage.getItem('intimacy_show_exp_toast')
     if (showExpToast === '0') {
-      console.log('[亲密度] 经验提示已关闭，跳过显示')
       return
     }
     
@@ -350,7 +348,6 @@ export const useIntimacyStore = defineStore('intimacy', () => {
     if (intimacyData.current_level > oldLevel) {
       const levelConfig = levels.value.find(l => l.level === intimacyData.current_level)
       if (levelConfig) {
-        console.log('[亲密度] 检测到升级（互动）:', { oldLevel, newLevel: intimacyData.current_level })
         showLevelUp({
           newLevel: intimacyData.current_level,
           levelName: intimacyData.level_name || levelConfig.name,

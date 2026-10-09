@@ -138,7 +138,6 @@ export const useChatStore = defineStore('chat', () => {
     const isOwn = data.from_user_id === currentUserId
     const serverUrl = import.meta.env.VITE_SERVER_URL || ''
     
-    console.log('[Chat Store] 转换WebSocket消息:', data)
     
     // 为WebSocket消息生成唯一的animationKey，确保动画正常播放
     const animKey = `ws-${data.message_id}-${Date.now()}`
@@ -163,13 +162,11 @@ export const useChatStore = defineStore('chat', () => {
     // 图片消息 - 处理URL
     if (data.message_type === 'image') {
       const url = data.content
-      console.log('[Chat Store] 图片消息, 原始URL:', url)
       if (url && !url.startsWith('http://') && !url.startsWith('https://')) {
         message.imageUrl = serverUrl + url
       } else {
         message.imageUrl = url
       }
-      console.log('[Chat Store] 图片消息, 完整URL:', message.imageUrl)
     }
 
     // 视频消息 - 处理URL
@@ -231,7 +228,6 @@ export const useChatStore = defineStore('chat', () => {
 
     // 引用回复 - 确保数据结构完整
     if (data.reply_to) {
-      console.log('[Chat Store] 处理引用消息:', data.reply_to)
       message.replyTo = {
         message_id: data.reply_to.message_id,
         content: data.reply_to.content || '',
@@ -257,13 +253,6 @@ export const useChatStore = defineStore('chat', () => {
    * 处理收到的 WebSocket 消息
    */
   function handleWsMessage(data: MessageResponse, currentUserId: number) {
-    console.log('[Chat Store] handleWsMessage 被调用:', {
-      message_id: data.message_id,
-      message_type: data.message_type,
-      from_user_id: data.from_user_id,
-      currentUserId,
-      isOwn: data.from_user_id === currentUserId
-    })
     
     const isOwn = data.from_user_id === currentUserId
     
@@ -276,15 +265,12 @@ export const useChatStore = defineStore('chat', () => {
       })
       
       if (existingMsg) {
-        console.log('[Chat Store] 自己的消息已存在（临时消息），跳过添加')
         return // 已存在临时消息，不重复添加
       }
     }
     
-    console.log('[Chat Store] 准备添加消息到列表')
     const message = convertWsMessage(data, currentUserId)
     addMessage(message)
-    console.log('[Chat Store] 消息已添加，当前消息数:', messages.value.length)
   }
 
   /**
@@ -304,11 +290,6 @@ export const useChatStore = defineStore('chat', () => {
     const messageIds = data.message_ids || []
     const readerIdStr = String(data.reader_id)
     
-    console.log('[Chat Store] 收到已读回执:', {
-      messageIds,
-      readerId: readerIdStr,
-      totalMessages: messages.value.length
-    })
     
     // 直接查找对应的消息，不需要遍历所有消息
     messageIds.forEach(messageId => {
@@ -317,14 +298,6 @@ export const useChatStore = defineStore('chat', () => {
         m.id == messageId || (m as any).realId == messageId
       )
       
-      console.log('[Chat Store] 处理消息已读:', {
-        messageId,
-        found: !!message,
-        isOwn: message?.isOwn,
-        type: message?.type,
-        actualId: message?.id,
-        realId: (message as any)?.realId
-      })
       
       // 只处理自己发送的消息
       if (!message || !message.isOwn) return
@@ -336,7 +309,6 @@ export const useChatStore = defineStore('chat', () => {
       
       // 检查是否已经记录过这个用户的已读
       if ((message as any)._readUserIds.has(readerIdStr)) {
-        console.log('[Chat Store] 用户已读过此消息，跳过')
         return // 已存在，跳过
       }
       
@@ -345,12 +317,6 @@ export const useChatStore = defineStore('chat', () => {
       message.status = 'read'
       message.readCount = (message.readCount || 0) + 1
       
-      console.log('[Chat Store] 已更新消息已读状态:', {
-        messageId,
-        type: message.type,
-        readCount: message.readCount,
-        status: message.status
-      })
     })
   }
 

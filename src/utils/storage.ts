@@ -20,7 +20,6 @@ export interface LoginCredentials {
 export function saveUserInfo(userInfo: UserInfo): void {
   try {
     localStorage.setItem('userInfo', JSON.stringify(userInfo))
-    console.log('✅ 用户信息已保存到本地存储:', userInfo)
   } catch (error) {
     console.error('保存用户信息失败:', error)
   }

@@ -26,7 +26,6 @@ export const useUserStore = defineStore('user', () => {
     const savedUserInfo = getUserInfo()
     if (savedUserInfo) {
       userInfo.value = savedUserInfo
-      console.log('✅ 从本地存储加载用户信息:', savedUserInfo)
     }
   }
 
@@ -39,7 +38,6 @@ export const useUserStore = defineStore('user', () => {
     
     userInfo.value = info
     saveUserInfo(info)
-    console.log('✅ 用户信息已保存到 Pinia 和本地存储:', info)
   }
   
   // 处理头像URL（内网穿透）
@@ -60,7 +58,6 @@ export const useUserStore = defineStore('user', () => {
   const clearUser = () => {
     userInfo.value = null
     clearUserInfo()
-    console.log('✅ 用户信息已清除')
   }
 
   // 更新用户信息（部分更新）

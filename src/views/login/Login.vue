@@ -170,7 +170,6 @@ const handleLogin = async () => {
 
   try {
     const clientIp = await getRealIpFromThirdParty()
-    console.log('获取到的客户端IP:', clientIp || '使用后端获取')
 
     const requestData: any = {
       username: formState.username,
@@ -184,10 +183,8 @@ const handleLogin = async () => {
     const response = await login(requestData)
     const result = response.data
 
-    console.log('🔍 后端返回的完整响应:', result)
 
     if (result.code === 0) {
-      console.log('登录成功，前端接收到的数据:', result)
 
       if (!result.token) {
         console.error('❌ 后端未返回token')
@@ -205,12 +202,9 @@ const handleLogin = async () => {
       saveUserInfo(userInfo)
 
       const saved = localStorage.getItem('userInfo')
-      console.log('✅ 验证保存结果:', saved)
 
-      console.log('🍪 检查Cookie:', document.cookie)
       const tokenCookie = document.cookie.split('; ').find(row => row.startsWith('token='))
       if (tokenCookie) {
-        console.log('✅ Token已保存到Cookie:', tokenCookie)
       } else {
         console.warn('⚠️ Cookie中未找到token')
       }
@@ -232,7 +226,6 @@ const handleLogin = async () => {
     } else if (result.code === 403) {
       Message.error('账号无限期停用')
     } else {
-      console.log('登录失败:', result.msg)
       Message.error(result.msg || '登录失败')
     }
   } catch (error: any) {
