@@ -182,6 +182,15 @@ export const useListenStore = defineStore('listen', () => {
     sendSync(position, audioEl ? !audioEl.paused : true)
   }
 
+  // 胶囊上的播放/暂停
+  const isPlaying = computed(() => (audioEl ? !audioEl.paused : (info.value?.playing ?? false)))
+  function togglePlayback() {
+    const el = audioEl
+    if (!el) return
+    if (el.paused) el.play().catch(() => { /* ignore */ })
+    else el.pause()
+  }
+
   // ==================== 会话动作 ====================
   /** 完全重置（切房间 / 切账号 / 断线时调用）：释放一切本地状态，杜绝跨账号/跨房间泄漏 */
   function reset() {
@@ -319,7 +328,7 @@ export const useListenStore = defineStore('listen', () => {
       responderName: data.responder_name
     }
     endedReason.value = null
-    panelOpen.value = true
+    panelOpen.value = false
     startHeartbeat()
   }
 
@@ -388,7 +397,7 @@ export const useListenStore = defineStore('listen', () => {
         responderId: data.responder_id,
         responderName: data.responder_name
       }
-      panelOpen.value = true
+      panelOpen.value = false
       startHeartbeat()
     } else if (!data.active) {
       // 服务端说该房间无活跃会话：清理任何本地残留（会话/待接受/邀请气泡），杜绝泄漏
@@ -404,6 +413,7 @@ export const useListenStore = defineStore('listen', () => {
     registerAudio, unregisterAudio,
     onLocalPlay, onLocalPause, onLocalSeek,
     setVolume, setOnRemoteAction,
+    isPlaying, togglePlayback,
     // 动作
     invite, accept, decline, end, cancelPending,
     // 远程事件
