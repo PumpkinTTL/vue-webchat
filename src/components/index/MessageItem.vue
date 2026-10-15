@@ -418,11 +418,14 @@
               stroke-linecap="round" stroke-linejoin="round">
               <path d="M20 6L9 17l-5-5" />
             </svg>
-            <!-- 发送失败 -->
-            <svg v-else-if="message.status === 'failed'" class="status-failed" viewBox="0 0 24 24" fill="currentColor">
-              <circle cx="12" cy="12" r="10" />
-              <path d="M12 7v6M12 15h.01" stroke="white" stroke-width="2" stroke-linecap="round" />
-            </svg>
+            <!-- 发送失败：可点击重发 -->
+            <button v-else-if="message.status === 'failed'" class="status-failed-btn" type="button"
+              title="发送失败，点击重新发送" @click.stop="emit('resend', message)">
+              <svg class="status-failed" viewBox="0 0 24 24" fill="currentColor">
+                <circle cx="12" cy="12" r="10" />
+                <path d="M12 7v6M12 15h.01" stroke="white" stroke-width="2" stroke-linecap="round" />
+              </svg>
+            </button>
           </span>
         </div>
       </div>
@@ -488,6 +491,7 @@ const emit = defineEmits<{
   burn: [messageId: string | number]
   scrollToMessage: [messageId: number]
   edit: [messageId: string | number, content: string]
+  resend: [message: Message]
 }>()
 
 // Popover 显示状态
@@ -1566,6 +1570,32 @@ html.dark-mode {
 
 .status-failed {
   color: $danger-color;
+}
+
+// 发送失败的可点击重发按钮
+.status-failed-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  padding: 0;
+  border: none;
+  background: transparent;
+  cursor: pointer;
+  border-radius: 50%;
+  transition: transform $transition-fast, opacity $transition-fast;
+
+  svg {
+    width: 16px;
+    height: 16px;
+  }
+
+  &:hover {
+    transform: scale(1.15);
+  }
+
+  &:active {
+    transform: scale(0.95);
+  }
 }
 
 @keyframes spin {

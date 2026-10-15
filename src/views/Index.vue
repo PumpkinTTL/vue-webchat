@@ -39,7 +39,7 @@
         <MessageList ref="messageListRef" :messages="messages" :loading="messagesLoading" :has-more="hasMoreMessages"
           :loading-more="loadingMoreMessages" :upload-progress="uploadProgress" :has-reply="!!replyToMessage"
           @load-more="handleLoadMore" @reply="handleReplyMessage" @burn="handleBurnMessage" @edit="handleEditMessage"
-          @scroll-change="handleScrollChange" />
+          @resend="handleResendMessage" @scroll-change="handleScrollChange" />
 
         <!-- 新消息提示按钮 -->
         <Transition name="new-msg-fade">
@@ -57,7 +57,7 @@
         <InputBar ref="inputBarRef" :disabled="isInputDisabled" :reply-to="replyToMessage" :is-admin="userStore.isAdmin"
           :current-room="currentRoom" :deleted-count="deletedCount" @send="handleSendMessage"
           @send-image="handleSendImage" @send-video="handleSendVideo" @send-audio="handleSendAudio" @send-file="handleSendFile"
-          @start-recording="handleStartRecording" @stop-recording="handleStopRecording" @typing="handleTyping"
+          @start-recording="handleStartRecording" @stop-recording="handleStopRecording" @cancel-recording="handleCancelRecording" @typing="handleTyping"
           @cancel-reply="handleCancelReply" @toggle-lock="handleToggleLock" @clear-room="handleClearRoom"
           @restore-room="handleRestoreRoom" @open-history="handleOpenHistory" />
       </footer>
@@ -2080,8 +2080,143 @@ const handleSendFile = async (file: File) => {
   }
 }
 
-const handleStartRecording = () => { }
-const handleStopRecording = () => { }
+// ==================== 语音录制（按住说话）====================
+let mediaRecorder: MediaRecorder | null = null
+let recordedChunks: BlobPart[] = []
+let recordStream: MediaStream | null = null
+let recordCancelled = false
+
+// 选一个浏览器支持的音频编码
+const pickAudioMime = (): string => {
+  if (typeof MediaRecorder === 'undefined') return ''
+  const candidates = ['audio/webm;codecs=opus', 'audio/webm', 'audio/mp4', 'audio/ogg;codecs=opus', 'audio/ogg']
+  for (const t of candidates) {
+    if (MediaRecorder.isTypeSupported?.(t)) return t
+  }
+  return ''
+}
+
+const handleStartRecording = async () => {
+  if (isInputDisabled.value) return
+  if (!currentRoom.value?.id) return
+  if (mediaRecorder && mediaRecorder.state === 'recording') return
+  if (typeof navigator === 'undefined' || !navigator.mediaDevices?.getUserMedia) {
+    message.error('当前浏览器不支持录音')
+    return
+  }
+  try {
+    recordStream = await navigator.mediaDevices.getUserMedia({ audio: true })
+  } catch {
+    message.error('无法访问麦克风，请检查权限')
+    return
+  }
+
+  recordedChunks = []
+  recordCancelled = false
+  const mimeType = pickAudioMime()
+  try {
+    mediaRecorder = mimeType ? new MediaRecorder(recordStream, { mimeType }) : new MediaRecorder(recordStream)
+  } catch {
+    mediaRecorder = new MediaRecorder(recordStream)
+  }
+
+  mediaRecorder.ondataavailable = (ev) => {
+    if (ev.data && ev.data.size > 0) recordedChunks.push(ev.data)
+  }
+  mediaRecorder.onstop = () => {
+    const chunks = recordedChunks
+    recordedChunks = []
+    stopRecordStream()
+    if (recordCancelled) return
+    if (!chunks.length) return
+
+    const type = mediaRecorder?.mimeType || mimeType || 'audio/webm'
+    const ext = type.includes('mp4') ? 'm4a' : type.includes('ogg') ? 'ogg' : 'webm'
+    const blob = new Blob(chunks, { type })
+    if (blob.size < 1000) {
+      message.warning('录音太短了')
+      return
+    }
+    const file = new File([blob], `语音_${Date.now()}.${ext}`, { type })
+    void handleSendAudio(file)
+  }
+
+  try {
+    mediaRecorder.start()
+  } catch {
+    message.error('录音启动失败')
+    stopRecordStream()
+  }
+}
+
+const stopRecordStream = () => {
+  recordStream?.getTracks().forEach((t) => t.stop())
+  recordStream = null
+}
+
+const handleStopRecording = () => {
+  if (mediaRecorder && mediaRecorder.state === 'recording') {
+    mediaRecorder.stop()
+  } else {
+    stopRecordStream()
+  }
+}
+
+const handleCancelRecording = () => {
+  recordCancelled = true
+  if (mediaRecorder && mediaRecorder.state === 'recording') {
+    mediaRecorder.stop()
+  } else {
+    stopRecordStream()
+  }
+}
+
+// ==================== 失败消息重发 ====================
+const handleResendMessage = (msg: ChatMessageItem) => {
+  // 从列表移除失败占位
+  chatStore.removeMessage(msg.id)
+
+  // 重新走对应类型的发送流程
+  if (msg.type === 'image' && msg.imageUrl) {
+    refetchFileFromUrl(msg.imageUrl)
+      .then((file) => file && handleSendImage(file))
+      .catch(() => message.error('图片重发失败：无法读取原图'))
+    return
+  }
+  if (msg.type === 'video' && msg.videoUrl) {
+    refetchFileFromUrl(msg.videoUrl)
+      .then((file) => file && handleSendVideo(file))
+      .catch(() => message.error('视频重发失败：无法读取原文件'))
+    return
+  }
+  if (msg.type === 'audio' && msg.audioUrl) {
+    refetchFileFromUrl(msg.audioUrl, msg.audioName)
+      .then((file) => file && handleSendAudio(file))
+      .catch(() => message.error('语音重发失败：无法读取原文件'))
+    return
+  }
+  if (msg.type === 'file') {
+    message.info('原文件已不可用，请重新选择发送')
+    return
+  }
+  // 文本 / 引用
+  if (msg.text) {
+    void handleSendMessage(msg.text)
+  }
+}
+
+// 从本地 blob: URL 重新取回 File（失败重发用）
+const refetchFileFromUrl = async (url?: string, name?: string): Promise<File | null> => {
+  if (!url || !url.startsWith('blob:')) return null
+  try {
+    const res = await fetch(url)
+    const blob = await res.blob()
+    const ext = (blob.type.split('/')[1] || 'bin').split(';')[0]
+    return new File([blob], name || `resend_${Date.now()}.${ext}`, { type: blob.type })
+  } catch {
+    return null
+  }
+}
 
 const handleTyping = () => {
   // 发送正在输入状态

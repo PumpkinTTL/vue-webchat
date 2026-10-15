@@ -52,6 +52,7 @@
         @reply="handleReply"
         @burn="handleBurn"
         @edit="handleEdit"
+        @resend="handleResend"
         @scroll-to-message="handleScrollToMessage"
       />
     </div>
@@ -130,6 +131,7 @@ const emit = defineEmits<{
   reply: [message: Message]
   burn: [messageId: string | number]
   edit: [messageId: string | number, content: string]
+  resend: [message: Message]
   scrollChange: [isAtBottom: boolean]
 }>()
 
@@ -299,6 +301,11 @@ const handleBurn = (messageId: string | number) => {
 // 编辑消息
 const handleEdit = (messageId: string | number, content: string) => {
   emit('edit', messageId, content)
+}
+
+// 重发失败消息
+const handleResend = (message: Message) => {
+  emit('resend', message)
 }
 
 // 滚动到指定消息 - 完全重构，不依赖ref

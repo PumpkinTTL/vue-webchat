@@ -367,6 +367,7 @@ const emit = defineEmits<{
   sendFile: [file: File]
   startRecording: []
   stopRecording: []
+  cancelRecording: []
   typing: []
   cancelReply: []
   toggleLock: []
@@ -701,7 +702,7 @@ const stopRecording = () => {
 const cancelRecording = () => {
   if (!isRecording.value) return
   isRecording.value = false
-  // TODO: 取消录音
+  emit('cancelRecording')
 }
 
 // 取消引用
