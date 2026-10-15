@@ -1,44 +1,36 @@
 <template>
-  <!-- 一起听：输入框上方的小气泡（非 toast），邀请/等待中 -->
+  <!-- 一起听：输入框上方的小气泡（非 toast）。授权操作使用组件库按钮（a-button） -->
   <Transition name="listen-pop">
     <div v-if="show" class="listen-bubble">
-      <!-- 收到邀请 -->
-      <template v-if="invitation">
-        <div class="lb-icon">
-          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-            <path d="M9 18V5l12-2v13" />
-            <circle cx="6" cy="18" r="3" />
-            <circle cx="18" cy="16" r="3" />
-          </svg>
-        </div>
-        <div class="lb-body">
-          <div class="lb-title">
-            <strong>{{ invitation.fromNickname }}</strong> 邀请你一起听
-          </div>
-          <div class="lb-name">{{ invitation.audioName }}</div>
-        </div>
-        <div class="lb-actions">
-          <button class="lb-btn lb-btn--ghost" type="button" @click="decline">拒绝</button>
-          <button class="lb-btn lb-btn--primary" type="button" @click="accept">同意</button>
-        </div>
-      </template>
+      <span class="lb-icon" :class="{ 'lb-icon--spin': !invitation }">
+        <svg v-if="invitation" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+          <path d="M9 18V5l12-2v13" />
+          <circle cx="6" cy="18" r="3" />
+          <circle cx="18" cy="16" r="3" />
+        </svg>
+        <svg v-else viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round">
+          <circle cx="12" cy="12" r="9" opacity="0.25" />
+          <path d="M21 12a9 9 0 00-9-9" />
+        </svg>
+      </span>
 
-      <!-- 等待对方接受 -->
-      <template v-else-if="pending">
-        <div class="lb-icon lb-icon--spin">
-          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round">
-            <circle cx="12" cy="12" r="9" opacity="0.25" />
-            <path d="M21 12a9 9 0 00-9-9" />
-          </svg>
+      <div class="lb-body">
+        <div class="lb-title">
+          <template v-if="invitation"><strong>{{ invitation.fromNickname }}</strong> 邀请你一起听</template>
+          <template v-else>正在等待对方接受…</template>
         </div>
-        <div class="lb-body">
-          <div class="lb-title">正在等待对方接受一起听…</div>
-          <div class="lb-name">{{ pendingName }}</div>
-        </div>
-        <div class="lb-actions">
-          <button class="lb-btn lb-btn--ghost" type="button" @click="cancel">取消</button>
-        </div>
-      </template>
+        <div class="lb-name">{{ invitation ? invitation.audioName : pendingName }}</div>
+      </div>
+
+      <div class="lb-actions">
+        <template v-if="invitation">
+          <a-button size="small" @click="decline">拒绝</a-button>
+          <a-button size="small" type="primary" @click="accept">同意</a-button>
+        </template>
+        <template v-else>
+          <a-button size="small" @click="cancel">取消</a-button>
+        </template>
+      </div>
     </div>
   </Transition>
 </template>
@@ -51,7 +43,6 @@ const listenStore = useListenStore()
 
 const invitation = computed(() => listenStore.invitation)
 const pending = computed(() => listenStore.pending)
-
 const show = computed(() => !!invitation.value || pending.value)
 const pendingName = computed(() => listenStore.info?.audioName || '')
 
@@ -65,17 +56,18 @@ const cancel = () => listenStore.cancelPending()
   display: flex;
   align-items: center;
   gap: 10px;
-  padding: 10px 12px;
+  padding: 9px 12px;
   margin-bottom: 8px;
-  background: linear-gradient(135deg, rgba($primary-color, 0.08), rgba(#8b5cf6, 0.08));
-  border: 1px solid rgba($primary-color, 0.2);
+  background: $bg-color-elevated;
+  border: 1px solid $border-base;
   border-radius: $border-radius-base;
+  box-shadow: $box-shadow-sm;
 }
 
 .lb-icon {
   flex-shrink: 0;
-  width: 34px;
-  height: 34px;
+  width: 32px;
+  height: 32px;
   border-radius: $border-radius-sm;
   display: flex;
   align-items: center;
@@ -83,7 +75,7 @@ const cancel = () => listenStore.cancelPending()
   color: #fff;
   background: linear-gradient(135deg, #8b5cf6, #7c3aed);
 
-  svg { width: 18px; height: 18px; }
+  svg { width: 17px; height: 17px; }
 
   &--spin svg { animation: lb-spin 0.9s linear infinite; }
 }
@@ -98,12 +90,13 @@ const cancel = () => listenStore.cancelPending()
 .lb-title {
   font-size: 13px;
   color: $text-primary;
+  line-height: 1.3;
 
   strong { font-weight: $font-weight-semibold; }
 }
 
 .lb-name {
-  margin-top: 2px;
+  margin-top: 1px;
   font-size: 12px;
   color: $text-tertiary;
   white-space: nowrap;
@@ -117,39 +110,14 @@ const cancel = () => listenStore.cancelPending()
   gap: 8px;
 }
 
-.lb-btn {
-  height: 30px;
-  padding: 0 14px;
-  border-radius: $border-radius-sm;
-  font-size: 13px;
-  font-weight: $font-weight-medium;
-  cursor: pointer;
-  border: 1px solid transparent;
-  transition: all $transition-fast;
-
-  &--primary {
-    background: $primary-color;
-    color: #fff;
-    &:hover { background: $primary-hover; }
-  }
-
-  &--ghost {
-    background: transparent;
-    color: $text-secondary;
-    border-color: $border-base;
-    &:hover { background: rgba($text-tertiary, 0.08); }
-  }
-}
-
 .listen-pop-enter-active,
 .listen-pop-leave-active { transition: all 0.22s ease; }
 .listen-pop-enter-from,
 .listen-pop-leave-to { opacity: 0; transform: translateY(8px); }
 
 :global(.dark-mode) .listen-bubble {
-  background: linear-gradient(135deg, rgba($primary-color, 0.12), rgba(#8b5cf6, 0.12));
-  border-color: rgba($primary-color, 0.3);
+  background: $bg-color-elevated-dark;
+  border-color: $border-base-dark;
 }
 :global(.dark-mode) .lb-title { color: $text-primary-dark; }
-:global(.dark-mode) .lb-btn--ghost { color: $text-secondary-dark; border-color: $border-base-dark; }
 </style>

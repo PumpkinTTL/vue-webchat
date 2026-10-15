@@ -19,7 +19,8 @@
             <circle cx="18" cy="16" r="3" />
           </svg>
         </span>
-        <span class="lp-header__text">一起听 · {{ partnerName }}</span>
+        <span class="lp-header__text">一起听</span>
+        <span class="lp-header__partner">{{ partnerName }}</span>
       </div>
     </template>
 
@@ -33,6 +34,14 @@
         class="lp-player"
       />
 
+      <!-- 状态行 -->
+      <div class="lp-status">
+        <span class="lp-dot"></span>
+        <span>同步中 · 播放 / 暂停 / 拖动都会同步给对方</span>
+      </div>
+
+      <div class="lp-divider"></div>
+
       <!-- 本地音量（不同步，各自独立） -->
       <div class="lp-volume">
         <span class="lp-volume__icon">
@@ -41,25 +50,20 @@
             <path d="M15.5 8.5a5 5 0 010 7" />
           </svg>
         </span>
-        <input
-          class="lp-volume__range"
-          type="range"
-          min="0"
-          max="1"
-          step="0.01"
+        <a-slider
+          class="lp-volume__slider"
           :value="volume"
-          @input="onVolume"
+          :min="0"
+          :max="1"
+          :step="0.01"
+          :tooltip-open="false"
+          @change="onVolume"
         />
-      </div>
-
-      <div class="lp-tip">
-        <span class="lp-dot"></span>
-        同步中 · 播放 / 暂停 / 拖动进度都会同步给对方
       </div>
     </div>
 
     <template #footer>
-      <button class="lp-exit" type="button" @click="exit">退出一起听</button>
+      <a-button block danger @click="exit">退出一起听</a-button>
     </template>
   </a-drawer>
 </template>
@@ -101,10 +105,7 @@ watch(
 watch(playerRef, () => { if (listenStore.active) nextTick(bindAudio) })
 
 const closePanel = () => { listenStore.panelOpen = false }
-const onVolume = (e: Event) => {
-  const v = Number((e.target as HTMLInputElement).value)
-  listenStore.setVolume(v)
-}
+const onVolume = (v: number) => listenStore.setVolume(v)
 const exit = () => listenStore.end()
 </script>
 
@@ -134,10 +135,17 @@ const exit = () => listenStore.end()
   color: $text-primary;
 }
 
+.lp-header__partner {
+  font-size: 12px;
+  color: $text-tertiary;
+  padding-left: 6px;
+  border-left: 1px solid $border-base;
+}
+
 .lp-body {
   display: flex;
   flex-direction: column;
-  gap: 14px;
+  gap: 12px;
 }
 
 .lp-player {
@@ -149,25 +157,7 @@ const exit = () => listenStore.end()
   }
 }
 
-.lp-volume {
-  display: flex;
-  align-items: center;
-  gap: 10px;
-}
-
-.lp-volume__icon {
-  flex-shrink: 0;
-  color: $text-tertiary;
-
-  svg { width: 16px; height: 16px; display: block; }
-}
-
-.lp-volume__range {
-  flex: 1;
-  accent-color: $primary-color;
-}
-
-.lp-tip {
+.lp-status {
   display: flex;
   align-items: center;
   gap: 8px;
@@ -191,21 +181,30 @@ const exit = () => listenStore.end()
   50% { opacity: 0.35; }
 }
 
-.lp-exit {
-  width: 100%;
-  height: 34px;
-  border-radius: $border-radius-sm;
-  border: 1px solid rgba($danger-color, 0.3);
-  background: rgba($danger-color, 0.08);
-  color: $danger-color;
-  font-size: 13px;
-  font-weight: $font-weight-medium;
-  cursor: pointer;
-  transition: all $transition-fast;
+.lp-divider {
+  height: 1px;
+  background: $border-light;
+}
 
-  &:hover { background: rgba($danger-color, 0.16); }
+.lp-volume {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.lp-volume__icon {
+  flex-shrink: 0;
+  color: $text-tertiary;
+
+  svg { width: 16px; height: 16px; display: block; }
+}
+
+.lp-volume__slider {
+  flex: 1;
 }
 
 :global(.dark-mode) .lp-header__text { color: $text-primary-dark; }
-:global(.dark-mode) .lp-tip { color: $text-tertiary-dark; }
+:global(.dark-mode) .lp-header__partner { border-color: $border-base-dark; }
+:global(.dark-mode) .lp-status { color: $text-tertiary-dark; }
+:global(.dark-mode) .lp-divider { background: $border-light-dark; }
 </style>
