@@ -56,6 +56,8 @@
       <footer class="input-area">
         <!-- 一起听：邀请/等待气泡（非 toast，显示在输入框上方） -->
         <ListenInviteBubble />
+        <!-- 一起听：收起态迷你条（会话进行中且面板收起时，作为重新展开入口） -->
+        <ListenMiniBar />
         <InputBar ref="inputBarRef" :disabled="isInputDisabled" :reply-to="replyToMessage" :is-admin="userStore.isAdmin"
           :current-room="currentRoom" :deleted-count="deletedCount" @send="handleSendMessage"
           @send-image="handleSendImage" @send-video="handleSendVideo" @send-audio="handleSendAudio" @send-file="handleSendFile"
@@ -184,6 +186,7 @@ import IntimacyExpTip from '@/components/intimacy/IntimacyExpTip.vue'
 import IntimacyBondNotification from '@/components/intimacy/IntimacyBondNotification.vue'
 import ChatHistoryPanel from '@/components/index/ChatHistoryPanel.vue'
 import ListenInviteBubble from '@/components/index/ListenInviteBubble.vue'
+import ListenMiniBar from '@/components/index/ListenMiniBar.vue'
 import ListenPanel from '@/components/index/ListenPanel.vue'
 import { getUserRooms, createRoom, joinRoom, leaveRoom, getRoomUserCount, toggleRoomLock as toggleRoomLockApi, clearRoomMessages, restoreRoomMessages, getDeletedMessagesCount } from '@/apis/room'
 import { getMessageList, sendTextMessage, sendImageMessage, sendVideoMessage, sendAudioMessage, sendFileMessage, editMessage } from '@/apis/message'

@@ -106,8 +106,7 @@ watch(playerRef, () => { if (listenStore.active) nextTick(bindAudio) })
 
 const closePanel = () => { listenStore.panelOpen = false }
 const onVolume = (v: number) => listenStore.setVolume(v)
-const exit = () => listenStore.end()
-</script>
+const exit = () => listenStore.end()</script>
 
 <style lang="scss" scoped>
 .lp-header {
