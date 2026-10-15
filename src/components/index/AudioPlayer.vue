@@ -9,8 +9,7 @@
       class="ab-play"
       :class="{ playing }"
       type="button"
-      :disabled="error"
-      :aria-label="error ? '无法播放' : playing ? '暂停' : '播放'"
+      :aria-label="error ? '点击重试' : playing ? '暂停' : '播放'"
       @click="toggle"
     >
       <!-- 缓冲中 -->
@@ -78,7 +77,7 @@
 </template>
 
 <script setup lang="ts">
-import { ref, computed, onBeforeUnmount } from 'vue'
+import { ref, computed, watch, onBeforeUnmount } from 'vue'
 import { formatDuration } from '@/utils/video'
 import { claimPlayback, releasePlayback } from '@/utils/mediaPlayback'
 
@@ -96,6 +95,8 @@ const currentTime = ref(0)
 const duration = ref(0)
 const error = ref(false)
 const isDragging = ref(false)
+let retryCount = 0
+let retryTimer: ReturnType<typeof setTimeout> | null = null
 
 const percent = computed(() => {
   if (!duration.value) return 0
@@ -109,29 +110,69 @@ const fmt = (s: number) => (isFinite(s) && s > 0 ? formatDuration(s) : '0:00')
 
 const toggle = () => {
   const el = audioEl.value
-  if (!el || error.value) return
+  if (!el) return
   if (el.paused) {
     // 全局互斥：暂停当前正在播放的任意媒体（音频或视频），确保同一时间只播一个
     claimPlayback(el)
+    // 可恢复：这次点击即视为一次重试，清掉上次的错误态
+    if (error.value) {
+      error.value = false
+      try { el.load() } catch { /* ignore */ }
+    }
     buffering.value = true
-    el.play().catch(() => { error.value = true; buffering.value = false })
+    el.play().catch(() => { onError() })
   } else {
     el.pause()
   }
 }
 
-const onPlay = () => { playing.value = true }
+const onPlay = () => { playing.value = true; error.value = false }
 const onPause = () => { playing.value = false; buffering.value = false }
 const onEnded = () => { playing.value = false; buffering.value = false; currentTime.value = 0; releasePlayback(audioEl.value!) }
-const onError = () => { error.value = true; playing.value = false; buffering.value = false }
+const onError = () => {
+  playing.value = false
+  buffering.value = false
+  // 刚上传完时（尤其发送方）图床/CDN 可能还没就绪，播放器会瞬时 error。
+  // 这里既保留「可点击重试」，也做有限次自动重试，避免要刷新页面才能播放。
+  if (retryCount < 3) {
+    retryCount++
+    error.value = false
+    if (retryTimer) clearTimeout(retryTimer)
+    retryTimer = setTimeout(() => {
+      const el = audioEl.value
+      if (!el) return
+      try { el.load() } catch { /* ignore */ }
+    }, 1500 * retryCount)
+  } else {
+    error.value = true // 多次仍失败：标记错误，但按钮仍可点击重试
+  }
+}
 const onLoaded = () => {
   if (audioEl.value && isFinite(audioEl.value.duration)) {
     duration.value = audioEl.value.duration
   }
+  // 元数据加载成功说明资源可用，清掉错误与重试计数
+  error.value = false
+  retryCount = 0
+  if (retryTimer) { clearTimeout(retryTimer); retryTimer = null }
 }
 const onTimeUpdate = () => {
   if (audioEl.value) currentTime.value = audioEl.value.currentTime
 }
+
+// src 变化（如发送方从本地 blob 切到图床正式地址）时重置错误/进度，避免残留错误态锁死播放
+watch(
+  () => props.src,
+  () => {
+    error.value = false
+    buffering.value = false
+    currentTime.value = 0
+    duration.value = 0
+    playing.value = false
+    retryCount = 0
+    if (retryTimer) { clearTimeout(retryTimer); retryTimer = null }
+  }
+)
 
 // 点击/拖动进度条定位
 const seekByClientX = (clientX: number) => {
@@ -161,6 +202,7 @@ const startDrag = () => {
 onBeforeUnmount(() => {
   releasePlayback(audioEl.value!)
   isDragging.value = false
+  if (retryTimer) { clearTimeout(retryTimer); retryTimer = null }
   window.removeEventListener('mousemove', onDragMove)
   window.removeEventListener('mouseup', onDragEnd)
 })
