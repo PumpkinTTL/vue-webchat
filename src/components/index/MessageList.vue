@@ -141,6 +141,7 @@ const historyMessageId = ref<string | number | null>(null)
 const historyOffset = ref<number>(0) // 消息顶部相对于容器顶部的偏移
 const showBackToHistory = ref(false)
 const isAutoScrolling = ref(false)
+let autoLoadRound = 0 // 引用跳转时自动加载历史的轮次计数
 
 // 已读状态管理
 const { initObserver, observeMessageElement, observeMessages, observeAllUnreadMessages, cleanup } = useReadStatus()
@@ -201,6 +202,14 @@ const scrollToBottomWithHistory = (smooth = true) => {
   }, 500)
 }
 
+// 高亮指定消息元素（统一走 DOM，避免依赖未定义的 ref）
+const highlightMessageElement = (el: HTMLElement, duration = 2000) => {
+  el.classList.add('highlight-message')
+  setTimeout(() => {
+    el.classList.remove('highlight-message')
+  }, duration)
+}
+
 // 回到历史位置
 const handleBackToHistory = () => {
   if (!historyMessageId.value || !messageContainer.value) return
@@ -225,11 +234,8 @@ const handleBackToHistory = () => {
     behavior: 'smooth'
   })
   
-  // 高亮目标消息
-  const messageRef = messageRefs.value.get(historyMessageId.value)
-  if (messageRef?.highlight) {
-    messageRef.highlight()
-  }
+  // 高亮目标消息（直接操作 DOM，避免依赖 ref）
+  highlightMessageElement(targetEl)
   
   // 清除历史位置
   clearHistoryPosition()
@@ -298,28 +304,37 @@ const handleEdit = (messageId: string | number, content: string) => {
 // 滚动到指定消息 - 完全重构，不依赖ref
 const handleScrollToMessage = (messageId: number) => {
   if (!messageContainer.value) return
-  
-  
-  // 使用递归重试机制，确保DOM完全渲染
+
+  // 使用递归重试机制，确保DOM完全渲染；若目标消息尚未加载，则触发加载更多历史
   const attemptScroll = (attempt: number = 0): void => {
     if (!messageContainer.value) {
       return
     }
-    
+
     // 直接通过DOM查找目标元素
     const targetEl = messageContainer.value.querySelector(`[data-msg-id="${messageId}"]`) as HTMLElement
-    
+
     if (!targetEl) {
       if (attempt < 10) {
         // 最多重试10次，每次间隔50ms
         setTimeout(() => attemptScroll(attempt + 1), 50)
       } else {
-        antMessage.info('原消息不在当前视图中')
+        // 当前视图中没有：请求父组件加载更多历史后再试（最多再尝试 5 轮）
+        if (props.hasMore && !props.loadingMore && autoLoadRound < 5) {
+          autoLoadRound++
+          emit('loadMore')
+          setTimeout(() => attemptScroll(0), 400)
+        } else {
+          autoLoadRound = 0
+          antMessage.info('原消息不在当前视图中')
+        }
       }
       return
     }
-    
-    
+
+    // 找到目标：重置自动加载轮次
+    autoLoadRound = 0
+
     // 计算滚动位置，让目标消息居中
     const containerRect = messageContainer.value.getBoundingClientRect()
     const targetRect = targetEl.getBoundingClientRect()
@@ -327,32 +342,32 @@ const handleScrollToMessage = (messageId: number) => {
     const targetOffsetTop = targetRect.top - containerRect.top + scrollTop
     const centerOffset = (containerRect.height - targetRect.height) / 2
     const scrollTo = Math.max(0, targetOffsetTop - centerOffset)
-    
+
     // 计算滚动距离和时间
     const scrollDistance = Math.abs(scrollTo - scrollTop)
     const scrollDuration = Math.min(500, scrollDistance * 0.5)
-    
+
     // 执行滚动
     messageContainer.value.scrollTo({
       top: scrollTo,
       behavior: 'smooth'
     })
-    
-    
+
     // 滚动完成后直接操作DOM添加高亮class，不依赖ref
     setTimeout(() => {
       if (!targetEl) return
-      
-      // 添加高亮class
+
+      // 先移除入场动画 class，避免“晃动结束后又缩放”的叠加效果
+      targetEl.classList.remove('msg-new')
       targetEl.classList.add('highlight-message')
-      
+
       // 2秒后移除高亮
       setTimeout(() => {
         targetEl.classList.remove('highlight-message')
       }, 2000)
     }, scrollDuration + 100)
   }
-  
+
   // 立即开始第一次尝试
   attemptScroll(0)
 }

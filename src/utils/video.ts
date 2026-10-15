@@ -46,9 +46,12 @@ export const formatDuration = (seconds: number): string => {
  * @returns 验证结果
  */
 export const validateVideoFile = (file: File): { valid: boolean; error?: string } => {
-  // 检查文件类型
-  const allowedTypes = ['video/mp4', 'video/webm', 'video/ogg', 'video/quicktime']
-  if (!allowedTypes.includes(file.type)) {
+  // 检查文件类型：MIME 或扩展名任一命中即通过
+  // （部分浏览器对 .mp4 可能给出 video/x-m4v 或空 type，用扩展名兜底避免误拒）
+  const allowedTypes = ['video/mp4', 'video/webm', 'video/ogg', 'video/quicktime', 'video/x-m4v']
+  const allowedExts = ['mp4', 'webm', 'ogv', 'ogg', 'mov', 'm4v']
+  const ext = (file.name.split('.').pop() || '').toLowerCase()
+  if (!allowedTypes.includes(file.type) && !allowedExts.includes(ext)) {
     return {
       valid: false,
       error: '不支持的视频格式，请上传 MP4、WebM、OGG 或 MOV 格式的视频'

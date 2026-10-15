@@ -6,7 +6,7 @@ import request from '@/utils/request'
 export interface Message {
   id: number | string
   room_id: number
-  type: 'normal' | 'text' | 'image' | 'voice' | 'video' | 'file' | 'system' | 'reply'
+  type: 'normal' | 'text' | 'image' | 'voice' | 'video' | 'file' | 'audio' | 'system' | 'reply'
   text: string
   time: string
   isOwn: boolean
@@ -21,6 +21,10 @@ export interface Message {
   videoUrl?: string
   videoThumbnail?: string
   videoDuration?: number
+  // 音频消息
+  audioUrl?: string
+  audioDuration?: number
+  audioName?: string
   // 文件消息
   fileName?: string
   fileSize?: number
@@ -69,6 +73,12 @@ export interface SendMessageResponse {
     video_thumbnail?: string // 备用字段
     videoDuration?: number   // 视频时长
     video_duration?: number  // 备用字段
+    audioUrl?: string   // 音频URL
+    audio_url?: string  // 备用字段
+    audioDuration?: number   // 音频时长
+    audio_duration?: number  // 备用字段
+    audioName?: string  // 音频文件名
+    audio_name?: string // 备用字段
     content?: string    // 内容（可能包含图片/视频路径）
     intimacy?: {
       current_exp: number
@@ -146,6 +156,23 @@ export function sendVideoMessage(roomId: number, video: File) {
 }
 
 /**
+ * 发送音频消息
+ */
+export function sendAudioMessage(roomId: number, audio: File) {
+  const formData = new FormData()
+  formData.append('room_id', String(roomId))
+  formData.append('audio', audio)
+
+  return request<SendMessageResponse>({
+    url: '/message/sendAudio',
+    method: 'post',
+    data: formData,
+    // 不要手动设置 Content-Type，让 Axios 自动设置正确的 multipart/form-data (带 boundary)
+    timeout: 600000 // 600秒超时（10分钟），与视频一致，适配内网穿透慢速网络
+  })
+}
+
+/**
  * 发送文件消息
  */
 export function sendFileMessage(roomId: number, file: File) {
@@ -217,5 +244,44 @@ export function editMessage(messageId: number, content: string) {
       message_id: messageId,
       content
     }
+  })
+}
+
+/**
+ * 搜索聊天记录参数
+ */
+export interface SearchMessagesParams {
+  room_id: number
+  keyword?: string
+  type?: string        // '' | 'text' | 'image' | 'video' | 'audio' | 'file'
+  date_from?: string
+  date_to?: string
+  page?: number
+  limit?: number
+}
+
+/**
+ * 聊天统计数据
+ */
+export interface MessageStatistics {
+  total: number
+  by_type: Record<string, number>
+  by_day: { date: string; count: number }[]
+  by_sender: { user_id: number; nickname: string; avatar?: string; count: number }[]
+  first_time?: string | null
+  last_time?: string | null
+}
+
+/** 搜索聊天记录 */
+export function searchMessages(params: SearchMessagesParams) {
+  return request<{ code: number; msg: string; data: { messages: Message[]; total: number; has_more: boolean; page: number; limit: number } }>({
+    url: '/message/search', method: 'get', params
+  })
+}
+
+/** 聊天统计 */
+export function getMessageStatistics(roomId: number) {
+  return request<{ code: number; msg: string; data: MessageStatistics }>({
+    url: '/message/statistics', method: 'get', params: { room_id: roomId }
   })
 }

@@ -31,12 +31,16 @@ export interface JoinRoomMessage {
 export interface ChatMessage {
   type: 'message'
   message_id: number
-  message_type: 'text' | 'image' | 'voice' | 'video' | 'file'
+  message_type: 'text' | 'image' | 'voice' | 'video' | 'file' | 'audio'
   content: string
   // 视频消息
   video_url?: string
   video_thumbnail?: string
   video_duration?: number
+  // 音频消息
+  audio_url?: string
+  audio_duration?: number
+  audio_name?: string
   // 文件消息
   file_name?: string
   file_size?: number
@@ -88,6 +92,13 @@ export interface RoomLockChangedMessage {
   lock: number
 }
 
+export interface ProfileUpdatedMessage {
+  type: 'profile_updated'
+  user_id: number
+  nickname?: string
+  avatar?: string
+}
+
 export interface IntimacyRestartMessage {
   type: 'intimacy_restart'
   room_id: number
@@ -107,6 +118,7 @@ export type ClientMessage =
   | MessageEditedMessage
   | RoomClearedMessage
   | RoomLockChangedMessage
+  | ProfileUpdatedMessage
   | IntimacyRestartMessage
   | PingMessage
 
@@ -136,7 +148,7 @@ export interface MessageResponse {
   type: 'message'
   room_id: number
   message_id: number
-  message_type: 'text' | 'image' | 'voice' | 'video' | 'file'
+  message_type: 'text' | 'image' | 'voice' | 'video' | 'file' | 'audio'
   from_user_id: number
   from_nickname: string
   from_avatar: string
@@ -146,6 +158,10 @@ export interface MessageResponse {
   video_url?: string
   video_thumbnail?: string
   video_duration?: number
+  // 音频消息
+  audio_url?: string
+  audio_duration?: number
+  audio_name?: string
   // 文件消息
   file_name?: string
   file_size?: number
@@ -230,6 +246,13 @@ export interface RoomLockChangedResponse {
   lock: number
 }
 
+export interface ProfileUpdatedResponse {
+  type: 'profile_updated'
+  user_id: number
+  nickname?: string
+  avatar?: string
+}
+
 export interface IntimacyStartResponse {
   type: 'intimacy_start'
   room_id: number
@@ -279,6 +302,7 @@ export type ServerMessage =
   | MessageEditedResponse
   | RoomClearedResponse
   | RoomLockChangedResponse
+  | ProfileUpdatedResponse
   | IntimacyStartResponse
   | IntimacyCompleteResponse
   | IntimacyResetResponse

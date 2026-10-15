@@ -56,10 +56,10 @@
       <footer class="input-area">
         <InputBar ref="inputBarRef" :disabled="isInputDisabled" :reply-to="replyToMessage" :is-admin="userStore.isAdmin"
           :current-room="currentRoom" :deleted-count="deletedCount" @send="handleSendMessage"
-          @send-image="handleSendImage" @send-video="handleSendVideo" @send-file="handleSendFile"
+          @send-image="handleSendImage" @send-video="handleSendVideo" @send-audio="handleSendAudio" @send-file="handleSendFile"
           @start-recording="handleStartRecording" @stop-recording="handleStopRecording" @typing="handleTyping"
           @cancel-reply="handleCancelReply" @toggle-lock="handleToggleLock" @clear-room="handleClearRoom"
-          @restore-room="handleRestoreRoom" />
+          @restore-room="handleRestoreRoom" @open-history="handleOpenHistory" />
       </footer>
     </main>
 
@@ -156,6 +156,14 @@
     :level-name="intimacyStore.currentIntimacy?.level_name || '恋人'"
     @close="handleCloseBondNotification"
   />
+
+  <!-- 聊天记录 / 媒体库 / 统计面板 -->
+  <ChatHistoryPanel
+    v-if="currentRoom?.id"
+    v-model:open="showHistoryPanel"
+    :room-id="currentRoom.id"
+    @jump="handleHistoryJump"
+  />
 </template>
 
 <script setup lang="ts">
@@ -169,8 +177,9 @@ import IntimacyPanel from '@/components/intimacy/IntimacyPanel.vue'
 import IntimacyLevelUpModal from '@/components/intimacy/IntimacyLevelUpModal.vue'
 import IntimacyExpTip from '@/components/intimacy/IntimacyExpTip.vue'
 import IntimacyBondNotification from '@/components/intimacy/IntimacyBondNotification.vue'
+import ChatHistoryPanel from '@/components/index/ChatHistoryPanel.vue'
 import { getUserRooms, createRoom, joinRoom, leaveRoom, getRoomUserCount, toggleRoomLock as toggleRoomLockApi, clearRoomMessages, restoreRoomMessages, getDeletedMessagesCount } from '@/apis/room'
-import { getMessageList, sendTextMessage, sendImageMessage, sendVideoMessage, sendFileMessage, editMessage } from '@/apis/message'
+import { getMessageList, sendTextMessage, sendImageMessage, sendVideoMessage, sendAudioMessage, sendFileMessage, editMessage } from '@/apis/message'
 import type { CreateRoomParams, JoinRoomParams } from '@/apis/room'
 import { useChat } from '@/composables/useChat'
 import { useDarkMode } from '@/composables/useDarkMode'
@@ -192,12 +201,27 @@ const { wsStore, chatStore, initChat, destroyChat, enterRoom, broadcastMessage, 
 
 // 消息列表引用
 const messageListRef = ref<InstanceType<typeof MessageList>>()
-
 // 输入栏引用
 const inputBarRef = ref<InstanceType<typeof InputBar>>()
 
 // 响应式状态
 const sidebarOpen = ref(false)
+
+// 聊天记录 / 媒体库 / 统计面板
+const showHistoryPanel = ref(false)
+const handleOpenHistory = () => {
+  if (!currentRoom.value?.id) {
+    message.info('请先进入一个房间')
+    return
+  }
+  showHistoryPanel.value = true
+}
+// 从面板点击某条记录 → 跳转并高亮
+const handleHistoryJump = async (messageId: number) => {
+  showHistoryPanel.value = false
+  await nextTick()
+  messageListRef.value?.scrollToMessage(messageId)
+}
 
 // 亲密度面板状态
 const showIntimacyPanel = ref(false)
@@ -411,6 +435,17 @@ onMounted(async () => {
     }
   })
 
+  // 监听他人资料变更（昵称/头像）：刷新本地消息里的发送者信息 + 在线用户列表
+  wsStore.setOnProfileUpdated((data) => {
+    chatStore.updateUserProfile(data.user_id, data.nickname, data.avatar)
+    // 同步在线用户列表
+    const u = wsStore.onlineUsers.find((x: any) => x.user_id === data.user_id)
+    if (u) {
+      if (data.nickname) u.nick_name = data.nickname
+      if (data.avatar !== undefined) u.avatar = data.avatar
+    }
+  })
+
   // 加载房间列表
   await loadUserRooms()
 })
@@ -620,6 +655,12 @@ const loadRoomMessages = async (roomId: number) => {
           fileUrl = serverUrl + fileUrl
         }
 
+        // 处理音频URL
+        let audioUrl = msg.audioUrl
+        if (audioUrl && !audioUrl.startsWith('http://') && !audioUrl.startsWith('https://') && !audioUrl.startsWith('blob:')) {
+          audioUrl = serverUrl + audioUrl
+        }
+
         // 处理头像URL
         let avatar = msg.sender?.avatar || ''
         if (avatar && !avatar.startsWith('http://') && !avatar.startsWith('https://') && !avatar.startsWith('blob:')) {
@@ -646,6 +687,10 @@ const loadRoomMessages = async (roomId: number) => {
           videoUrl: videoUrl,
           videoThumbnail: videoThumbnail,
           videoDuration: msg.videoDuration,
+          // 音频
+          audioUrl: audioUrl,
+          audioDuration: msg.audioDuration,
+          audioName: msg.audioName,
           // 文件
           fileName: msg.fileName,
           fileSize: msg.fileSize,
@@ -724,6 +769,12 @@ const handleLoadMore = async () => {
           fileUrl = serverUrl + fileUrl
         }
 
+        // 处理音频URL
+        let audioUrl = msg.audioUrl
+        if (audioUrl && !audioUrl.startsWith('http://') && !audioUrl.startsWith('https://') && !audioUrl.startsWith('blob:')) {
+          audioUrl = serverUrl + audioUrl
+        }
+
         // 处理头像URL
         let avatar = msg.sender?.avatar || ''
         if (avatar && !avatar.startsWith('http://') && !avatar.startsWith('https://') && !avatar.startsWith('blob:')) {
@@ -750,6 +801,10 @@ const handleLoadMore = async () => {
           videoUrl: videoUrl,
           videoThumbnail: videoThumbnail,
           videoDuration: msg.videoDuration,
+          // 音频
+          audioUrl: audioUrl,
+          audioDuration: msg.audioDuration,
+          audioName: msg.audioName,
           // 文件
           fileName: msg.fileName,
           fileSize: msg.fileSize,
@@ -1029,7 +1084,13 @@ const handleSelectRoom = async (room: any) => {
 }
 
 const handleAddContact = () => { }
-const handleRefresh = () => { loadUserRooms() }
+// 刷新：重载房间列表 + 当前房间消息
+const handleRefresh = async () => {
+  await loadUserRooms()
+  if (currentRoom.value?.id) {
+    await loadRoomMessages(currentRoom.value.id)
+  }
+}
 
 const handleLeaveRoomAction = async (room: any) => {
   try {
@@ -1254,10 +1315,11 @@ const handleSendMessage = async (text: string) => {
     )
 
     if (result.code === 0 && result.data) {
-      // 更新消息ID和状态
+      // 更新消息ID和状态（统一：id 换真实值 + 记录 realId，供去重与焚毁/引用使用）
       const msg = chatStore.messages.find(m => m.id === tempId)
       if (msg) {
         msg.id = result.data.id
+        ;(msg as any).realId = Number(result.data.id)
         msg.status = 'sent'
       }
 
@@ -1278,10 +1340,11 @@ const handleSendMessage = async (text: string) => {
         content: text,
         reply_to: currentReplyTo ? {
           message_id: Number(currentReplyTo.id),
-          content: currentReplyTo.text || currentReplyTo.content || '',
+          // 使用与后端一致的预览文本：图片/视频/文件显示 [图片]/[视频]/[文件]，避免把 URL 当正文
+          content: getReplyPreviewText(currentReplyTo),
           user_id: currentReplyTo.sender?.id || 0,
           nickname: currentReplyTo.sender?.nickname || currentReplyTo.username || '用户',
-          message_type: currentReplyTo.type,
+          message_type: getMessageTypeNumber(currentReplyTo.type),
           deleted: false
         } : undefined,
         intimacy: result.intimacy?.data // 只传递data部分，不传递整个intimacy对象
@@ -1332,7 +1395,8 @@ const handleSendImage = async (file: File) => {
     username: userStore.userInfo?.nick_name || '我',
     status: 'sending',
     imageUrl: tempImageUrl,
-    isNew: true
+    isNew: true,
+    animationKey: `anim-${tempId}`
   }
 
   chatStore.addMessage(tempMessage)
@@ -1389,14 +1453,14 @@ const handleSendImage = async (file: File) => {
         // 清除进度（隐藏进度遮罩）
         delete uploadProgress.value[tempId]
 
-        // 直接更新临时消息，不改变ID避免重新渲染
+        // 直接更新临时消息（换真实 id，确保焚毁/引用等后续操作可用）
         const msg = chatStore.messages.find(m => m.id === tempId)
         if (msg) {
-          // 不更新ID，保持临时ID，避免Vue重新渲染导致跳动
+          msg.id = Number(result.data.id) // 使用真实ID，避免焚毁/引用的 Number(temp) 变 NaN
           msg.imageUrl = fullImageUrl // 更新为服务器URL
           msg.status = 'sent' // 更新状态
           msg.isNew = false; // 取消新消息标记
-          // 保存真实ID到自定义属性，用于后续操作
+          // 保存真实ID到自定义属性，用于去重
           (msg as any).realId = Number(result.data.id);
         }
 
@@ -1485,7 +1549,8 @@ const handleSendVideo = async (file: File) => {
     videoUrl: tempVideoUrl,
     videoThumbnail: undefined,
     videoDuration: 0,
-    isNew: true
+    isNew: true,
+    animationKey: `anim-${tempId}`
   }
 
   chatStore.addMessage(tempMessage)
@@ -1549,15 +1614,16 @@ const handleSendVideo = async (file: File) => {
         // 清除进度（隐藏进度遮罩）
         delete uploadProgress.value[tempId]
 
-        // 直接更新临时消息，不改变ID避免重新渲染
+        // 直接更新临时消息（换真实 id，确保焚毁/引用等后续操作可用）
         const msg = chatStore.messages.find(m => m.id === tempId)
         if (msg) {
+          msg.id = Number(result.data.id) // 使用真实ID
           msg.videoUrl = fullVideoUrl // 更新为服务器URL
           msg.videoThumbnail = fullThumbnailUrl || undefined
           msg.videoDuration = videoDuration || 0
           msg.status = 'sent' // 更新状态
           msg.isNew = false; // 取消新消息标记
-          // 保存真实ID到自定义属性，用于后续操作
+          // 保存真实ID到自定义属性，用于去重
           (msg as any).realId = Number(result.data.id)
         } else {
           console.warn('[视频上传] 未找到临时消息:', tempId)
@@ -1619,40 +1685,275 @@ const handleSendVideo = async (file: File) => {
   }
 }
 
+const handleSendAudio = async (file: File) => {
+  if (!currentRoom.value?.id) {
+    message.warning('请先选择房间')
+    return
+  }
+
+  // 生成临时消息ID
+  const tempId = `temp_${Date.now()}`
+
+  // 创建临时音频URL用于预览
+  const tempAudioUrl = URL.createObjectURL(file)
+
+  // 初始化上传进度
+  uploadProgress.value[tempId] = 0
+
+  // 添加临时消息到列表（占位）
+  const tempMessage: ChatMessageItem = {
+    id: tempId,
+    type: 'audio',
+    text: '',
+    time: new Date(),
+    isOwn: true,
+    sender: {
+      id: userStore.userInfo?.id || 0,
+      nickname: userStore.userInfo?.nick_name || '我',
+      avatar: userStore.userInfo?.avatar || ''
+    },
+    username: userStore.userInfo?.nick_name || '我',
+    status: 'sending',
+    audioUrl: tempAudioUrl,
+    audioDuration: 0,
+    audioName: file.name,
+    isNew: true,
+    animationKey: `anim-${tempId}`
+  }
+
+  chatStore.addMessage(tempMessage)
+
+  // 只有在底部时才自动滚动
+  if (isAtBottom.value) {
+    nextTick(() => {
+      messageListRef.value?.scrollToBottom(true)
+    })
+  }
+
+  // 模拟上传进度（音频上传较慢）
+  const progressInterval = setInterval(() => {
+    if (uploadProgress.value[tempId] < 40) {
+      uploadProgress.value[tempId] += Math.random() * 3 + 2
+      if (uploadProgress.value[tempId] > 40) {
+        uploadProgress.value[tempId] = 40
+      }
+    } else if (uploadProgress.value[tempId] < 70) {
+      uploadProgress.value[tempId] += Math.random() * 0.7 + 0.3
+      if (uploadProgress.value[tempId] > 70) {
+        uploadProgress.value[tempId] = 70
+      }
+    }
+  }, 300)
+
+  try {
+    // 上传音频
+    const result = await sendAudioMessage(currentRoom.value.id, file)
+
+    // 清除进度模拟
+    clearInterval(progressInterval)
+    uploadProgress.value[tempId] = 100
+
+
+    if (result.code === 0 && result.data) {
+      // 获取音频路径
+      const audioUrl = result.data.audioUrl || result.data.audio_url || result.data.content || result.data.text || ''
+      const audioDuration = result.data.audioDuration || result.data.audio_duration || 0
+      const audioName = result.data.audioName || result.data.audio_name || file.name
+
+      // 拼接完整URL
+      const serverUrl = import.meta.env.VITE_SERVER_URL || ''
+      const fullAudioUrl = audioUrl && !audioUrl.startsWith('http://') && !audioUrl.startsWith('https://')
+        ? serverUrl + audioUrl
+        : audioUrl
+
+      // 短暂延迟后更新临时消息（让用户看到100%）
+      setTimeout(() => {
+        // 释放临时URL
+        URL.revokeObjectURL(tempAudioUrl)
+
+        // 清除进度（隐藏进度遮罩）
+        delete uploadProgress.value[tempId]
+
+        // 直接更新临时消息（换真实 id，确保焚毁/引用等后续操作可用）
+        const msg = chatStore.messages.find(m => m.id === tempId)
+        if (msg) {
+          msg.id = Number(result.data.id) // 使用真实ID
+          msg.audioUrl = fullAudioUrl // 更新为服务器URL
+          msg.audioDuration = audioDuration || 0
+          msg.audioName = audioName
+          msg.status = 'sent' // 更新状态
+          msg.isNew = false; // 取消新消息标记
+          // 保存真实ID到自定义属性，用于去重
+          (msg as any).realId = Number(result.data.id)
+        } else {
+          console.warn('[音频上传] 未找到临时消息:', tempId)
+        }
+
+        // 私密房间：处理亲密度信息
+        if (currentRoom.value?.isPrivate && result.intimacy && result.intimacy.code === 0) {
+          intimacyStore.updateIntimacyFromMessage(result.intimacy.data)
+          triggerFloatingHearts()
+        }
+
+        // 广播消息（携带音频路径和亲密度信息）
+        broadcastMessage({
+          message_id: Number(result.data.id),
+          message_type: 'audio',
+          content: audioUrl,
+          audio_url: audioUrl,
+          audio_duration: audioDuration || undefined,
+          audio_name: audioName,
+          intimacy: result.intimacy?.data
+        })
+
+        // 如果不在底部，增加已发送计数
+        if (!isAtBottom.value) {
+          ownSentMessageCount.value++
+        }
+      }, 300)
+    } else {
+      // 发送失败，更新临时消息状态
+      clearInterval(progressInterval)
+      delete uploadProgress.value[tempId]
+      const msg = chatStore.messages.find(m => m.id === tempId)
+      if (msg) {
+        msg.status = 'failed'
+      }
+      message.error(result.msg || result.message || '音频发送失败')
+    }
+  } catch (error: any) {
+    // 发送失败，更新临时消息状态
+    clearInterval(progressInterval)
+    delete uploadProgress.value[tempId]
+    const msg = chatStore.messages.find(m => m.id === tempId)
+    if (msg) {
+      msg.status = 'failed'
+    }
+
+    // 优化错误提示
+    let errorMsg = '音频发送失败'
+    if (error.message) {
+      if (error.message.includes('timeout')) {
+        errorMsg = '音频上传超时，请检查网络连接或尝试压缩音频'
+      } else if (error.message.includes('Network Error')) {
+        errorMsg = '网络连接失败，请检查网络'
+      } else {
+        errorMsg = error.message
+      }
+    }
+    message.error(errorMsg)
+  }
+}
+
 const handleSendFile = async (file: File) => {
   if (!currentRoom.value?.id) {
     message.warning('请先选择房间')
     return
   }
 
+  // 生成临时消息ID + 本地占位消息（与图片/视频一致的体验）
+  const tempId = `temp_${Date.now()}`
+
+  // 初始化上传进度
+  uploadProgress.value[tempId] = 0
+
+  const tempMessage: ChatMessageItem = {
+    id: tempId,
+    type: 'file',
+    text: '',
+    time: new Date(),
+    isOwn: true,
+    sender: {
+      id: userStore.userInfo?.id || 0,
+      nickname: userStore.userInfo?.nick_name || '我',
+      avatar: userStore.userInfo?.avatar || ''
+    },
+    username: userStore.userInfo?.nick_name || '我',
+    status: 'sending',
+    fileName: file.name,
+    fileSize: file.size,
+    fileExtension: (file.name.split('.').pop() || '').toLowerCase(),
+    isNew: true,
+    animationKey: `anim-${tempId}`
+  }
+
+  chatStore.addMessage(tempMessage)
+
+  if (isAtBottom.value) {
+    nextTick(() => {
+      messageListRef.value?.scrollToBottom(true)
+    })
+  }
+
+  // 模拟上传进度（文件上传中途无真实进度回调）
+  const progressInterval = setInterval(() => {
+    if (uploadProgress.value[tempId] < 80) {
+      uploadProgress.value[tempId] += Math.random() * 7 + 3
+      if (uploadProgress.value[tempId] > 80) uploadProgress.value[tempId] = 80
+    }
+  }, 300)
+
   try {
     const result = await sendFileMessage(currentRoom.value.id, file)
+
+    clearInterval(progressInterval)
+    uploadProgress.value[tempId] = 100
+
     if (result.code === 0 && result.data) {
-      // 私密房间：处理亲密度信息
-      if (currentRoom.value?.isPrivate && result.intimacy && result.intimacy.code === 0) {
-        intimacyStore.updateIntimacyFromMessage(result.intimacy.data)
-        triggerFloatingHearts()
-      }
+      const serverUrl = import.meta.env.VITE_SERVER_URL || ''
+      const rawUrl = result.data.fileUrl || (result.data as any).file_url || ''
+      const fullFileUrl = rawUrl && !rawUrl.startsWith('http://') && !rawUrl.startsWith('https://')
+        ? serverUrl + rawUrl
+        : rawUrl
 
-      broadcastMessage({
-        message_id: Number(result.data.id),
-        message_type: 'file',
-        content: '',
-        file_name: file.name,
-        file_size: file.size,
-        intimacy: result.intimacy?.data
-      })
+      setTimeout(() => {
+        delete uploadProgress.value[tempId]
 
-      // 如果不在底部，增加已发送计数
-      if (!isAtBottom.value) {
-        ownSentMessageCount.value++
-      }
+        const msg = chatStore.messages.find(m => m.id === tempId)
+        if (msg) {
+          msg.id = Number(result.data.id)
+          msg.fileUrl = fullFileUrl
+          msg.fileName = result.data.fileName || (result.data as any).file_name || file.name
+          msg.fileSize = result.data.fileSize ?? (result.data as any).file_size ?? file.size
+          msg.fileExtension = result.data.fileExtension || (result.data as any).file_extension || tempMessage.fileExtension
+          msg.status = 'sent'
+          msg.isNew = false
+          ;(msg as any).realId = Number(result.data.id)
+        }
 
-      message.success('文件发送成功')
+        // 私密房间：处理亲密度信息
+        if (currentRoom.value?.isPrivate && result.intimacy && result.intimacy.code === 0) {
+          intimacyStore.updateIntimacyFromMessage(result.intimacy.data)
+          triggerFloatingHearts()
+        }
+
+        broadcastMessage({
+          message_id: Number(result.data.id),
+          message_type: 'file',
+          content: '',
+          file_name: file.name,
+          file_size: file.size,
+          file_extension: tempMessage.fileExtension,
+          file_url: rawUrl,
+          intimacy: result.intimacy?.data
+        })
+
+        if (!isAtBottom.value) {
+          ownSentMessageCount.value++
+        }
+      }, 300)
     } else {
-      message.error(result.msg || result.message || '发送文件失败')
+      clearInterval(progressInterval)
+      delete uploadProgress.value[tempId]
+      const msg = chatStore.messages.find(m => m.id === tempId)
+      if (msg) msg.status = 'failed'
+      message.error(result.msg || (result as any).message || '发送文件失败')
     }
   } catch (error: any) {
+    clearInterval(progressInterval)
+    delete uploadProgress.value[tempId]
+    const msg = chatStore.messages.find(m => m.id === tempId)
+    if (msg) msg.status = 'failed'
     message.error(error.message || '发送文件失败')
   }
 }
@@ -1683,6 +1984,7 @@ const getReplyPreviewText = (msg: any): string => {
 
   if (msg.type === 'image') return '[图片]'
   if (msg.type === 'video') return '[视频]'
+  if (msg.type === 'audio') return '[音频]'
   if (msg.type === 'file') return '[文件]'
 
   const text = msg.text || msg.content || ''
@@ -1696,7 +1998,8 @@ const getMessageTypeNumber = (type: string): number => {
     'image': 2,
     'file': 3,
     'system': 4,
-    'video': 5
+    'video': 5,
+    'audio': 6
   }
   return typeMap[type] || 1
 }

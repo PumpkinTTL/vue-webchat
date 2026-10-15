@@ -118,7 +118,7 @@
 </template>
 
 <script setup lang="ts">
-import { ref } from 'vue'
+import { ref, onUnmounted } from 'vue'
 import UserCard from './UserCard.vue'
 import ContactList from './ContactList.vue'
 import RoomList from './RoomList.vue'
@@ -137,8 +137,11 @@ const props = withDefaults(defineProps<Props>(), {
 
 // 响应式状态
 const activeTab = ref<'contacts' | 'rooms'>('rooms')
-const autoRefresh = ref(true)
+const autoRefresh = ref(false)
 const isDarkMode = ref(false)
+
+// 自动刷新定时器
+let autoRefreshTimer: ReturnType<typeof setInterval> | null = null
 
 const emit = defineEmits<{
   createRoom: []
@@ -156,9 +159,35 @@ const switchTab = (tab: 'contacts' | 'rooms') => {
   activeTab.value = tab
 }
 
+const stopAutoRefresh = () => {
+  if (autoRefreshTimer) {
+    clearInterval(autoRefreshTimer)
+    autoRefreshTimer = null
+  }
+}
+
+const startAutoRefresh = () => {
+  stopAutoRefresh()
+  autoRefreshTimer = setInterval(() => {
+    // 页面隐藏时不刷新，避免后台无谓请求
+    if (typeof document !== 'undefined' && document.visibilityState === 'hidden') return
+    emit('refresh')
+  }, 15000)
+}
+
 const toggleAutoRefresh = () => {
   autoRefresh.value = !autoRefresh.value
+  if (autoRefresh.value) {
+    startAutoRefresh()
+  } else {
+    stopAutoRefresh()
+  }
 }
+
+// 组件卸载清理
+onUnmounted(() => {
+  stopAutoRefresh()
+})
 
 const toggleTheme = () => {
   isDarkMode.value = !isDarkMode.value

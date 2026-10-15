@@ -2,7 +2,7 @@
   <div class="msg-row" :class="{
     'msg-own': message.isOwn,
     'msg-system-row': message.type === 'system',
-    'msg-new': message.isNew,
+    'msg-new': animateIn,
     'highlight-message': isHighlighted
   }" :data-msg-id="message.id">
     <!-- 系统消息 -->
@@ -14,9 +14,9 @@
     <template v-else>
       <!-- 头像 -->
       <div class="msg-avatar-wrapper">
-        <!-- 流光特效层 -->
-        <div class="avatar-glow"></div>
-        <img src="@/assets/icons/header_icon.png" alt="frame" class="avatar-frame">
+        <!-- 头像框（装饰图 + 流光）：按要求暂时隐藏，恢复时取消注释即可 -->
+        <!-- <div class="avatar-glow"></div>
+        <img src="@/assets/icons/header_icon.png" alt="frame" class="avatar-frame"> -->
         <div class="msg-avatar">
           <img v-if="avatarUrl" :src="avatarUrl" :alt="senderName">
           <span v-else class="avatar-char">{{ avatarChar }}</span>
@@ -78,20 +78,43 @@
                     {{ formatDuration(message.videoDuration) }}
                   </div>
                 </div>
-                <video v-else :src="videoUrl" controls preload="metadata" class="video-player"></video>
+                <video v-else :src="videoUrl" controls preload="metadata" class="video-player" @play="onVideoPlay"></video>
               </div>
-              <!-- 文件 -->
-              <div v-else-if="message.type === 'file'" class="file-message">
-                <div class="file-icon">
-                  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                    <path d="M13 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V9z" />
-                    <path d="M13 2v7h7" />
-                  </svg>
-                </div>
-                <div class="file-info">
-                  <div class="file-name">{{ message.fileName || '未知文件' }}</div>
-                  <div class="file-size">{{ formatFileSize(message.fileSize) }}</div>
-                </div>
+              <!-- 音频消息 -->
+              <div v-else-if="message.type === 'audio'" class="audio-wrapper" @click.stop>
+                <AudioPlayer :src="audioUrl" :name="message.audioName" />
+              </div>
+              <!-- 文件（若为音频则在气泡内播放，否则可下载） -->
+              <div v-else-if="message.type === 'file'" class="file-message"
+                :class="{ 'file-clickable': !isAudioFile, 'file-message-audio': isAudioFile }"
+                @click="isAudioFile ? null : handleFileAction()">
+                <AudioPlayer v-if="isAudioFile" :src="fileActionUrl" :name="message.fileName" />
+                <template v-else>
+                  <div class="file-icon">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                      <path d="M13 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V9z" />
+                      <path d="M13 2v7h7" />
+                    </svg>
+                  </div>
+                  <div class="file-info">
+                    <div class="file-name">{{ message.fileName || '未知文件' }}</div>
+                    <div class="file-size">
+                      <template v-if="message.status === 'sending' && uploadProgress !== undefined">
+                        上传中 {{ Math.round(uploadProgress) }}%
+                      </template>
+                      <template v-else>{{ formatFileSize(message.fileSize) }}</template>
+                    </div>
+                  </div>
+                  <!-- 文件上传进度环（发送中） -->
+                  <div v-if="message.status === 'sending' && uploadProgress !== undefined" class="file-progress-ring">
+                    <svg viewBox="0 0 36 36">
+                      <circle cx="18" cy="18" r="16" fill="none" stroke="rgba(148,163,184,0.25)" stroke-width="3" />
+                      <circle cx="18" cy="18" r="16" fill="none" stroke="#8b5cf6" stroke-width="3" stroke-linecap="round"
+                        :stroke-dasharray="100.53" :stroke-dashoffset="100.53 * (1 - (uploadProgress || 0) / 100)"
+                        transform="rotate(-90 18 18)" />
+                    </svg>
+                  </div>
+                </template>
               </div>
               <!-- 文本 -->
               <div v-else class="text-wrapper">
@@ -258,21 +281,72 @@
                       {{ formatDuration(message.videoDuration) }}
                     </div>
                   </div>
-                  <video v-else :src="videoUrl" controls preload="metadata" class="video-player"></video>
+                  <video v-else :src="videoUrl" controls preload="metadata" class="video-player" @play="onVideoPlay"></video>
                 </template>
               </div>
-              <!-- 文件 -->
-              <div v-else-if="message.type === 'file'" class="file-message">
-                <div class="file-icon">
-                  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                    <path d="M13 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V9z" />
-                    <path d="M13 2v7h7" />
-                  </svg>
+              <!-- 音频消息 -->
+              <div v-else-if="message.type === 'audio'" class="audio-wrapper" @click.stop>
+                <!-- 上传中：显示占位容器 -->
+                <div v-if="message.status === 'sending' && uploadProgress !== undefined"
+                  class="video-upload-placeholder">
+                  <div class="video-upload-content">
+                    <div class="video-upload-icon">
+                      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <path d="M9 18V5l12-2v13" stroke-linecap="round" stroke-linejoin="round"/>
+                        <circle cx="6" cy="18" r="3"/>
+                        <circle cx="18" cy="16" r="3"/>
+                      </svg>
+                    </div>
+                    <div class="video-upload-text">音频上传中...</div>
+                    <!-- 圆形进度环 -->
+                    <div class="progress-ring">
+                      <svg viewBox="0 0 100 100">
+                        <circle cx="50" cy="50" r="42" fill="none" stroke="rgba(255, 255, 255, 0.15)"
+                          stroke-width="6" />
+                        <circle cx="50" cy="50" r="42" fill="none" stroke="#3B82F6" stroke-width="6"
+                          stroke-linecap="round" :stroke-dasharray="circumference"
+                          :stroke-dashoffset="progressOffset" />
+                      </svg>
+                      <div class="progress-text">{{ Math.round(uploadProgress) }}%</div>
+                    </div>
+                  </div>
                 </div>
-                <div class="file-info">
-                  <div class="file-name">{{ message.fileName || '未知文件' }}</div>
-                  <div class="file-size">{{ formatFileSize(message.fileSize) }}</div>
-                </div>
+                <!-- 上传完成：显示音频 -->
+                <template v-else>
+                  <AudioPlayer :src="audioUrl" :name="message.audioName" />
+                </template>
+              </div>
+              <!-- 文件（若为音频则在气泡内播放，否则可下载） -->
+              <div v-else-if="message.type === 'file'" class="file-message"
+                :class="{ 'file-clickable': !isAudioFile, 'file-message-audio': isAudioFile }"
+                @click="isAudioFile ? null : handleFileAction()">
+                <AudioPlayer v-if="isAudioFile" :src="fileActionUrl" :name="message.fileName" />
+                <template v-else>
+                  <div class="file-icon">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                      <path d="M13 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V9z" />
+                      <path d="M13 2v7h7" />
+                    </svg>
+                  </div>
+                  <div class="file-info">
+                    <div class="file-name">{{ message.fileName || '未知文件' }}</div>
+                    <div class="file-size">
+                      <template v-if="message.status === 'sending' && uploadProgress !== undefined">
+                        上传中 {{ Math.round(uploadProgress) }}%
+                      </template>
+                      <template v-else>{{ formatFileSize(message.fileSize) }}</template>
+                    </div>
+                  </div>
+                  <!-- 文件上传进度环（发送中） -->
+                  <div v-if="message.status === 'sending' && uploadProgress !== undefined" class="file-progress-ring">
+                    <svg viewBox="0 0 36 36">
+                      <circle cx="18" cy="18" r="16" fill="none" stroke="rgba(148,163,184,0.25)" stroke-width="3" />
+                      <circle cx="18" cy="18" r="16" fill="none" stroke="#8b5cf6" stroke-width="3" stroke-linecap="round"
+                        :stroke-dasharray="100.53" :stroke-dashoffset="100.53 * (1 - (uploadProgress || 0) / 100)"
+                        transform="rotate(-90 18 18)" />
+                    </svg>
+                  </div>
+                </template>
               </div>
               <!-- 文本 -->
               <div v-else class="text-wrapper">
@@ -332,10 +406,11 @@
           <span class="msg-time">{{ formatTime(message.time) }}</span>
           <!-- 发送状态图标 -->
           <span v-if="message.status" class="msg-status">
-            <!-- 发送中 -->
+            <!-- 发送中：旋转 loading 圈 -->
             <svg v-if="message.status === 'sending'" class="status-sending" viewBox="0 0 24 24" fill="none"
-              stroke="currentColor" stroke-width="2">
-              <circle cx="12" cy="12" r="10" />
+              stroke="currentColor" stroke-width="2.5" stroke-linecap="round">
+              <circle cx="12" cy="12" r="9" opacity="0.2" />
+              <path d="M21 12a9 9 0 00-9-9" />
             </svg>
             <!-- 发送成功 -->
             <svg v-else-if="message.status === 'sent' || message.status === 'delivered' || message.status === 'read'"
@@ -360,6 +435,8 @@ import { ref, computed } from 'vue'
 import { message as antMessage, Modal } from 'ant-design-vue'
 import { formatDuration } from '@/utils/video'
 import { hasUrl, separateTextAndUrls } from '@/utils/linkParser'
+import AudioPlayer from './AudioPlayer.vue'
+import { claimPlayback } from '@/utils/mediaPlayback'
 
 interface ReplyTo {
   message_id: number
@@ -372,7 +449,7 @@ interface ReplyTo {
 
 interface Message {
   id: string | number
-  type: 'text' | 'image' | 'voice' | 'video' | 'file' | 'system'
+  type: 'text' | 'image' | 'voice' | 'video' | 'file' | 'audio' | 'system'
   text?: string
   content?: string
   imageUrl?: string
@@ -382,6 +459,9 @@ interface Message {
   videoUrl?: string
   videoThumbnail?: string
   videoDuration?: number
+  audioUrl?: string
+  audioDuration?: number
+  audioName?: string
   time: Date | string
   isOwn: boolean
   sender?: {
@@ -413,9 +493,24 @@ const emit = defineEmits<{
 // Popover 显示状态
 const popoverVisible = ref(false)
 
+// 入场动画：仅在消息“新到达”时播放一次，播完即移除。
+// 避免入场缩放动画与高亮动画（点击引用跳转时）叠加，出现“晃动结束后又缩放”的问题。
+const animateIn = ref(!!props.message.isNew)
+if (animateIn.value) {
+  setTimeout(() => {
+    animateIn.value = false
+  }, 700)
+}
+
 // 切换移动端菜单
 const toggleMobileMenu = () => {
   popoverVisible.value = !popoverVisible.value
+}
+
+// 视频开始播放时，抢占全局播放权（暂停其它正在播放的音/视频）
+const onVideoPlay = (e: Event) => {
+  const el = e.target as HTMLMediaElement
+  if (el) claimPlayback(el)
 }
 
 // 高亮状态
@@ -467,10 +562,33 @@ const videoUrl = computed(() => processUrl(props.message.videoUrl))
 // 处理视频缩略图URL
 const videoThumbnailUrl = computed(() => processUrl(props.message.videoThumbnail))
 
+// 文件可访问 URL（用于下载/打开）
+const fileActionUrl = computed(() => processUrl(props.message.fileUrl))
+
+// 音频文件扩展名（file 类型的音频也在气泡内播放，不跳转/下载）
+const AUDIO_EXTENSIONS = ['mp3', 'wav', 'ogg', 'oga', 'm4a', 'aac', 'flac', 'opus', 'weba', 'mp4a', 'amr', 'wma']
+const isAudioFile = computed(() => {
+  // 音频类型消息恒为音频
+  if (props.message.type === 'audio') return true
+  if (props.message.type !== 'file') return false
+
+  const ext = (props.message.fileExtension || '').toLowerCase().replace(/^\./, '')
+  if (ext && AUDIO_EXTENSIONS.includes(ext)) return true
+
+  // 兜底：从文件名/URL 推断扩展名
+  const name = props.message.fileName || props.message.fileUrl || ''
+  const m = name.toLowerCase().match(/\.([a-z0-9]+)(?:\?|$)/)
+  return !!(m && AUDIO_EXTENSIONS.includes(m[1]))
+})
+
+// 处理音频URL
+const audioUrl = computed(() => processUrl(props.message.audioUrl))
+
 const bubbleClass = computed(() => ({
   'msg-image': props.message.type === 'image',
   'msg-file': props.message.type === 'file',
-  'msg-video': props.message.type === 'video'
+  'msg-video': props.message.type === 'video',
+  'msg-audio': props.message.type === 'audio'
 }))
 
 // 是否可以复制
@@ -498,9 +616,11 @@ const replyNickname = computed(() => {
 const MESSAGE_TYPE_MAP: Record<number | string, string> = {
   2: '[图片]',
   5: '[视频]',
+  6: '[音频]',
   3: '[文件]',
   'image': '[图片]',
   'video': '[视频]',
+  'audio': '[音频]',
   'file': '[文件]'
 }
 
@@ -613,9 +733,29 @@ const handleLinkClick = (url: string) => {
 // 处理视频点击
 const handleVideoClick = () => {
   if (videoUrl.value) {
-    // 可以使用Ant Design的Modal或者原生video播放
-    // 这里简单处理，让video标签自己播放
+    window.open(videoUrl.value, '_blank', 'noopener,noreferrer')
   }
+}
+
+// 文件消息：点击下载 / 打开
+const handleFileAction = () => {
+  const url = fileActionUrl.value
+  if (!url) {
+    antMessage.warning('文件地址不可用')
+    return
+  }
+  // 外链/同源文件：直接用 a[download] 触发下载
+  const a = document.createElement('a')
+  a.href = url
+  a.target = '_blank'
+  a.rel = 'noopener noreferrer'
+  // 同源才设置 download 属性（跨域时 download 会被忽略，退化为新标签打开）
+  if (url.startsWith(serverUrl) || url.startsWith(window.location.origin)) {
+    a.download = props.message.fileName || ''
+  }
+  document.body.appendChild(a)
+  a.click()
+  document.body.removeChild(a)
 }
 
 // 高亮消息
@@ -903,7 +1043,8 @@ defineExpose({
 
   &.msg-image,
   &.msg-file,
-  &.msg-video {
+  &.msg-video,
+  &.msg-audio {
     background: transparent !important;
     padding: 0 !important;
     box-shadow: none !important;
@@ -1261,6 +1402,13 @@ html.dark-mode {
   display: block;
 }
 
+// ==================== 音频消息 ====================
+// 播放器样式在 AudioPlayer.vue 内（气泡内自绘，避免原生 <audio> 在移动端跳系统播放器）
+.audio-wrapper {
+  display: inline-flex;
+  max-width: 100%;
+}
+
 // 文件
 .file-message {
   display: flex;
@@ -1308,6 +1456,46 @@ html.dark-mode {
   font-size: 11px;
   color: $text-tertiary;
   margin-top: 2px;
+}
+
+// 可点击下载的文件消息
+.file-clickable {
+  cursor: pointer;
+  transition: border-color 0.2s ease, box-shadow 0.2s ease;
+
+  &:hover {
+    border-color: $primary-color;
+    box-shadow: 0 2px 8px rgba($primary-color, 0.15);
+
+    .file-icon {
+      background: rgba($primary-color, 0.18);
+    }
+  }
+
+  &:active {
+    transform: scale(0.99);
+  }
+}
+
+// 音频文件：由 AudioPlayer 自带卡片样式，外层去掉边框/内边距
+.file-message-audio {
+  padding: 0;
+  border: none;
+  background: transparent;
+  min-width: 0;
+}
+
+// 文件上传进度环
+.file-progress-ring {
+  width: 26px;
+  height: 26px;
+  flex-shrink: 0;
+
+  svg {
+    width: 100%;
+    height: 100%;
+    transition: stroke-dashoffset 0.2s ease;
+  }
 }
 
 // 昵称和时间（他人消息）

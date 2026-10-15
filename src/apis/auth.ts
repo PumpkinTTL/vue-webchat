@@ -43,3 +43,30 @@ export function logAccess(data: { client_ip: string; page: string }) {
     data
   })
 }
+
+/**
+ * 上传头像
+ * @param file 头像图片文件（后端字段名固定为 avatar）
+ */
+export function uploadAvatar(file: File) {
+  const formData = new FormData()
+  formData.append('avatar', file)
+  return request<{ code: number; msg: string; data: { url: string; avatar: string } }>({
+    url: '/user/uploadAvatar',
+    method: 'post',
+    data: formData,
+    // 不手动设置 Content-Type，交给 axios 自动带 boundary
+    timeout: 60000
+  })
+}
+
+/**
+ * 更新用户资料（昵称、签名）
+ */
+export function updateProfile(data: { nickname?: string; sign?: string }) {
+  return request<{ code: number; msg: string; data?: any }>({
+    url: '/user/update',
+    method: 'post',
+    data
+  })
+}

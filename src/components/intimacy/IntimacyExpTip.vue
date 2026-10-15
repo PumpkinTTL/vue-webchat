@@ -53,6 +53,7 @@ function getIcon(type: string): string {
     'text': 'comment-dots',
     'image': 'image',
     'video': 'video',
+    'audio': 'music',
     'file': 'file-alt'
   }
   return iconMap[type] || 'star'
@@ -65,6 +66,7 @@ function getTypeText(type: string): string {
     'text': '消息',
     'image': '图片',
     'video': '视频',
+    'audio': '音频',
     'file': '文件'
   }
   return typeMap[type] || 'EXP'

@@ -8,7 +8,7 @@ export type MessageStatus = 'sending' | 'sent' | 'delivered' | 'read' | 'failed'
 // 消息类型
 export interface ChatMessageItem {
   id: number | string
-  type: 'text' | 'image' | 'voice' | 'video' | 'file' | 'system'
+  type: 'text' | 'image' | 'voice' | 'video' | 'file' | 'audio' | 'system'
   text: string
   time: Date
   isOwn: boolean
@@ -26,6 +26,10 @@ export interface ChatMessageItem {
   videoUrl?: string
   videoThumbnail?: string
   videoDuration?: number
+  // 音频消息
+  audioUrl?: string
+  audioDuration?: number
+  audioName?: string
   // 文件消息
   fileName?: string
   fileSize?: number
@@ -190,27 +194,6 @@ export const useChatStore = defineStore('chat', () => {
       message.videoDuration = data.video_duration
     }
 
-    // 视频消息 - 处理URL
-    if (data.message_type === 'video') {
-      // 视频URL
-      if (data.video_url) {
-        if (!data.video_url.startsWith('http://') && !data.video_url.startsWith('https://')) {
-          message.videoUrl = serverUrl + data.video_url
-        } else {
-          message.videoUrl = data.video_url
-        }
-      }
-      // 缩略图URL
-      if (data.video_thumbnail) {
-        if (!data.video_thumbnail.startsWith('http://') && !data.video_thumbnail.startsWith('https://')) {
-          message.videoThumbnail = serverUrl + data.video_thumbnail
-        } else {
-          message.videoThumbnail = data.video_thumbnail
-        }
-      }
-      message.videoDuration = data.video_duration
-    }
-
     // 文件消息 - 处理URL
     if (data.message_type === 'file') {
       message.fileName = data.file_name
@@ -224,6 +207,19 @@ export const useChatStore = defineStore('chat', () => {
           message.fileUrl = data.file_url
         }
       }
+    }
+
+    // 音频消息 - 处理URL
+    if (data.message_type === 'audio') {
+      if (data.audio_url) {
+        if (!data.audio_url.startsWith('http://') && !data.audio_url.startsWith('https://')) {
+          message.audioUrl = serverUrl + data.audio_url
+        } else {
+          message.audioUrl = data.audio_url
+        }
+      }
+      message.audioDuration = data.audio_duration
+      message.audioName = data.audio_name
     }
 
     // 引用回复 - 确保数据结构完整
@@ -256,16 +252,13 @@ export const useChatStore = defineStore('chat', () => {
     
     const isOwn = data.from_user_id === currentUserId
     
-    // 如果是自己发送的消息，检查是否已经存在临时消息（通过realId匹配）
+    // 如果是自己发送的消息，且本地已存在对应消息（临时消息换真实id后 m.id 即真实id，或带 realId），则跳过，避免重复插入
     if (isOwn) {
-      const existingMsg = messages.value.find(m => {
-        // 检查临时消息是否保存了真实ID
-        const realId = (m as any).realId
-        return realId && realId === data.message_id
-      })
-      
-      if (existingMsg) {
-        return // 已存在临时消息，不重复添加
+      const exists = messages.value.some(m =>
+        m.id == data.message_id || (m as any).realId == data.message_id
+      )
+      if (exists) {
+        return
       }
     }
     
@@ -404,6 +397,22 @@ export const useChatStore = defineStore('chat', () => {
     readMessageIds.value.clear()
   }
 
+  /**
+   * 更新某个用户的资料（昵称/头像）——用于自己修改资料后本地即时生效、
+   * 以及收到他人 profile_updated 广播时同步刷新历史消息里的发送者信息。
+   */
+  function updateUserProfile(userId: number, nickname?: string, avatar?: string) {
+    if (!userId) return
+    messages.value.forEach(m => {
+      if (m.sender && m.sender.id === userId) {
+        if (nickname) m.sender.nickname = nickname
+        if (avatar !== undefined) m.sender.avatar = avatar
+        // 同步 username 字段（部分渲染分支用它）
+        if (nickname) m.username = nickname
+      }
+    })
+  }
+
   return {
     // 状态
     messages,
@@ -435,6 +444,7 @@ export const useChatStore = defineStore('chat', () => {
     markMessageAsRead,
     markMessagesAsRead,
     isMessageRead,
-    clearReadStatus
+    clearReadStatus,
+    updateUserProfile
   }
 })

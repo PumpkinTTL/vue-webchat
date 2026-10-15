@@ -8,14 +8,16 @@
         <div
           class="avatar-frame-container animate__animated animate__bounceIn"
           style="--animate-duration: 0.5s"
+          @click.stop="triggerAvatarUpload"
+          :title="'点击更换头像'"
         >
-          <!-- 流光特效层 -->
-          <div class="avatar-glow"></div>
+          <!-- 头像框（装饰图 + 流光）：按要求暂时隐藏，恢复时取消注释即可 -->
+          <!-- <div class="avatar-glow"></div>
           <img
             src="@/assets/icons/header_icon.png"
             alt="frame"
             class="avatar-frame"
-          />
+          /> -->
           <div class="user-avatar">
             <img
               v-if="userInfo.avatar"
@@ -25,7 +27,29 @@
             <span v-else class="avatar-placeholder">
               {{ userInfo.nick_name?.charAt(0) || "U" }}
             </span>
+            <!-- 上传中遮罩 -->
+            <div v-if="uploadingAvatar" class="avatar-uploading">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor">
+                <circle cx="12" cy="12" r="9" stroke-width="3" opacity="0.25" />
+                <path d="M21 12a9 9 0 00-9-9" stroke-width="3" stroke-linecap="round" />
+              </svg>
+            </div>
+            <!-- 悬停提示：更换头像 -->
+            <div v-else class="avatar-edit-hint">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                <path d="M23 19a2 2 0 01-2 2H3a2 2 0 01-2-2V8a2 2 0 012-2h4l2-3h6l2 3h4a2 2 0 012 2z" />
+                <circle cx="12" cy="13" r="4" />
+              </svg>
+            </div>
           </div>
+          <!-- 隐藏的头像文件选择器 -->
+          <input
+            ref="avatarInput"
+            type="file"
+            accept="image/*"
+            style="display: none"
+            @change="handleAvatarChange"
+          />
         </div>
         <div
           class="status-indicator animate__animated animate__bounceIn"
@@ -33,7 +57,7 @@
         ></div>
       </div>
 
-      <div class="user-info">
+      <div class="user-info" @click.stop="openProfileEdit" title="点击编辑资料">
         <div
           class="user-name animate__animated animate__fadeInLeft"
           style="--animate-duration: 0.35s; --animate-delay: 0.05s"
@@ -46,6 +70,12 @@
         >
           <span class="id-label">ID</span>
           <span class="id-value">{{ userInfo.id || "---" }}</span>
+          <span class="edit-hint">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+              <path d="M11 4H4a2 2 0 00-2 2v14a2 2 0 002 2h14a2 2 0 002-2v-7" />
+              <path d="M18.5 2.5a2.121 2.121 0 013 3L12 15l-4 1 1-4 9.5-9.5z" />
+            </svg>
+          </span>
         </div>
       </div>
 
@@ -87,40 +117,100 @@
 
   <!-- 版本日志弹窗 -->
   <VersionLog v-model:open="showVersionLog" />
+
+  <!-- 编辑资料弹窗 -->
+  <ProfileEditModal v-model:open="showProfileEdit" @saved="handleProfileSaved" />
 </template>
 
 <script setup lang="ts">
 import { computed, ref } from "vue";
 import { useRouter } from "vue-router";
 import { Modal } from "ant-design-vue";
-import { getUserInfo, clearUserInfo } from "@/utils/storage";
+import { clearUserInfo } from "@/utils/storage";
 import { Message } from "@/utils/message";
+import { uploadAvatar } from "@/apis/auth";
+import { useUserStore } from "@/store/user";
+import { useWebSocketStore } from "@/store/websocket";
+import { useChatStore } from "@/store/chat";
 import VersionLog from "@/components/common/VersionLog.vue";
+import ProfileEditModal from "@/components/common/ProfileEditModal.vue";
 
 // 服务器地址
 const serverUrl = import.meta.env.VITE_SERVER_URL || "";
 
-interface UserInfo {
-  id?: string | number;
-  nick_name?: string;
-  avatar?: string;
-}
-
 const router = useRouter();
+const userStore = useUserStore();
 
-// 获取用户信息
-const userInfo = computed<UserInfo>(() => getUserInfo() || {});
+// 从 store 读取用户信息（响应式，头像/昵称变更后立即刷新，无需刷新页面）
+const userInfo = computed(() => userStore.userInfo || ({} as any));
 
 // 版本日志弹窗
 const showVersionLog = ref(false);
 
-// 拼接头像URL
+// 编辑资料弹窗
+const showProfileEdit = ref(false);
+const wsStore = useWebSocketStore();
+const chatStore = useChatStore();
+
+const openProfileEdit = () => {
+  showProfileEdit.value = true;
+};
+
+// 资料保存成功：本地即时生效 + 广播给同房间其他人刷新
+const handleProfileSaved = (info: { nickname: string; avatar: string; sign?: string }) => {
+  const uid = userStore.userInfo?.id;
+  if (uid) {
+    chatStore.updateUserProfile(uid, info.nickname, info.avatar);
+  }
+  wsStore.broadcastProfileUpdated({
+    user_id: uid || 0,
+    nickname: info.nickname,
+    avatar: info.avatar,
+  });
+};
+
+// 头像上传
+const avatarInput = ref<HTMLInputElement>();
+const uploadingAvatar = ref(false);
+
+// 拼接头像URL（正确处理 http 绝对地址、/storage 相对地址）
 const avatarUrl = computed(() => {
-  if (!userInfo.value.avatar) return "";
-  // 如果已经是完整URL则直接返回
-  if (userInfo.value.avatar.startsWith("http")) return userInfo.value.avatar;
-  return `${serverUrl}/${userInfo.value.avatar}`;
+  const avatar = userInfo.value.avatar;
+  if (!avatar) return "";
+  if (avatar.startsWith("http://") || avatar.startsWith("https://")) return avatar;
+  const path = avatar.startsWith("/") ? avatar : "/" + avatar;
+  return serverUrl + path;
 });
+
+// 点头像 -> 触发文件选择
+const triggerAvatarUpload = () => {
+  if (uploadingAvatar.value) return;
+  avatarInput.value?.click();
+};
+
+// 选择头像文件
+const handleAvatarChange = async (e: Event) => {
+  const target = e.target as HTMLInputElement;
+  const file = target.files?.[0];
+  target.value = ""; // 允许重复选择同一文件
+  if (!file) return;
+
+  uploadingAvatar.value = true;
+  try {
+    const result = await uploadAvatar(file);
+    if (result.code === 0 && result.data) {
+      const url = result.data.url || result.data.avatar;
+      userStore.updateUserInfo({ avatar: url });
+      Message.success("头像更新成功");
+    } else {
+      Message.error(result.msg || "头像上传失败");
+    }
+  } catch (error: any) {
+    Message.error(error?.message || "头像上传失败");
+  } finally {
+    uploadingAvatar.value = false;
+  }
+};
 
 // 退出登录
 const handleLogout = () => {
@@ -131,6 +221,7 @@ const handleLogout = () => {
     cancelText: "取消",
     okButtonProps: { danger: true },
     onOk: () => {
+      userStore.clearUser();
       clearUserInfo();
       Message.success("已退出登录");
       router.push("/login");
@@ -248,6 +339,57 @@ const handleLogout = () => {
   }
 }
 
+// 头像容器可点击交互
+.avatar-frame-container {
+  cursor: pointer;
+
+  &:hover .avatar-edit-hint {
+    opacity: 1;
+  }
+}
+
+// 更换头像悬停提示
+.avatar-edit-hint {
+  position: absolute;
+  inset: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: rgba(0, 0, 0, 0.45);
+  color: #fff;
+  opacity: 0;
+  transition: opacity 0.2s ease;
+  pointer-events: none;
+
+  svg {
+    width: 20px;
+    height: 20px;
+  }
+}
+
+// 上传中遮罩
+.avatar-uploading {
+  position: absolute;
+  inset: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: rgba(0, 0, 0, 0.55);
+  color: #fff;
+
+  svg {
+    width: 22px;
+    height: 22px;
+    animation: avatarSpin 0.9s linear infinite;
+  }
+}
+
+@keyframes avatarSpin {
+  to {
+    transform: rotate(360deg);
+  }
+}
+
 .avatar-placeholder {
   font-family: $font-family-heading;
   font-size: $font-size-xl;
@@ -279,6 +421,29 @@ const handleLogout = () => {
   display: flex;
   flex-direction: column;
   gap: $spacing-xs;
+}
+
+// 可点击编辑资料的提示
+.user-info {
+  cursor: pointer;
+
+  &:hover .edit-hint {
+    opacity: 1;
+  }
+}
+
+.edit-hint {
+  display: inline-flex;
+  align-items: center;
+  margin-left: 4px;
+  color: $primary-color;
+  opacity: 0;
+  transition: opacity 0.2s ease;
+
+  svg {
+    width: 13px;
+    height: 13px;
+  }
 }
 
 .user-name {

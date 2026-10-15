@@ -122,11 +122,14 @@ export function useChat() {
    */
   function broadcastMessage(params: {
     message_id: number
-    message_type: 'text' | 'image' | 'voice' | 'video' | 'file'
+    message_type: 'text' | 'image' | 'voice' | 'video' | 'file' | 'audio'
     content: string
     video_url?: string
     video_thumbnail?: string
     video_duration?: number
+    audio_url?: string
+    audio_duration?: number
+    audio_name?: string
     file_name?: string
     file_size?: number
     file_extension?: string

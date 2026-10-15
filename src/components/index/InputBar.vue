@@ -43,6 +43,33 @@
       </div>
     </Transition>
 
+    <!-- 音频预览 -->
+    <Transition name="preview-slide">
+      <div v-if="audioPreview" class="upload-preview">
+        <div class="preview-card">
+          <div class="audio-preview-icon">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+              <path d="M9 18V5l12-2v13" stroke-linecap="round" stroke-linejoin="round"/>
+              <circle cx="6" cy="18" r="3"/>
+              <circle cx="18" cy="16" r="3"/>
+            </svg>
+          </div>
+          <div class="file-info">
+            <span class="fname">{{ selectedAudioFile?.name }}</span>
+            <div class="video-meta">
+              <span class="fsize">{{ formatFileSize(selectedAudioFile?.size || 0) }}</span>
+              <span v-if="audioDuration > 0" class="video-duration">{{ formatDuration(audioDuration) }}</span>
+            </div>
+          </div>
+          <button class="remove-btn" @click="clearAudioPreview">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+              <path d="M18 6L6 18M6 6l12 12"/>
+            </svg>
+          </button>
+        </div>
+      </div>
+    </Transition>
+
     <!-- 引用预览条 -->
     <Transition name="reply-slide">
       <div v-if="replyTo" class="reply-preview-bar">
@@ -183,6 +210,34 @@
                 </div>
                 <span class="menu-label">文件</span>
               </button>
+
+              <button class="menu-item" @click="selectAudio">
+                <div class="menu-icon menu-icon-audio">
+                  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor">
+                    <path d="M9 18V5l12-2v13" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+                    <circle cx="6" cy="18" r="3" stroke-width="2"/>
+                    <circle cx="18" cy="16" r="3" stroke-width="2"/>
+                  </svg>
+                </div>
+                <span class="menu-label">音频</span>
+              </button>
+            </div>
+          </div>
+
+          <!-- 聊天记录/媒体面板入口 -->
+          <div class="menu-section">
+            <div class="section-title">工具</div>
+            <div class="menu-grid">
+              <button class="menu-item history-item" @click="handleOpenHistory">
+                <div class="menu-icon menu-icon-history">
+                  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor">
+                    <path d="M3 3v5h5" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+                    <path d="M3.05 13A9 9 0 106 5.3L3 8" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+                    <path d="M12 7v5l4 2" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+                  </svg>
+                </div>
+                <span class="menu-label">聊天记录</span>
+              </button>
             </div>
           </div>
 
@@ -260,6 +315,7 @@
       <!-- 隐藏的文件输入 -->
       <input ref="imageInput" type="file" accept="image/*" hidden @change="handleImageSelect">
       <input ref="videoInput" type="file" accept="video/*" hidden @change="handleVideoSelect">
+      <input ref="audioInput" type="file" accept="audio/*" hidden @change="handleAudioSelect">
       <input ref="fileInput" type="file" accept="*/*" hidden @change="handleFileSelect">
     </div>
   </div>
@@ -268,12 +324,13 @@
 <script setup lang="ts">
 import { ref, computed, nextTick } from 'vue'
 import { getVideoDuration, formatDuration, validateVideoFile } from '@/utils/video'
+import { getAudioDuration, validateAudioFile } from '@/utils/audio'
 import { message } from 'ant-design-vue'
 import EmojiPicker from '@/components/emoji/EmojiPicker.vue'
 
 interface ReplyMessage {
   id: string | number
-  type: 'text' | 'image' | 'voice' | 'video' | 'file' | 'system'
+  type: 'text' | 'image' | 'voice' | 'video' | 'file' | 'audio' | 'system'
   text?: string
   content?: string
   sender?: {
@@ -305,6 +362,7 @@ const emit = defineEmits<{
   send: [text: string]
   sendImage: [file: File]
   sendVideo: [file: File]
+  sendAudio: [file: File]
   sendFile: [file: File]
   startRecording: []
   stopRecording: []
@@ -313,6 +371,7 @@ const emit = defineEmits<{
   toggleLock: []
   clearRoom: [hardDelete: boolean]
   restoreRoom: []
+  openHistory: []
 }>()
 
 const inputText = ref('')
@@ -329,13 +388,19 @@ const videoPreview = ref('')
 const selectedVideoFile = ref<File | null>(null)
 const videoDuration = ref(0)
 
+// 音频预览相关
+const audioPreview = ref('')
+const selectedAudioFile = ref<File | null>(null)
+const audioDuration = ref(0)
+
 const inputRef = ref<HTMLInputElement>()
 const imageInput = ref<HTMLInputElement>()
 const videoInput = ref<HTMLInputElement>()
+const audioInput = ref<HTMLInputElement>()
 const fileInput = ref<HTMLInputElement>()
 
 // 是否可以发送
-const canSend = computed(() => inputText.value.trim().length > 0 || selectedImageFile.value !== null || selectedVideoFile.value !== null)
+const canSend = computed(() => inputText.value.trim().length > 0 || selectedImageFile.value !== null || selectedVideoFile.value !== null || selectedAudioFile.value !== null)
 
 // 输入框占位符
 const inputPlaceholder = computed(() => {
@@ -351,6 +416,7 @@ const replyPreviewText = computed(() => {
   
   if (props.replyTo.type === 'image') return '[图片]'
   if (props.replyTo.type === 'video') return '[视频]'
+  if (props.replyTo.type === 'audio') return '[音频]'
   if (props.replyTo.type === 'file') return '[文件]'
   
   const text = props.replyTo.text || props.replyTo.content || ''
@@ -366,6 +432,12 @@ const toggleAttachMenu = () => {
 // 关闭附件菜单
 const closeAttachMenu = () => {
   showAttachMenu.value = false
+}
+
+// 打开聊天记录/媒体面板
+const handleOpenHistory = () => {
+  showAttachMenu.value = false
+  emit('openHistory')
 }
 
 // 切换表情选择器
@@ -395,6 +467,13 @@ const handleSend = () => {
   if (selectedVideoFile.value) {
     emit('sendVideo', selectedVideoFile.value)
     clearVideoPreview()
+    return
+  }
+
+  // 如果有音频预览，发送音频
+  if (selectedAudioFile.value) {
+    emit('sendAudio', selectedAudioFile.value)
+    clearAudioPreview()
     return
   }
   
@@ -430,6 +509,12 @@ const selectImage = () => {
 // 选择视频
 const selectVideo = () => {
   videoInput.value?.click()
+  showAttachMenu.value = false
+}
+
+// 选择音频
+const selectAudio = () => {
+  audioInput.value?.click()
   showAttachMenu.value = false
 }
 
@@ -482,6 +567,16 @@ const clearVideoPreview = () => {
   videoDuration.value = 0
 }
 
+// 清除音频预览
+const clearAudioPreview = () => {
+  if (audioPreview.value) {
+    URL.revokeObjectURL(audioPreview.value)
+  }
+  audioPreview.value = ''
+  selectedAudioFile.value = null
+  audioDuration.value = 0
+}
+
 // 格式化文件大小
 const formatFileSize = (bytes: number): string => {
   if (bytes === 0) return '0 B'
@@ -528,6 +623,37 @@ const handleFileSelect = (e: Event) => {
     emit('sendFile', file)
     target.value = ''
   }
+}
+
+// 音频选择（与视频一致：先校验，再进入预览，发送时统一由 handleSend 处理）
+const handleAudioSelect = (e: Event) => {
+  const target = e.target as HTMLInputElement
+  const file = target.files?.[0]
+  if (!file) return
+
+  // 验证音频文件
+  const validation = validateAudioFile(file)
+  if (!validation.valid) {
+    message.error(validation.error || '音频文件无效')
+    target.value = ''
+    return
+  }
+
+  // 保存文件并生成预览
+  selectedAudioFile.value = file
+  audioPreview.value = URL.createObjectURL(file)
+
+  // 提取音频时长
+  getAudioDuration(file)
+    .then(duration => {
+      audioDuration.value = duration
+    })
+    .catch(error => {
+      console.error('[音频] 获取时长失败:', error)
+      audioDuration.value = 0
+    })
+
+  target.value = ''
 }
 
 // 录音相关
@@ -627,6 +753,23 @@ defineExpose({
     align-items: center;
     justify-content: center;
     background: linear-gradient(135deg, $info-color, darken($info-color, 10%));
+    border-radius: $border-radius-sm;
+    flex-shrink: 0;
+
+    svg {
+      width: 28px;
+      height: 28px;
+      color: white;
+    }
+  }
+
+  .audio-preview-icon {
+    width: 60px;
+    height: 60px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background: linear-gradient(135deg, #8b5cf6, #7c3aed);
     border-radius: $border-radius-sm;
     flex-shrink: 0;
 
@@ -1227,6 +1370,14 @@ defineExpose({
 
   &.menu-icon-file {
     background: linear-gradient(135deg, #f59e0b, #d97706);
+  }
+
+  &.menu-icon-audio {
+    background: linear-gradient(135deg, #8b5cf6, #7c3aed);
+  }
+
+  &.menu-icon-history {
+    background: linear-gradient(135deg, #06b6d4, #0891b2);
   }
 
   // 管理功能图标
