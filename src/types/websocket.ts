@@ -108,6 +108,35 @@ export interface PingMessage {
   type: 'ping'
 }
 
+// ==================== 一起听（同步播放）客户端发送 ====================
+
+export interface ListenInviteMessage {
+  type: 'listen_invite'
+  audio_url: string
+  audio_name?: string
+  audio_duration?: number | null
+  position?: number
+  playing?: boolean
+}
+
+export interface ListenAcceptMessage {
+  type: 'listen_accept'
+}
+
+export interface ListenDeclineMessage {
+  type: 'listen_decline'
+}
+
+export interface ListenSyncMessage {
+  type: 'listen_sync'
+  position: number
+  playing: boolean
+}
+
+export interface ListenEndMessage {
+  type: 'listen_end'
+}
+
 export type ClientMessage =
   | AuthMessage
   | JoinRoomMessage
@@ -120,6 +149,11 @@ export type ClientMessage =
   | RoomLockChangedMessage
   | ProfileUpdatedMessage
   | IntimacyRestartMessage
+  | ListenInviteMessage
+  | ListenAcceptMessage
+  | ListenDeclineMessage
+  | ListenSyncMessage
+  | ListenEndMessage
   | PingMessage
 
 // ==================== 服务端推送的消息 ====================
@@ -251,6 +285,69 @@ export interface ProfileUpdatedResponse {
   user_id: number
   nickname?: string
   avatar?: string
+}
+
+// ==================== 一起听（同步播放）服务端推送 ====================
+
+export interface ListenInvitedResponse {
+  type: 'listen_invited'
+  from_user_id: number
+  from_nickname: string
+  audio_url: string
+  audio_name?: string
+  audio_duration?: number | null
+  position: number
+  playing: boolean
+}
+
+export interface ListenStartedResponse {
+  type: 'listen_started'
+  audio_url: string
+  audio_name?: string
+  audio_duration?: number | null
+  position: number
+  playing: boolean
+  server_at: number
+  initiator_id: number
+  initiator_name: string
+  responder_id: number
+  responder_name: string
+}
+
+export interface ListenDeclinedResponse {
+  type: 'listen_declined'
+  by_user_id: number
+  by_nickname: string
+}
+
+export interface ListenSyncResponse {
+  type: 'listen_sync'
+  position: number
+  playing: boolean
+  by_user_id: number
+  server_at: number
+}
+
+export interface ListenEndedResponse {
+  type: 'listen_ended'
+  reason: 'ended' | 'cancelled' | 'disconnect' | 'left' | 'cleared' | string
+  by_user_id?: number
+  by_nickname?: string
+}
+
+export interface ListenStateResponse {
+  type: 'listen_state'
+  active: boolean
+  audio_url?: string
+  audio_name?: string
+  audio_duration?: number | null
+  position?: number
+  playing?: boolean
+  server_at?: number
+  initiator_id?: number
+  initiator_name?: string
+  responder_id?: number
+  responder_name?: string
 }
 
 export interface IntimacyStartResponse {

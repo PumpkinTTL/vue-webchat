@@ -41,3 +41,26 @@ export function releasePlayback(el: HTMLMediaElement): void {
 export function isPlaybackOwner(el: HTMLMediaElement): boolean {
   return current === el
 }
+
+// ==================== 当前正在播放的音频（供「一起听」获取来源）====================
+
+export interface NowPlaying {
+  src: string
+  name: string
+  duration: number
+  el: HTMLAudioElement
+  at: number
+}
+
+let nowPlaying: NowPlaying | null = null
+
+/** 记录最近一次播放的音频（用于发起「一起听」时取音频来源与进度） */
+export function setNowPlaying(info: { src: string; name: string; duration: number; el: HTMLAudioElement }): void {
+  nowPlaying = { ...info, at: Date.now() }
+}
+
+/** 取最近播放的音频（超过 30 分钟视为过期） */
+export function getNowPlaying(): NowPlaying | null {
+  if (nowPlaying && Date.now() - nowPlaying.at > 30 * 60 * 1000) return null
+  return nowPlaying
+}

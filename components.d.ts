@@ -37,6 +37,8 @@ declare module 'vue' {
     IntimacyInteraction: typeof import('./src/components/intimacy/IntimacyInteraction.vue')['default']
     IntimacyLevelUpModal: typeof import('./src/components/intimacy/IntimacyLevelUpModal.vue')['default']
     IntimacyPanel: typeof import('./src/components/intimacy/IntimacyPanel.vue')['default']
+    ListenInviteBubble: typeof import('./src/components/index/ListenInviteBubble.vue')['default']
+    ListenPanel: typeof import('./src/components/index/ListenPanel.vue')['default']
     MessageItem: typeof import('./src/components/index/MessageItem.vue')['default']
     MessageList: typeof import('./src/components/index/MessageList.vue')['default']
     ProfileEditModal: typeof import('./src/components/common/ProfileEditModal.vue')['default']

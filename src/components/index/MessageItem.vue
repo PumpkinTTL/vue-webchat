@@ -82,13 +82,13 @@
               </div>
               <!-- 音频消息 -->
               <div v-else-if="message.type === 'audio'" class="audio-wrapper" @click.stop>
-                <AudioPlayer :src="audioUrl" :name="message.audioName" />
+                <AudioPlayer :src="audioUrl" :name="message.audioName" @sync="onAudioSync" />
               </div>
               <!-- 文件（若为音频则在气泡内播放，否则可下载） -->
               <div v-else-if="message.type === 'file'" class="file-message"
                 :class="{ 'file-clickable': !isAudioFile, 'file-message-audio': isAudioFile }"
                 @click="isAudioFile ? null : handleFileAction()">
-                <AudioPlayer v-if="isAudioFile" :src="fileActionUrl" :name="message.fileName" />
+                <AudioPlayer v-if="isAudioFile" :src="fileActionUrl" :name="message.fileName" @sync="onAudioSync" />
                 <template v-else>
                   <div class="file-icon">
                     <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
@@ -313,14 +313,14 @@
                 </div>
                 <!-- 上传完成：显示音频 -->
                 <template v-else>
-                  <AudioPlayer :src="audioUrl" :name="message.audioName" />
+                  <AudioPlayer :src="audioUrl" :name="message.audioName" @sync="onAudioSync" />
                 </template>
               </div>
               <!-- 文件（若为音频则在气泡内播放，否则可下载） -->
               <div v-else-if="message.type === 'file'" class="file-message"
                 :class="{ 'file-clickable': !isAudioFile, 'file-message-audio': isAudioFile }"
                 @click="isAudioFile ? null : handleFileAction()">
-                <AudioPlayer v-if="isAudioFile" :src="fileActionUrl" :name="message.fileName" />
+                <AudioPlayer v-if="isAudioFile" :src="fileActionUrl" :name="message.fileName" @sync="onAudioSync" />
                 <template v-else>
                   <div class="file-icon">
                     <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
@@ -492,7 +492,13 @@ const emit = defineEmits<{
   scrollToMessage: [messageId: number]
   edit: [messageId: string | number, content: string]
   resend: [message: Message]
+  sync: [{ src: string; name: string; position: number; playing: boolean; duration: number }]
 }>()
+
+// 来自音频播放器的「一起听」请求，向上转发
+const onAudioSync = (payload: { src: string; name: string; position: number; playing: boolean; duration: number }) => {
+  emit('sync', payload)
+}
 
 // Popover 显示状态
 const popoverVisible = ref(false)

@@ -18,7 +18,13 @@ import type {
   IntimacyCompleteResponse,
   IntimacyResetResponse,
   ErrorResponse,
-  IntimacyInfo
+  IntimacyInfo,
+  ListenInvitedResponse,
+  ListenStartedResponse,
+  ListenDeclinedResponse,
+  ListenSyncResponse,
+  ListenEndedResponse,
+  ListenStateResponse
 } from '@/types/websocket'
 import { getToken } from '@/utils/storage'
 
@@ -113,6 +119,14 @@ export const useWebSocketStore = defineStore('websocket', () => {
   let onError: ((data: ErrorResponse) => void) | null = null
   let onRoomJoined: ((roomId: number, users: OnlineUser[]) => void) | null = null
   let onProfileUpdated: ((data: ProfileUpdatedResponse) => void) | null = null
+
+  // 一起听（同步播放）回调
+  let onListenInvited: ((data: ListenInvitedResponse) => void) | null = null
+  let onListenStarted: ((data: ListenStartedResponse) => void) | null = null
+  let onListenDeclined: ((data: ListenDeclinedResponse) => void) | null = null
+  let onListenSync: ((data: ListenSyncResponse) => void) | null = null
+  let onListenEnded: ((data: ListenEndedResponse) => void) | null = null
+  let onListenState: ((data: ListenStateResponse) => void) | null = null
 
   // ==================== 核心方法 ====================
 
@@ -490,6 +504,24 @@ export const useWebSocketStore = defineStore('websocket', () => {
     return send({ type: 'intimacy_restart', room_id: roomId })
   }
 
+  // ==================== 一起听（同步播放）====================
+
+  function listenInvite(payload: { audio_url: string; audio_name?: string; audio_duration?: number | null; position?: number; playing?: boolean }) {
+    return send({ type: 'listen_invite', ...payload })
+  }
+  function listenAccept() {
+    return send({ type: 'listen_accept' })
+  }
+  function listenDecline() {
+    return send({ type: 'listen_decline' })
+  }
+  function listenSync(position: number, playing: boolean) {
+    return send({ type: 'listen_sync', position, playing })
+  }
+  function listenEnd() {
+    return send({ type: 'listen_end' })
+  }
+
   // ==================== 消息处理 ====================
 
   function handleMessage(data: ServerMessage) {
@@ -609,6 +641,42 @@ export const useWebSocketStore = defineStore('websocket', () => {
       case 'profile_updated':
         if (onProfileUpdated) {
           onProfileUpdated(data)
+        }
+        break
+
+      case 'listen_invited':
+        if (onListenInvited) {
+          onListenInvited(data)
+        }
+        break
+
+      case 'listen_started':
+        if (onListenStarted) {
+          onListenStarted(data)
+        }
+        break
+
+      case 'listen_declined':
+        if (onListenDeclined) {
+          onListenDeclined(data)
+        }
+        break
+
+      case 'listen_sync':
+        if (onListenSync) {
+          onListenSync(data)
+        }
+        break
+
+      case 'listen_ended':
+        if (onListenEnded) {
+          onListenEnded(data)
+        }
+        break
+
+      case 'listen_state':
+        if (onListenState) {
+          onListenState(data)
         }
         break
 
@@ -834,6 +902,26 @@ export const useWebSocketStore = defineStore('websocket', () => {
     onProfileUpdated = callback
   }
 
+  // 一起听：事件注册
+  function setOnListenInvited(callback: typeof onListenInvited) {
+    onListenInvited = callback
+  }
+  function setOnListenStarted(callback: typeof onListenStarted) {
+    onListenStarted = callback
+  }
+  function setOnListenDeclined(callback: typeof onListenDeclined) {
+    onListenDeclined = callback
+  }
+  function setOnListenSync(callback: typeof onListenSync) {
+    onListenSync = callback
+  }
+  function setOnListenEnded(callback: typeof onListenEnded) {
+    onListenEnded = callback
+  }
+  function setOnListenState(callback: typeof onListenState) {
+    onListenState = callback
+  }
+
   /**
    * 广播自己的资料变更（昵称/头像），让同房间其他人也刷新
    */
@@ -875,6 +963,11 @@ export const useWebSocketStore = defineStore('websocket', () => {
     broadcastRoomRestored,
     restartIntimacy,
     broadcastProfileUpdated,
+    listenInvite,
+    listenAccept,
+    listenDecline,
+    listenSync,
+    listenEnd,
     
     // 事件注册
     setOnMessage,
@@ -891,6 +984,12 @@ export const useWebSocketStore = defineStore('websocket', () => {
     setOnError,
     setOnRoomJoined,
     setOnProfileUpdated,
-    setOnResync
+    setOnResync,
+    setOnListenInvited,
+    setOnListenStarted,
+    setOnListenDeclined,
+    setOnListenSync,
+    setOnListenEnded,
+    setOnListenState
   }
 })

@@ -37,6 +37,12 @@
           <span class="ab-sep">/</span>
           <span class="ab-total">{{ fmt(duration) }}</span>
         </span>
+        <button v-if="showSync" class="ab-sync" type="button" title="发起一起听" @click.stop="emitSync">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <path d="M3 18v-6a9 9 0 0118 0v6" />
+            <path d="M21 19a2 2 0 01-2 2h-1a2 2 0 01-2-2v-3a2 2 0 012-2h3zM3 19a2 2 0 002 2h1a2 2 0 002-2v-3a2 2 0 00-2-2H3z" />
+          </svg>
+        </button>
       </div>
 
       <div
@@ -79,12 +85,33 @@
 <script setup lang="ts">
 import { ref, computed, watch, onBeforeUnmount } from 'vue'
 import { formatDuration } from '@/utils/video'
-import { claimPlayback, releasePlayback } from '@/utils/mediaPlayback'
+import { claimPlayback, releasePlayback, setNowPlaying } from '@/utils/mediaPlayback'
 
-const props = withDefaults(defineProps<{ src?: string; name?: string }>(), {
+const props = withDefaults(defineProps<{ src?: string; name?: string; showSync?: boolean }>(), {
   src: '',
-  name: ''
+  name: '',
+  showSync: true
 })
+
+const emit = defineEmits<{
+  sync: [{ src: string; name: string; position: number; playing: boolean; duration: number }]
+}>()
+
+// 供「一起听」面板挂载/读取底层 audio 元素
+defineExpose({
+  getAudioEl: () => audioEl.value
+})
+
+// 发起「一起听」：把当前音频与进度交给父组件，由父组件走 WS 邀请
+const emitSync = () => {
+  emit('sync', {
+    src: props.src,
+    name: props.name,
+    position: currentTime.value,
+    playing: playing.value,
+    duration: duration.value
+  })
+}
 
 const audioEl = ref<HTMLAudioElement>()
 const trackEl = ref<HTMLElement>()
@@ -126,7 +153,14 @@ const toggle = () => {
   }
 }
 
-const onPlay = () => { playing.value = true; error.value = false }
+const onPlay = () => {
+  playing.value = true
+  error.value = false
+  // 记录当前播放来源，供「一起听」发起时取用
+  if (audioEl.value) {
+    setNowPlaying({ src: props.src, name: props.name, duration: duration.value, el: audioEl.value })
+  }
+}
 const onPause = () => { playing.value = false; buffering.value = false }
 const onEnded = () => { playing.value = false; buffering.value = false; currentTime.value = 0; releasePlayback(audioEl.value!) }
 const onError = () => {
@@ -326,6 +360,27 @@ $audio-accent-2: #8b5cf6;
 
   .ab-cur { color: $audio-accent; }
   .ab-sep { margin: 0 3px; opacity: 0.5; }
+}
+
+// 一起听入口（点它发起同步邀请）
+.ab-sync {
+  flex-shrink: 0;
+  width: 20px;
+  height: 20px;
+  padding: 0;
+  border: none;
+  background: transparent;
+  color: $text-tertiary;
+  cursor: pointer;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 50%;
+  transition: color $transition-fast, background $transition-fast;
+
+  svg { width: 14px; height: 14px; }
+
+  &:hover { color: $primary-color; background: rgba($primary-color, 0.1); }
 }
 
 // ==================== 进度条 ====================

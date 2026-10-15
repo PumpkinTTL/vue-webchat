@@ -53,6 +53,7 @@
         @burn="handleBurn"
         @edit="handleEdit"
         @resend="handleResend"
+        @sync="handleSync"
         @scroll-to-message="handleScrollToMessage"
       />
     </div>
@@ -132,6 +133,7 @@ const emit = defineEmits<{
   burn: [messageId: string | number]
   edit: [messageId: string | number, content: string]
   resend: [message: Message]
+  sync: [{ src: string; name: string; position: number; playing: boolean; duration: number }]
   scrollChange: [isAtBottom: boolean]
 }>()
 
@@ -306,6 +308,11 @@ const handleEdit = (messageId: string | number, content: string) => {
 // 重发失败消息
 const handleResend = (message: Message) => {
   emit('resend', message)
+}
+
+// 一起听：音频播放器发起同步
+const handleSync = (payload: { src: string; name: string; position: number; playing: boolean; duration: number }) => {
+  emit('sync', payload)
 }
 
 // 滚动到指定消息 - 完全重构，不依赖ref

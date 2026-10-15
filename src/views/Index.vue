@@ -39,7 +39,7 @@
         <MessageList ref="messageListRef" :messages="messages" :loading="messagesLoading" :has-more="hasMoreMessages"
           :loading-more="loadingMoreMessages" :upload-progress="uploadProgress" :has-reply="!!replyToMessage"
           @load-more="handleLoadMore" @reply="handleReplyMessage" @burn="handleBurnMessage" @edit="handleEditMessage"
-          @resend="handleResendMessage" @scroll-change="handleScrollChange" />
+          @resend="handleResendMessage" @sync="handleAudioSync" @scroll-change="handleScrollChange" />
 
         <!-- 新消息提示按钮 -->
         <Transition name="new-msg-fade">
@@ -54,6 +54,8 @@
 
       <!-- 输入区域 -->
       <footer class="input-area">
+        <!-- 一起听：邀请/等待气泡（非 toast，显示在输入框上方） -->
+        <ListenInviteBubble />
         <InputBar ref="inputBarRef" :disabled="isInputDisabled" :reply-to="replyToMessage" :is-admin="userStore.isAdmin"
           :current-room="currentRoom" :deleted-count="deletedCount" @send="handleSendMessage"
           @send-image="handleSendImage" @send-video="handleSendVideo" @send-audio="handleSendAudio" @send-file="handleSendFile"
@@ -62,6 +64,9 @@
           @restore-room="handleRestoreRoom" @open-history="handleOpenHistory" />
       </footer>
     </main>
+
+    <!-- 一起听：紧凑同步面板（抽屉，非全屏） -->
+    <ListenPanel />
 
 
 
@@ -178,6 +183,8 @@ import IntimacyLevelUpModal from '@/components/intimacy/IntimacyLevelUpModal.vue
 import IntimacyExpTip from '@/components/intimacy/IntimacyExpTip.vue'
 import IntimacyBondNotification from '@/components/intimacy/IntimacyBondNotification.vue'
 import ChatHistoryPanel from '@/components/index/ChatHistoryPanel.vue'
+import ListenInviteBubble from '@/components/index/ListenInviteBubble.vue'
+import ListenPanel from '@/components/index/ListenPanel.vue'
 import { getUserRooms, createRoom, joinRoom, leaveRoom, getRoomUserCount, toggleRoomLock as toggleRoomLockApi, clearRoomMessages, restoreRoomMessages, getDeletedMessagesCount } from '@/apis/room'
 import { getMessageList, sendTextMessage, sendImageMessage, sendVideoMessage, sendAudioMessage, sendFileMessage, editMessage } from '@/apis/message'
 import type { CreateRoomParams, JoinRoomParams } from '@/apis/room'
@@ -185,6 +192,7 @@ import { useChat } from '@/composables/useChat'
 import { useDarkMode } from '@/composables/useDarkMode'
 import { useUserStore } from '@/store/user'
 import { useIntimacyStore } from '@/store/intimacy'
+import { useListenStore } from '@/store/listen'
 import type { ChatMessageItem } from '@/store/chat'
 
 // 使用用户 store
@@ -192,6 +200,9 @@ const userStore = useUserStore()
 
 // 使用亲密度 store
 const intimacyStore = useIntimacyStore()
+
+// 使用一起听 store
+const listenStore = useListenStore()
 
 // 使用深色模式 composable
 const { toggle: toggleDarkMode } = useDarkMode()
@@ -450,6 +461,20 @@ onMounted(async () => {
   wsStore.setOnResync(() => {
     void resyncMessages()
   })
+
+  // 一起听：远程事件接入
+  wsStore.setOnListenInvited((data) => listenStore.onInvited(data))
+  wsStore.setOnListenStarted((data) => listenStore.onStarted(data))
+  wsStore.setOnListenDeclined(() => listenStore.onDeclined({ by_user_id: 0, by_nickname: '' }))
+  wsStore.setOnListenSync((data) => listenStore.onSync(data))
+  wsStore.setOnListenEnded((data) => {
+    const wasActive = listenStore.active
+    listenStore.onEnded(data)
+    if (wasActive && data.reason === 'disconnect') {
+      message.warning('对方已断开，一起听已结束')
+    }
+  })
+  wsStore.setOnListenState((data) => listenStore.onState(data))
 
   // 加载房间列表
   await loadUserRooms()
@@ -1368,6 +1393,33 @@ const handleScrollToNewMessage = () => {
   ownSentMessageCount.value = 0
   nextTick(() => {
     messageListRef.value?.scrollToBottomWithHistory(true)
+  })
+}
+
+// 一起听：从音频播放器发起同步邀请
+const handleAudioSync = (payload: { src: string; name: string; position: number; playing: boolean; duration: number }) => {
+  if (!payload.src) {
+    message.warning('该音频暂不可用于一起听')
+    return
+  }
+  if (!currentRoom.value?.id) {
+    message.warning('请先进入房间')
+    return
+  }
+  if (!wsStore.isAuthed) {
+    message.warning('连接尚未就绪，请稍后再试')
+    return
+  }
+  if (listenStore.active || listenStore.pending) {
+    message.info('已在一起听中')
+    return
+  }
+  listenStore.invite({
+    audioUrl: payload.src,
+    audioName: payload.name || '音频',
+    audioDuration: payload.duration || 0,
+    position: payload.position,
+    playing: payload.playing
   })
 }
 
