@@ -483,6 +483,21 @@ onMounted(async () => {
   })
   wsStore.setOnListenState((data) => listenStore.onState(data))
 
+  // 一起听：对方操作轻提示（toast）
+  listenStore.setOnRemoteAction((action, position) => {
+    const who = listenStore.partnerName || '对方'
+    const mm = Math.floor(position / 60)
+    const ss = Math.floor(position % 60)
+    const timeText = `${mm}:${String(ss).padStart(2, '0')}`
+    if (action === 'seek') {
+      message.info(`${who} 拖动到 ${timeText}`)
+    } else if (action === 'play') {
+      message.info(`${who} 播放中`)
+    } else {
+      message.info(`${who} 暂停了`)
+    }
+  })
+
   // 加载房间列表
   await loadUserRooms()
 })

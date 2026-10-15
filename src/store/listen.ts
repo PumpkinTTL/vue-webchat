@@ -327,10 +327,41 @@ export const useListenStore = defineStore('listen', () => {
     teardown('declined')
   }
 
+  // 通过回调把「对方的操作」上抛给视图层做轻提示（toast）
+  let onRemoteAction: ((action: 'seek' | 'play' | 'pause', position: number) => void) | null = null
+  function setOnRemoteAction(cb: typeof onRemoteAction) {
+    onRemoteAction = cb
+  }
+  const lastActionAt: Record<string, number> = { seek: 0, play: 0, pause: 0 }
+  const ACTION_THROTTLE = 2500
+  const fireRemoteAction = (action: 'seek' | 'play' | 'pause', position: number) => {
+    if (!onRemoteAction) return
+    const now = Date.now()
+    if (now - lastActionAt[action] < ACTION_THROTTLE) return
+    lastActionAt[action] = now
+    try { onRemoteAction(action, position) } catch { /* ignore */ }
+  }
+
   function onSync(data: { position: number; playing: boolean; by_user_id: number; server_at: number }) {
     if (!active.value) return
     if (String(data.by_user_id) === String(wsStore.currentUserId)) return // 自己发的，忽略
-    applyRemote(data.position || 0, !!data.playing, data.server_at || Date.now())
+
+    const pos = data.position || 0
+    const playing = !!data.playing
+
+    // 判定对方动作（用于 toast）：位置突变=拖动；播放态变化=播放/暂停
+    const localPos = audioEl ? audioEl.currentTime : (info.value?.position ?? 0)
+    const localPlaying = audioEl ? !audioEl.paused : (info.value?.playing ?? false)
+    const isSeek = Math.abs(pos - localPos) > 2.5
+    const isToggle = playing !== localPlaying
+
+    if (isSeek) {
+      fireRemoteAction('seek', pos)
+    } else if (isToggle) {
+      fireRemoteAction(playing ? 'play' : 'pause', pos)
+    }
+
+    applyRemote(pos, playing, data.server_at || Date.now())
   }
 
   function onEnded(data: { reason: string }) {
@@ -372,7 +403,7 @@ export const useListenStore = defineStore('listen', () => {
     // 音频同步
     registerAudio, unregisterAudio,
     onLocalPlay, onLocalPause, onLocalSeek,
-    setVolume,
+    setVolume, setOnRemoteAction,
     // 动作
     invite, accept, decline, end, cancelPending,
     // 远程事件
