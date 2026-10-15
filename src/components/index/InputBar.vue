@@ -140,6 +140,7 @@
           @input="handleInput"
           @focus="handleFocus"
           @blur="handleBlur"
+          @paste="handlePaste"
         >
 
         <!-- 表情按钮（在输入框内） -->
@@ -492,6 +493,53 @@ const handleInput = () => {
   emit('typing')
 }
 
+// 粘贴：支持直接粘贴图片/截图（很多聊天应用都有此体验）
+const handlePaste = (e: ClipboardEvent) => {
+  if (props.disabled) return
+  const items = e.clipboardData?.items
+  if (!items) return
+
+  // 从剪贴板中找出第一个文件（优先图片，其次视频/音频）
+  let picked: File | null = null
+  let pickedIsImage = false
+  for (const item of Array.from(items)) {
+    if (item.kind !== 'file') continue
+    const file = item.getAsFile()
+    if (!file) continue
+    if (!picked) {
+      picked = file
+      pickedIsImage = file.type.startsWith('image/')
+    }
+    // 图片优先——找到图片就直接用
+    if (file.type.startsWith('image/')) {
+      picked = file
+      pickedIsImage = true
+      break
+    }
+  }
+
+  if (!picked) return // 纯文本粘贴交给浏览器默认行为
+
+  // 剪贴板图片常常没有文件名，补一个
+  let file = picked
+  if (!file.name) {
+    const ext = (file.type.split('/')[1] || 'png').replace('jpeg', 'jpg')
+    file = new File([file], `粘贴图片_${Date.now()}.${ext}`, { type: file.type })
+  }
+
+  if (pickedIsImage) {
+    e.preventDefault() // 阻止把图片当文本/路径粘进输入框
+    applyImageFile(file)
+  } else if (file.type.startsWith('video/')) {
+    e.preventDefault()
+    applyVideoFile(file)
+  } else if (file.type.startsWith('audio/')) {
+    e.preventDefault()
+    applyAudioFile(file)
+  }
+  // 其它类型：不拦截，走默认（避免把任意文件塞进聊天）
+}
+
 const handleFocus = () => {
   // 聚焦时可以做一些处理
 }
@@ -529,23 +577,48 @@ const handleImageSelect = (e: Event) => {
   const target = e.target as HTMLInputElement
   const file = target.files?.[0]
   if (file) {
-    // 验证文件类型
-    if (!file.type.startsWith('image/')) {
-      // TODO: 显示错误提示
-      target.value = ''
-      return
-    }
-    
-    // 保存文件并生成预览
-    selectedImageFile.value = file
-    const reader = new FileReader()
-    reader.onload = (e) => {
-      imagePreview.value = e.target?.result as string
-    }
-    reader.readAsDataURL(file)
-    
+    applyImageFile(file)
     target.value = ''
   }
+}
+
+// 应用图片文件（选择/粘贴共用）：设置预览 + 暂存待发送
+const applyImageFile = (file: File) => {
+  if (!file.type.startsWith('image/')) return
+  selectedImageFile.value = file
+  const reader = new FileReader()
+  reader.onload = (ev) => {
+    imagePreview.value = ev.target?.result as string
+  }
+  reader.readAsDataURL(file)
+}
+
+// 应用视频文件（选择/粘贴共用）
+const applyVideoFile = (file: File) => {
+  const validation = validateVideoFile(file)
+  if (!validation.valid) {
+    message.error(validation.error || '视频文件无效')
+    return
+  }
+  selectedVideoFile.value = file
+  videoPreview.value = URL.createObjectURL(file)
+  getVideoDuration(file)
+    .then((d) => { videoDuration.value = d })
+    .catch((err) => { console.error('[视频] 获取时长失败:', err); videoDuration.value = 0 })
+}
+
+// 应用音频文件（选择/粘贴共用）
+const applyAudioFile = (file: File) => {
+  const validation = validateAudioFile(file)
+  if (!validation.valid) {
+    message.error(validation.error || '音频文件无效')
+    return
+  }
+  selectedAudioFile.value = file
+  audioPreview.value = URL.createObjectURL(file)
+  getAudioDuration(file)
+    .then((d) => { audioDuration.value = d })
+    .catch((err) => { console.error('[音频] 获取时长失败:', err); audioDuration.value = 0 })
 }
 
 // 清除图片预览
@@ -590,29 +663,7 @@ const handleVideoSelect = (e: Event) => {
   const target = e.target as HTMLInputElement
   const file = target.files?.[0]
   if (!file) return
-  
-  // 验证视频文件
-  const validation = validateVideoFile(file)
-  if (!validation.valid) {
-    message.error(validation.error || '视频文件无效')
-    target.value = ''
-    return
-  }
-  
-  // 保存文件并生成预览
-  selectedVideoFile.value = file
-  videoPreview.value = URL.createObjectURL(file)
-  
-  // 提取视频时长
-  getVideoDuration(file)
-    .then(duration => {
-      videoDuration.value = duration
-    })
-    .catch(error => {
-      console.error('[视频] 获取时长失败:', error)
-      videoDuration.value = 0
-    })
-  
+  applyVideoFile(file)
   target.value = ''
 }
 
@@ -630,29 +681,7 @@ const handleAudioSelect = (e: Event) => {
   const target = e.target as HTMLInputElement
   const file = target.files?.[0]
   if (!file) return
-
-  // 验证音频文件
-  const validation = validateAudioFile(file)
-  if (!validation.valid) {
-    message.error(validation.error || '音频文件无效')
-    target.value = ''
-    return
-  }
-
-  // 保存文件并生成预览
-  selectedAudioFile.value = file
-  audioPreview.value = URL.createObjectURL(file)
-
-  // 提取音频时长
-  getAudioDuration(file)
-    .then(duration => {
-      audioDuration.value = duration
-    })
-    .catch(error => {
-      console.error('[音频] 获取时长失败:', error)
-      audioDuration.value = 0
-    })
-
+  applyAudioFile(file)
   target.value = ''
 }
 
