@@ -22,6 +22,14 @@ import type {
 } from '@/types/websocket'
 import { getToken } from '@/utils/storage'
 
+/**
+ * 连接恢复的原因（供上层做 HTTP 兜底补拉，区分场景）
+ * - reconnect：断线后重连并重新认证成功
+ * - visible：页面回到前台（可能连接已断或曾长时间挂起）
+ * - online：网络恢复
+ */
+export type ResyncReason = 'reconnect' | 'visible' | 'online'
+
 export const useWebSocketStore = defineStore('websocket', () => {
   // ==================== 状态 ====================
   
@@ -49,7 +57,32 @@ export const useWebSocketStore = defineStore('websocket', () => {
   const maxReconnectDelay = 30000     // 退避上限
   const connectingUrl = ref<string>('') // 当前连接地址（重连时复用）
   let awaitingPong = false            // 上一次 ping 是否还在等待 pong（用于判定连接是否已死）
+  let authedBefore = false            // 本 store 生命周期内是否曾经认证过（用于区分首连与重连）
   let lifecycleBound = false          // 是否已绑定页面生命周期监听（只绑一次）
+
+  // 连接恢复回调（HTTP 兜底补拉）：resync 去抖 + 最近一次触发时间
+  const RESYNC_DEBOUNCE_MS = 1500
+  let onResync: ((reason: ResyncReason) => void) | null = null
+  let pendingResync: ResyncReason | null = null  // 回调尚未注册时暂存的 resync，注册后补触发
+  const lastResyncAt: Record<ResyncReason, number> = { reconnect: 0, visible: 0, online: 0 }
+
+  // ==================== 断线发送队列（outbox） ====================
+  // socket 非 OPEN 时，把“必须送达”的业务消息入队，待连接恢复（认证 + 重新 join）后按序补发，
+  // 避免「消息发出去了但 socket 没连上 / 重连期间」直接丢弃。
+  // 只保留状态类消息；ping/typing 这类易失消息不入队（丢弃）。
+  const OUTBOX_MAX = 100
+  const OUTBOX_TYPES = new Set<ClientMessage['type']>([
+    'message',
+    'mark_read',
+    'message_edited',
+    'message_burned',
+    'room_cleared',
+    'room_lock_changed',
+    'profile_updated',
+    'intimacy_restart'
+  ])
+  const outbox = ref<ClientMessage[]>([])
+  let flushing = false                // 单飞：保证同时只有一个 flush 在跑
 
   // ==================== 计算属性 ====================
   
@@ -87,9 +120,14 @@ export const useWebSocketStore = defineStore('websocket', () => {
    * 连接 WebSocket
    */
   function connect(wsUrl?: string) {
+    // 单飞：已有连接在途/已建立则不再新建
     if (ws.value && (ws.value.readyState === WebSocket.CONNECTING || ws.value.readyState === WebSocket.OPEN)) {
+      // 清理可能残留的重连定时器，避免旧排程后又触发一次（虽会早退，但避免空转）
+      stopReconnect()
       return
     }
+    // 主动发起连接：取消待执行的重连排程，确保同一时刻只有一个连接尝试
+    stopReconnect()
 
     // 解析连接地址（优先显式传入 > 环境变量 > 当前页面地址），并缓存以便重连复用
     let url = wsUrl
@@ -190,6 +228,7 @@ export const useWebSocketStore = defineStore('websocket', () => {
     manualClose.value = true
     stopReconnect()
     stopPing()
+    clearOutbox()
 
     if (ws.value) {
       ws.value.close()
@@ -203,18 +242,129 @@ export const useWebSocketStore = defineStore('websocket', () => {
     typingUsers.value.clear()
     intimacyActive.value = false
     intimacyStartTime.value = null
+    // 重置重连判定标记：下次 connect + auth 视为首次认证，不再触发 reconnect resync
+    authedBefore = false
+    pendingResync = null
+    lastResyncAt.reconnect = 0
+    lastResyncAt.visible = 0
+    lastResyncAt.online = 0
   }
 
   /**
    * 发送消息
+   * - socket OPEN：直接发送
+   * - 非 OPEN：若是“必须送达”的业务消息则入队（连接恢复后补发），否则丢弃并返回 false
    */
   function send(data: ClientMessage) {
-    if (!ws.value || ws.value.readyState !== WebSocket.OPEN) {
-      console.error('[WebSocket] 未连接，无法发送消息')
+    if (ws.value && ws.value.readyState === WebSocket.OPEN) {
+      try {
+        ws.value.send(JSON.stringify(data))
+        return true
+      } catch (error) {
+        console.error('[WebSocket] 发送消息失败:', error)
+        // 发送抛错（socket 处于异常态）：按未连接处理，尝试入队
+        enqueue(data)
+        return false
+      }
+    }
+    return enqueue(data)
+  }
+
+  /**
+   * 未连接时的入队策略：
+   * 仅保留状态类消息（见 OUTBOX_TYPES），ping/typing 直接丢弃
+   */
+  function enqueue(data: ClientMessage): boolean {
+    if (!OUTBOX_TYPES.has(data.type)) {
+      // ping / typing 等易失消息：不入队（typing 已过期无意义，ping 由心跳机制自发）
       return false
     }
-    ws.value.send(JSON.stringify(data))
-    return true
+    if (outbox.value.length >= OUTBOX_MAX) {
+      // 超限：丢最旧，避免无限增长
+      const dropped = outbox.value.shift()
+      console.warn('[WebSocket] 发送队列已满，丢弃最旧消息:', dropped?.type)
+    }
+    outbox.value.push(data)
+    return false
+  }
+
+  /**
+   * 连接恢复后按序补发队列；仍非 OPEN 则保留队列。
+   * 单飞：避免 auth_success 与 room_joined 相继触发导致重复 flush。
+   */
+  function flushOutbox() {
+    if (flushing) return
+    if (!ws.value || ws.value.readyState !== WebSocket.OPEN) return
+    if (outbox.value.length === 0) return
+
+    flushing = true
+    const pending = outbox.value
+    outbox.value = []
+    let idx = 0
+    for (; idx < pending.length; idx++) {
+      // flush 途中连接再次断开：剩余消息回填到队首，保留待下次恢复
+      if (!ws.value || ws.value.readyState !== WebSocket.OPEN) break
+      try {
+        ws.value.send(JSON.stringify(pending[idx]))
+      } catch (error) {
+        console.error('[WebSocket] 补发队列消息失败，回填队列:', error)
+        break
+      }
+    }
+    if (idx < pending.length) {
+      // 未发送完的部分回填到队首（保持原有顺序），已发送的不再重复
+      outbox.value = pending.slice(idx).concat(outbox.value)
+    }
+    flushing = false
+  }
+
+  function clearOutbox() {
+    if (outbox.value.length > 0) {
+      outbox.value = []
+    }
+    flushing = false
+  }
+
+  /**
+   * 触发连接恢复回调（HTTP 兜底补拉）
+   * - 同一 reason 1.5s 内去抖，避免风暴
+   * - 回调尚未注册时暂存，待 setOnResync 注册后补触发（回调可能晚于连接建立）
+   * - 回调异常 try/catch，绝不影响连接流程
+   */
+  function fireResync(reason: ResyncReason) {
+    if (!onResync) {
+      // 回调还没注册（上层可能晚于连接建立才接线）→ 暂存待补触发
+      pendingResync = reason
+      return
+    }
+    const now = Date.now()
+    if (now - lastResyncAt[reason] < RESYNC_DEBOUNCE_MS) return
+    lastResyncAt[reason] = now
+    try {
+      onResync(reason)
+    } catch (error) {
+      console.error('[WebSocket] resync 回调异常:', error)
+    }
+  }
+
+  /**
+   * 注册连接恢复回调（上层据此做 HTTP 兜底补拉，补上断线期间丢失的广播消息）
+   * 触发时机：重连认证成功（reconnect）/ 回到前台（visible）/ 网络恢复（online）
+   * 若在注册之前已经发生过 resync（如连接先建立、回调后接线），注册后立即补触发一次。
+   */
+  function setOnResync(callback: typeof onResync) {
+    onResync = callback
+    if (callback && pendingResync) {
+      const reason = pendingResync
+      pendingResync = null
+      // 注册即补触发，绕过本次去抖（尚未触发过），并记录时间
+      lastResyncAt[reason] = Date.now()
+      try {
+        callback(reason)
+      } catch (error) {
+        console.error('[WebSocket] resync 回调异常:', error)
+      }
+    }
   }
 
   /**
@@ -348,18 +498,31 @@ export const useWebSocketStore = defineStore('websocket', () => {
         // 连接成功确认
         break
 
-      case 'auth_success':
+      case 'auth_success': {
         status.value = 'authed'
         currentUserId.value = data.user_id
         currentNickname.value = data.nickname
         currentAvatar.value = data.avatar
+        // 本次认证是否为「重连后的会话」：此前已经认证过 → 说明是断线重连
+        // （disconnect 会重置 authedBefore，因此首次连接首次认证不触发 resync）
+        const isReconnect = authedBefore
+        authedBefore = true
         // 认证成功后自动（重新）加入目标房间：
         // 重连场景下如果不重新 join_room，服务端在线名单不会包含自己，
         // 对方将永远看不到“上线”，私密房间也不会进入 2 人状态，导致爱心不点亮、互动不启动。
+        let sentJoin = false
         if (desiredRoomId.value && !joinedThisSession) {
-          send({ type: 'join_room', room_id: desiredRoomId.value })
+          sentJoin = send({ type: 'join_room', room_id: desiredRoomId.value })
+        }
+        // 无房间可 join 时，此处即可补发队列；有 join 则等 room_joined 后再补发（保证服务端已就位）
+        if (!sentJoin) {
+          flushOutbox()
+        }
+        if (isReconnect) {
+          fireResync('reconnect')
         }
         break
+      }
 
       case 'room_joined':
         currentRoomId.value = data.room_id
@@ -371,6 +534,8 @@ export const useWebSocketStore = defineStore('websocket', () => {
         if (onRoomJoined) {
           onRoomJoined(data.room_id, data.users)
         }
+        // 已重新加入房间 → 补发断线期间排队的消息
+        flushOutbox()
         break
 
       case 'message':
@@ -586,17 +751,19 @@ export const useWebSocketStore = defineStore('websocket', () => {
 
     document.addEventListener('visibilitychange', () => {
       if (document.visibilityState !== 'visible') return
-      // 回到前台：连接已死或重连挂起时立即恢复
       if (manualClose.value) return
+      // 回到前台：连接已死或重连挂起时立即恢复
       const dead = !ws.value || ws.value.readyState === WebSocket.CLOSED || ws.value.readyState === WebSocket.CLOSING
       if (dead) {
         stopReconnect()
         reconnectAttempts.value = 0
         connect()
       }
+      // 无论连接是否仍 OPEN，都触发一次补拉：隐藏期间可能错过广播消息
+      fireResync('visible')
     })
 
-    // 网络恢复时立即重连
+    // 网络恢复时立即重连 + 补拉
     window.addEventListener('online', () => {
       if (manualClose.value) return
       const dead = !ws.value || ws.value.readyState !== WebSocket.OPEN
@@ -605,6 +772,7 @@ export const useWebSocketStore = defineStore('websocket', () => {
         reconnectAttempts.value = 0
         connect()
       }
+      fireResync('online')
     })
   }
 
@@ -722,6 +890,7 @@ export const useWebSocketStore = defineStore('websocket', () => {
     setOnIntimacyReset,
     setOnError,
     setOnRoomJoined,
-    setOnProfileUpdated
+    setOnProfileUpdated,
+    setOnResync
   }
 })

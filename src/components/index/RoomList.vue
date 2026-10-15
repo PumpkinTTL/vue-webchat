@@ -37,17 +37,18 @@
             <p class="room-desc">{{ room.description || '暂无简介' }}</p>
           </div>
 
-          <!-- 未读消息数 -->
-          <div v-if="room.unreadCount" class="unread-badge animate__animated animate__pulse" style="--animate-duration: 0.5s">
-            {{ room.unreadCount > 99 ? '99+' : room.unreadCount }}
+          <!-- 未读消息数 + 退出房间按钮 -->
+          <div class="room-actions">
+            <div v-if="room.unreadCount" class="unread-badge animate__animated animate__pulse" style="--animate-duration: 0.5s">
+              {{ room.unreadCount > 99 ? '99+' : room.unreadCount }}
+            </div>
+
+            <button class="leave-room-btn" @click.stop="handleLeaveRoom(room)" title="退出房间">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor">
+                <path d="M9 21H5a2 2 0 01-2-2V5a2 2 0 012-2h4M16 17l5-5-5-5M21 12H9" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+              </svg>
+            </button>
           </div>
-          
-          <!-- 退出房间按钮 -->
-          <button class="leave-room-btn" @click.stop="handleLeaveRoom(room)" title="退出房间">
-            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor">
-              <path d="M9 21H5a2 2 0 01-2-2V5a2 2 0 012-2h4M16 17l5-5-5-5M21 12H9" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
-            </svg>
-          </button>
         </div>
       </TransitionGroup>
     </div>
@@ -245,9 +246,12 @@ const handleLeaveRoom = (room: Room) => {
   display: flex;
   align-items: center;
   gap: $spacing-sm;
+  min-width: 0;
 }
 
 .room-name {
+  flex: 1 1 auto;
+  min-width: 0;
   font-family: $font-family-heading;
   font-size: $font-size-base;
   font-weight: $font-weight-semibold;
@@ -271,6 +275,7 @@ const handleLeaveRoom = (room: Room) => {
   border-radius: $border-radius-sm;
   font-size: $font-size-xs;
   flex-shrink: 0;
+  white-space: nowrap;
 }
 
 .badge-label {
@@ -279,6 +284,7 @@ const handleLeaveRoom = (room: Room) => {
   text-transform: uppercase;
   letter-spacing: 0.5px;
   transition: color $transition-base;
+  white-space: nowrap;
 }
 
 .dark-mode .badge-label {
@@ -289,6 +295,7 @@ const handleLeaveRoom = (room: Room) => {
   color: $text-secondary;
   font-weight: $font-weight-semibold;
   transition: color $transition-base;
+  white-space: nowrap;
 }
 
 .dark-mode .badge-value {
@@ -309,6 +316,15 @@ const handleLeaveRoom = (room: Room) => {
   color: $text-tertiary-dark;
 }
 
+// ==================== 右侧操作区（未读徽章 + 退出） ====================
+.room-actions {
+  display: flex;
+  align-items: center;
+  gap: $spacing-sm;
+  flex-shrink: 0;
+  margin-left: auto;
+}
+
 // ==================== 未读消息徽章 ====================
 .unread-badge {
   min-width: 20px;
@@ -323,6 +339,8 @@ const handleLeaveRoom = (room: Room) => {
   font-size: $font-size-xs;
   font-weight: $font-weight-bold;
   flex-shrink: 0;
+  white-space: nowrap;
+  line-height: 1;
 }
 
 // ==================== 退出房间按钮 ====================
@@ -398,6 +416,20 @@ const handleLeaveRoom = (room: Room) => {
   .room-badge {
     padding: 1px 4px;
     font-size: 10px;
+  }
+
+  .room-actions {
+    gap: 6px;
+  }
+
+  .leave-room-btn {
+    width: 28px;
+    height: 28px;
+
+    svg {
+      width: 16px;
+      height: 16px;
+    }
   }
 
   .room-desc {

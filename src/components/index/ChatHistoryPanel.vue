@@ -109,6 +109,26 @@
                 <img v-if="avatarOf(msg)" :src="avatarOf(msg)" :alt="nicknameOf(msg)" />
                 <span v-else>{{ nicknameOf(msg).charAt(0) }}</span>
               </div>
+
+              <!-- 图片 / 视频：左侧小缩略图，文字作为辅助信息保留 -->
+              <div v-if="isThumbable(msg)" class="chp-item__thumb">
+                <img
+                  v-if="thumbOf(msg) && !failedThumbs[msg.id]"
+                  :src="thumbOf(msg)"
+                  alt=""
+                  loading="lazy"
+                  @error="markThumbFailed(msg.id)"
+                />
+                <span v-else class="chp-item__thumb-fallback">
+                  <font-awesome-icon :icon="['fas', msg.type === 'video' ? 'video' : 'image']" />
+                </span>
+                <span v-if="msg.type === 'video'" class="chp-item__thumb-play">
+                  <svg viewBox="0 0 24 24" fill="currentColor">
+                    <path d="M8 5v14l11-7z" />
+                  </svg>
+                </span>
+              </div>
+
               <div class="chp-item__body">
                 <div class="chp-item__top">
                   <span class="chp-item__name">{{ nicknameOf(msg) }}</span>
@@ -248,6 +268,31 @@
               <span>时间跨度 {{ timeSpan }}</span>
             </div>
 
+            <div v-if="hasHighlights" class="chp-highlights">
+              <div v-if="busiestDay" class="chp-highlight">
+                <span class="chp-highlight__icon">
+                  <font-awesome-icon :icon="['fas', 'chart-line']" />
+                </span>
+                <div class="chp-highlight__body">
+                  <div class="chp-highlight__value">{{ busiestDay.date }}</div>
+                  <div class="chp-highlight__label">
+                    最活跃的一天 · <strong>{{ busiestDay.count }}</strong> 条
+                  </div>
+                </div>
+              </div>
+              <div v-if="busiestHour" class="chp-highlight">
+                <span class="chp-highlight__icon">
+                  <font-awesome-icon :icon="['fas', 'clock']" />
+                </span>
+                <div class="chp-highlight__body">
+                  <div class="chp-highlight__value">{{ busiestHour.range }}</div>
+                  <div class="chp-highlight__label">
+                    最活跃时段 · <strong>{{ busiestHour.count }}</strong> 条
+                  </div>
+                </div>
+              </div>
+            </div>
+
             <section class="chp-block">
               <h3 class="chp-block__title">近 30 天消息趋势</h3>
               <div class="chp-trend">
@@ -291,6 +336,24 @@
                   </div>
                 </li>
               </ul>
+            </section>
+
+            <section v-if="myRank" class="chp-block">
+              <h3 class="chp-block__title">我的发言</h3>
+              <div class="chp-mine">
+                <div class="chp-mine__stat">
+                  <div class="chp-mine__num">{{ myRank.count }}</div>
+                  <div class="chp-mine__label">我的发言数</div>
+                </div>
+                <div class="chp-mine__divider"></div>
+                <div class="chp-mine__stat">
+                  <div class="chp-mine__num">
+                    第 {{ myRank.rank }} 名
+                    <span v-if="myRank.total" class="chp-mine__sub">/ 共 {{ myRank.total }} 人</span>
+                  </div>
+                  <div class="chp-mine__label">我的排名</div>
+                </div>
+              </div>
             </section>
           </template>
 
@@ -379,6 +442,15 @@ function formatDateTime(input?: string | number | null): string {
   return `${d.getMonth() + 1}/${d.getDate()} ${pad(d.getHours())}:${pad(d.getMinutes())}`
 }
 
+/** 只取日期部分，如 10/15（跨年时补上年份） */
+function formatDay(input?: string | number | null): string {
+  if (input === null || input === undefined || input === '') return '—'
+  const d = typeof input === 'number' ? new Date(input * 1000) : parseDate(input)
+  if (Number.isNaN(d.getTime())) return String(input).slice(0, 10)
+  const md = `${d.getMonth() + 1}/${d.getDate()}`
+  return d.getFullYear() === new Date().getFullYear() ? md : `${d.getFullYear()}/${md}`
+}
+
 function resolveUrl(url?: string): string {
   if (!url) return ''
   if (
@@ -464,11 +536,40 @@ function thumbOf(m: Message): string {
   return ''
 }
 
+/** 图片 / 视频在搜索结果里展示为左侧小缩略图 */
+function isThumbable(m: Message): boolean {
+  return m.type === 'image' || m.type === 'video'
+}
+
+/** 缩略图加载失败兜底（按消息 id 记录） */
+const failedThumbs = ref<Record<string | number, boolean>>({})
+
+function markThumbFailed(id: string | number): void {
+  failedThumbs.value[id] = true
+}
+
 // ==================== 统计派生 ====================
+// 后端新增字段（接口类型未声明，做可选访问兜底，缺失时不崩）
+interface ExtraStats {
+  busiest_day?: { date: string; count: number } | null
+  busiest_hour?: { hour: number; count: number } | null
+  media_total?: number
+  rank?: { my_count: number; my_rank: number; senders_total: number } | null
+}
+
+const extraStats = computed<ExtraStats>(() => {
+  /**
+   * MessageStatistics 未声明新字段，这里做一次窄化后的可选读取；
+   * 后端字段缺失时返回空对象，下游一律走 null 兜底不渲染。
+   */
+  const s = statistics.value as (MessageStatistics & ExtraStats) | null
+  return s || {}
+})
+
 const statCards = computed(() => {
   const bt = statistics.value?.by_type || {}
   const pick = (keys: string[]) => keys.reduce((sum, k) => sum + (bt[k] || 0), 0)
-  return [
+  const cards = [
     { key: 'total', label: '总消息数', value: statistics.value?.total ?? 0, accent: true },
     { key: 'text', label: '文本', value: pick(['text', 'normal']), accent: false },
     { key: 'image', label: '图片', value: pick(['image']), accent: false },
@@ -476,6 +577,40 @@ const statCards = computed(() => {
     { key: 'audio', label: '音频', value: pick(['audio', 'voice']), accent: false },
     { key: 'file', label: '文件', value: pick(['file']), accent: false }
   ]
+  // 媒体总数（图片 + 视频 + 音频），接口未返回时补一项不上屏
+  const mediaTotal = extraStats.value.media_total
+  if (typeof mediaTotal === 'number') {
+    cards.push({ key: 'media', label: '媒体总数', value: mediaTotal, accent: false })
+  }
+  return cards
+})
+
+/** 最活跃的一天 / 时段（缺失则不渲染对应块） */
+const busiestDay = computed(() => {
+  const b = extraStats.value.busiest_day
+  if (!b || !b.date) return null
+  return { date: formatDay(b.date), count: b.count ?? 0 }
+})
+
+const busiestHour = computed(() => {
+  const b = extraStats.value.busiest_hour
+  if (!b || typeof b.hour !== 'number') return null
+  const start = pad(((b.hour % 24) + 24) % 24)
+  const end = pad((((b.hour + 1) % 24) + 24) % 24)
+  return { range: `${start}:00-${end}:00`, count: b.count ?? 0 }
+})
+
+const hasHighlights = computed(() => !!busiestDay.value || !!busiestHour.value)
+
+/** 我的发言数与排名 */
+const myRank = computed(() => {
+  const r = extraStats.value.rank
+  if (!r || typeof r.my_rank !== 'number') return null
+  return {
+    count: r.my_count ?? 0,
+    rank: r.my_rank,
+    total: r.senders_total ?? 0
+  }
 })
 
 const timeSpan = computed(() => {
@@ -1024,6 +1159,57 @@ watch(
   white-space: nowrap;
 }
 
+// 搜索结果左侧小缩略图（图片 / 视频）
+.chp-item__thumb {
+  position: relative;
+  flex-shrink: 0;
+  width: 40px;
+  height: 40px;
+  align-self: center;
+  border: 1px solid $border-light;
+  border-radius: $border-radius-sm;
+  overflow: hidden;
+  background: $bg-color-page;
+
+  img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    display: block;
+  }
+}
+
+.chp-item__thumb-fallback {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 100%;
+  height: 100%;
+  color: $text-placeholder;
+  font-size: 15px;
+}
+
+.chp-item__thumb-play {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 18px;
+  height: 18px;
+  border-radius: 50%;
+  background: rgba(15, 23, 42, 0.6);
+  color: #fff;
+
+  svg {
+    width: 10px;
+    height: 10px;
+    margin-left: 1px;
+  }
+}
+
 // ==================== 媒体网格 ====================
 .chp-grid {
   display: grid;
@@ -1410,6 +1596,109 @@ watch(
   transition: width $transition-base;
 }
 
+// ==================== 高光统计（最活跃的一天 / 时段） ====================
+.chp-highlights {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: $spacing-sm;
+  margin-top: $spacing-sm;
+}
+
+.chp-highlight {
+  display: flex;
+  align-items: center;
+  gap: $spacing-sm;
+  padding: $spacing-sm $spacing-md;
+  border: 1px solid $border-light;
+  border-radius: $border-radius-base;
+  background: $bg-color-elevated;
+}
+
+.chp-highlight__icon {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 32px;
+  height: 32px;
+  flex-shrink: 0;
+  border-radius: $border-radius-sm;
+  background: rgba($primary-color, 0.08);
+  color: $primary-color;
+  font-size: 14px;
+}
+
+.chp-highlight__body {
+  min-width: 0;
+}
+
+.chp-highlight__value {
+  font-family: $font-family-heading;
+  font-size: $font-size-base;
+  font-weight: $font-weight-semibold;
+  color: $text-primary;
+  line-height: 1.2;
+  font-variant-numeric: tabular-nums;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.chp-highlight__label {
+  margin-top: 2px;
+  font-size: $font-size-xs;
+  color: $text-tertiary;
+
+  strong {
+    color: $primary-color;
+    font-variant-numeric: tabular-nums;
+  }
+}
+
+// ==================== 我的发言 ====================
+.chp-mine {
+  display: flex;
+  align-items: stretch;
+  padding: $spacing-md;
+  border: 1px solid $border-light;
+  border-radius: $border-radius-base;
+  background: $bg-color-elevated;
+}
+
+.chp-mine__stat {
+  flex: 1;
+  min-width: 0;
+  text-align: center;
+}
+
+.chp-mine__num {
+  font-family: $font-family-heading;
+  font-size: $font-size-xl;
+  font-weight: $font-weight-bold;
+  color: $primary-color;
+  line-height: 1.15;
+  font-variant-numeric: tabular-nums;
+  white-space: nowrap;
+}
+
+.chp-mine__sub {
+  font-size: $font-size-xs;
+  font-weight: $font-weight-medium;
+  color: $text-tertiary;
+}
+
+.chp-mine__label {
+  margin-top: 4px;
+  font-size: $font-size-xs;
+  color: $text-tertiary;
+}
+
+.chp-mine__divider {
+  width: 1px;
+  align-self: stretch;
+  margin: 0 $spacing-sm;
+  background: $border-light;
+}
+
 // ==================== 深色模式 ====================
 :global(.dark-mode) {
   .chp-header__icon {
@@ -1456,9 +1745,34 @@ watch(
   .chp-item,
   .chp-file,
   .chp-card,
-  .chp-trend {
+  .chp-trend,
+  .chp-highlight,
+  .chp-mine {
     background: $bg-color-elevated-dark;
     border-color: $border-base-dark;
+  }
+
+  .chp-highlight__icon {
+    background: rgba($primary-lighter, 0.12);
+    color: $primary-lighter;
+  }
+
+  .chp-highlight__value {
+    color: $text-primary-dark;
+  }
+
+  .chp-mine__num {
+    color: $primary-lighter;
+  }
+
+  .chp-highlight__label,
+  .chp-mine__label,
+  .chp-mine__sub {
+    color: $text-tertiary-dark;
+  }
+
+  .chp-mine__divider {
+    background: $border-base-dark;
   }
 
   .chp-card--accent {
@@ -1485,6 +1799,15 @@ watch(
   .chp-cell {
     background: $bg-color-dark;
     border-color: $border-base-dark;
+  }
+
+  .chp-item__thumb {
+    background: $bg-color-dark;
+    border-color: $border-base-dark;
+  }
+
+  .chp-item__thumb-fallback {
+    color: $text-placeholder-dark;
   }
 
   .chp-file__icon {

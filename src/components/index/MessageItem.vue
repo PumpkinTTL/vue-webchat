@@ -921,6 +921,11 @@ defineExpose({
   overflow: hidden;
   position: relative;
   z-index: 1;
+  // 层次感：外扩 2px 底色描边（对齐列表背景，形成"留白"）+ 1px hairline 外环 + 极轻投影
+  // 用 box-shadow 实现，不改变头像尺寸，内容不被裁切
+  box-shadow: 0 0 0 2px $bg-color,
+    0 0 0 3px rgba($text-primary, 0.12),
+    0 1px 3px rgba($text-primary, 0.12);
 
   img {
     width: 100%;
@@ -1788,6 +1793,13 @@ html.dark-mode {
       background: $primary-color;
       color: white;
     }
+  }
+
+  // 深色模式头像层次：描边对齐深色列表背景 + 更浅 hairline + 更深投影
+  .msg-avatar {
+    box-shadow: 0 0 0 2px $bg-color-dark,
+      0 0 0 3px rgba(255, 255, 255, 0.14),
+      0 1px 3px rgba(0, 0, 0, 0.4);
   }
 
   .msg-sender,

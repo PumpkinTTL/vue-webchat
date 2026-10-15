@@ -446,6 +446,11 @@ onMounted(async () => {
     }
   })
 
+  // 连接恢复 / 页面回前台 → HTTP 兜底补拉，补上断线期间可能错过的消息
+  wsStore.setOnResync(() => {
+    void resyncMessages()
+  })
+
   // 加载房间列表
   await loadUserRooms()
 })
@@ -711,12 +716,124 @@ const loadRoomMessages = async (roomId: number) => {
       nextTick(() => {
         messageListRef.value?.scrollToBottom(false)
       })
+
+      // 进入房间后消息会随视口观察被标记已读，稍后刷新一次房间列表，
+      // 让侧边栏未读徽章及时归零（否则会停留在进入前的旧数值）
+      const enterRoomId = roomId
+      setTimeout(() => {
+        if (currentRoom.value?.id === enterRoomId) {
+          void refreshRoomList()
+        }
+      }, 1500)
     }
   } catch (error) {
     console.error('加载消息失败:', error)
     message.error('加载消息失败')
   } finally {
     messagesLoading.value = false
+  }
+}
+
+// ==================== HTTP 兜底补拉（提高健壮性）====================
+// 断线/切后台/关浏览器期间 Socket 不在线，期间广播的消息会丢。
+// 连接恢复或页面回到前台时，用 HTTP 拉取最近消息做「并集合并」（按 id 去重，绝不会重复）。
+
+// 单条后端消息 -> 本地消息格式（与 loadRoomMessages 内映射一致，供兜底复用）
+function mapApiMessage(msg: any): ChatMessageItem {
+  const serverUrl = import.meta.env.VITE_SERVER_URL || ''
+  const fix = (u?: string) =>
+    u && !u.startsWith('http://') && !u.startsWith('https://') && !u.startsWith('blob:') ? serverUrl + u : (u || '')
+
+  let msgType = msg.type
+  if (msgType === 'normal' || msgType === 'reply') msgType = 'text'
+
+  return {
+    id: msg.id,
+    type: msgType as any,
+    text: msg.text,
+    time: new Date(msg.time),
+    isOwn: msg.isOwn,
+    sender: msg.sender
+      ? { id: msg.sender.id, nickname: msg.sender.nickname || '未知用户', avatar: fix(msg.sender.avatar) }
+      : undefined,
+    username: msg.sender?.nickname,
+    status: msg.isOwn ? 'sent' : undefined,
+    readCount: msg.read_count || 0,
+    imageUrl: fix(msg.imageUrl),
+    videoUrl: fix(msg.videoUrl),
+    videoThumbnail: fix(msg.videoThumbnail),
+    videoDuration: msg.videoDuration,
+    audioUrl: fix(msg.audioUrl),
+    audioDuration: msg.audioDuration,
+    audioName: msg.audioName,
+    fileName: msg.fileName,
+    fileSize: msg.fileSize,
+    fileExtension: msg.fileExtension,
+    fileUrl: fix(msg.fileUrl),
+    replyTo: msg.reply_to,
+    edited: msg.edited || false,
+    editedAt: msg.edited_at
+  }
+}
+
+// 轻量刷新房间列表（不改动当前选中房间，仅用于更新未读数等）
+const refreshRoomList = async () => {
+  try {
+    const result = await getUserRooms()
+    if (result.code === 0 && result.data) {
+      roomList.value = result.data || []
+    }
+  } catch {
+    // 静默失败
+  }
+}
+
+// 把服务端消息并入本地（按 id 去重，保持时间顺序）
+const mergeIncomingMessages = (list: any[]) => {
+  const existing = new Set<string>()
+  chatStore.messages.forEach((m) => {
+    existing.add(String(m.id))
+    if ((m as any).realId != null) existing.add(String((m as any).realId))
+  })
+
+  const additions: ChatMessageItem[] = []
+  for (const raw of list) {
+    const key = String(raw.id)
+    if (existing.has(key)) continue
+    existing.add(key)
+    additions.push(mapApiMessage(raw))
+  }
+
+  if (additions.length > 0) {
+    additions.sort((a, b) => a.time.getTime() - b.time.getTime())
+    additions.forEach((m) => {
+      m.isNew = false
+      chatStore.addMessage(m)
+    })
+    if (isAtBottom.value) {
+      nextTick(() => messageListRef.value?.scrollToBottom(true))
+    } else {
+      newMessageCount.value += additions.filter((m) => !m.isOwn && m.type !== 'system').length
+    }
+  }
+}
+
+// 连接恢复 / 页面回前台时的 HTTP 兜底补拉（重复触发由 store 侧去抖）
+let resyncRunning = false
+const resyncMessages = async () => {
+  if (resyncRunning) return
+  if (!currentRoom.value?.id || !wsStore.isAuthed) return
+  resyncRunning = true
+  try {
+    const result = await getMessageList(currentRoom.value.id, 1, 100)
+    if (result.code === 0 && result.data) {
+      mergeIncomingMessages(result.data.messages || [])
+    }
+    await refreshRoomList()
+  } catch {
+    // 静默失败，下次恢复时再补
+  } finally {
+    resyncRunning = false
   }
 }
 
@@ -1232,11 +1349,16 @@ const updateDeletedCount = async () => {
 
 // 处理滚动位置变化
 const handleScrollChange = (atBottom: boolean) => {
+  const wasAtBottom = isAtBottom.value
   isAtBottom.value = atBottom
   // 如果滚动到底部，清除所有计数
   if (atBottom) {
     newMessageCount.value = 0
     ownSentMessageCount.value = 0
+    // 刚读到底（从未读状态转为已读）→ 轻量刷新房间列表，让未读徽章及时清零
+    if (!wasAtBottom) {
+      void refreshRoomList()
+    }
   }
 }
 
