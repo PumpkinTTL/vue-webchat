@@ -132,6 +132,7 @@ import { uploadAvatar } from "@/apis/auth";
 import { useUserStore } from "@/store/user";
 import { useWebSocketStore } from "@/store/websocket";
 import { useChatStore } from "@/store/chat";
+import { useListenStore } from "@/store/listen";
 import VersionLog from "@/components/common/VersionLog.vue";
 import ProfileEditModal from "@/components/common/ProfileEditModal.vue";
 
@@ -151,7 +152,7 @@ const showVersionLog = ref(false);
 const showProfileEdit = ref(false);
 const wsStore = useWebSocketStore();
 const chatStore = useChatStore();
-
+const listenStore = useListenStore();
 const openProfileEdit = () => {
   showProfileEdit.value = true;
 };
@@ -221,6 +222,11 @@ const handleLogout = () => {
     cancelText: "取消",
     okButtonProps: { danger: true },
     onOk: () => {
+      // 先结束可能存在的一起听会话，再清理本地状态（跨账号不残留）
+      try { listenStore.end() } catch { /* ignore */ }
+      listenStore.reset();
+      // 断开 WS，避免上一个账号的连接/房间状态带到登录页
+      try { wsStore.disconnect() } catch { /* ignore */ }
       userStore.clearUser();
       clearUserInfo();
       Message.success("已退出登录");

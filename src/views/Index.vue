@@ -465,13 +465,20 @@ onMounted(async () => {
   // 一起听：远程事件接入
   wsStore.setOnListenInvited((data) => listenStore.onInvited(data))
   wsStore.setOnListenStarted((data) => listenStore.onStarted(data))
-  wsStore.setOnListenDeclined(() => listenStore.onDeclined({ by_user_id: 0, by_nickname: '' }))
+  wsStore.setOnListenDeclined((data) => {
+    listenStore.onDeclined(data)
+    message.info(`${data.by_nickname || '对方'}拒绝了一起听`)
+  })
   wsStore.setOnListenSync((data) => listenStore.onSync(data))
   wsStore.setOnListenEnded((data) => {
     const wasActive = listenStore.active
+    const wasPending = listenStore.pending || !!listenStore.invitation
     listenStore.onEnded(data)
-    if (wasActive && data.reason === 'disconnect') {
-      message.warning('对方已断开，一起听已结束')
+    // 仅在「确实处于会话/待接受」时提示，避免噪音
+    if (wasActive || wasPending) {
+      if (data.reason === 'disconnect') message.warning('对方已断开，一起听已结束')
+      else if (data.reason === 'cancelled') message.info('一起听邀请已取消')
+      else if (data.reason === 'cleared') message.warning('房间已清空，一起听已结束')
     }
   })
   wsStore.setOnListenState((data) => listenStore.onState(data))
@@ -484,6 +491,9 @@ onUnmounted(() => {
   // 清理 WebSocket
   destroyChat()
 
+  // 一起听：离开页面时清理本地状态（跨账号/跨页面不残留）
+  listenStore.reset()
+
   // 清理输入状态定时器
   if (typingTimer) {
     clearTimeout(typingTimer)
@@ -494,6 +504,9 @@ onUnmounted(() => {
 watch(() => wsStore.isAuthed, (isAuthed) => {
   if (isAuthed && currentRoom.value?.id) {
     enterRoom(currentRoom.value.id)
+  } else if (!isAuthed) {
+    // 连接断开：本地一起听状态立即清理，避免面板卡住残留（服务端会在断开时结束会话）
+    listenStore.reset()
   }
 })
 
@@ -1123,6 +1136,11 @@ const handleSelectRoom = async (room: any) => {
   }
 
   const roomId = typeof room.id === 'string' ? parseInt(room.id) : room.id
+
+  // 切换房间：重置一起听本地状态，避免上个房间的面板/邀请残留（跨房间泄漏）
+  if (currentRoom.value?.id && currentRoom.value.id !== roomId) {
+    listenStore.reset()
+  }
 
   // 切换房间时，从已显示通知的记录中移除当前房间
   // 这样切回来时可以再次显示通知

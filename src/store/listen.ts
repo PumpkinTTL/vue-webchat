@@ -183,6 +183,12 @@ export const useListenStore = defineStore('listen', () => {
   }
 
   // ==================== 会话动作 ====================
+  /** 完全重置（切房间 / 切账号 / 断线时调用）：释放一切本地状态，杜绝跨账号/跨房间泄漏 */
+  function reset() {
+    teardown(null)
+    endedReason.value = null
+  }
+
   function invite(payload: { audioUrl: string; audioName: string; audioDuration: number; position: number; playing: boolean }) {
     const myId = wsStore.currentUserId
     info.value = {
@@ -209,10 +215,12 @@ export const useListenStore = defineStore('listen', () => {
 
   function accept() {
     wsStore.listenAccept()
+    clearInviteWatchdog()
     invitation.value = null
   }
   function decline() {
     wsStore.listenDecline()
+    clearInviteWatchdog()
     invitation.value = null
   }
   function end() {
@@ -220,6 +228,7 @@ export const useListenStore = defineStore('listen', () => {
   }
   function cancelPending() {
     wsStore.listenEnd()
+    clearInviteWatchdog()
     pending.value = false
   }
 
@@ -234,7 +243,26 @@ export const useListenStore = defineStore('listen', () => {
     panelOpen.value = false
     pendingApply = null
     stopHeartbeat()
+    clearInviteWatchdog()
     if (reason) endedReason.value = reason
+  }
+
+  // 兜底看门狗：邀请/等待若 65s 内无任何结果（服务端 60s 应已取消，通知可能丢失），
+  // 本地也强制清除，杜绝任何「气泡残留」型泄漏。
+  let inviteWatchdog: ReturnType<typeof setTimeout> | null = null
+  const clearInviteWatchdog = () => {
+    if (inviteWatchdog) { clearTimeout(inviteWatchdog); inviteWatchdog = null }
+  }
+  const armInviteWatchdog = () => {
+    clearInviteWatchdog()
+    inviteWatchdog = setTimeout(() => {
+      inviteWatchdog = null
+      if (invitation.value || pending.value) {
+        invitation.value = null
+        pending.value = false
+        if (!active.value) info.value = null
+      }
+    }, 65000)
   }
 
   function onInvited(data: {
@@ -253,6 +281,7 @@ export const useListenStore = defineStore('listen', () => {
       playing: !!data.playing,
       at: Date.now()
     }
+    armInviteWatchdog()
   }
 
   function onStarted(data: {
@@ -260,10 +289,23 @@ export const useListenStore = defineStore('listen', () => {
     position: number; playing: boolean; server_at: number
     initiator_id: number; initiator_name: string; responder_id: number; responder_name: string
   }) {
+    const myId = wsStore.currentUserId
+    const iAmParticipant = String(data.initiator_id) === String(myId) || String(data.responder_id) === String(myId)
+
+    // 房间内的「旁观者」：别人之间开始了会话，若本地还挂着这条邀请气泡，清掉（防泄漏）
+    if (!iAmParticipant) {
+      if (invitation.value && invitation.value.fromUserId === data.initiator_id) {
+        invitation.value = null
+        clearInviteWatchdog()
+      }
+      return
+    }
+
     active.value = true
     pending.value = false
     invitation.value = null
-    role.value = String(data.initiator_id) === String(wsStore.currentUserId) ? 'initiator' : 'responder'
+    clearInviteWatchdog()
+    role.value = String(data.initiator_id) === String(myId) ? 'initiator' : 'responder'
     info.value = {
       audioUrl: data.audio_url,
       audioName: data.audio_name || '音频',
@@ -318,8 +360,8 @@ export const useListenStore = defineStore('listen', () => {
       panelOpen.value = true
       startHeartbeat()
     } else if (!data.active) {
-      // 服务端说该房间无活跃会话：若本地仍处于会话态，说明已失效 → 清理
-      if (active.value || pending.value) teardown('ended')
+      // 服务端说该房间无活跃会话：清理任何本地残留（会话/待接受/邀请气泡），杜绝泄漏
+      if (active.value || pending.value || invitation.value) teardown('ended')
     }
   }
 
@@ -335,6 +377,6 @@ export const useListenStore = defineStore('listen', () => {
     invite, accept, decline, end, cancelPending,
     // 远程事件
     onInvited, onStarted, onDeclined, onSync, onEnded, onState,
-    teardown
+    teardown, reset
   }
 })
